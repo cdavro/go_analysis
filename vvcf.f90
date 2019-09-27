@@ -25,9 +25,12 @@ INTEGER, ALLOCATABLE            :: nb_surf(:)
 REAL(dp)                        :: tOH_disp_vec(3), tOH_norm, tOOHvec_disp_vec(3), tOOHvec_norm
 REAL(dp)                        :: tXOHvec_disp_vec(3), tXOHvec_norm, tXOvec_disp_vec(3), tXOvec_norm
 REAL(dp)                        :: tSOHvec_disp_vec(3), tSOHvec_norm, tSOvec_disp_vec(3), tSOvec_norm
-REAL(dp)                        :: tSS_disp_vec(3), tSS_norm, tS1S2_disp_uvec_go(3),tS1S3_disp_uvec_go(3)
-REAL(dp)                        :: tPS_uvec_go(3), tPS_OOHvec_pos_vec(3), tPS_OOHvec_dist
-REAL(dp)                        :: temp_vec(3)
+REAL(dp)                        :: tSS_disp_vec(3), tSS_norm
+REAL(dp)                        :: tS1S2_disp_uvec_go(3),tS1S3_disp_uvec_go(3)
+REAL(dp)                        :: tS1S2_disp_uvec_air(3),tS1S3_disp_uvec_air(3)
+REAL(dp)                        :: tPS_uvec_go(3), tPS_OOHvec_pos_vec_go(3)
+REAL(dp)                        :: tPS_uvec_air(3), tPS_OOHvec_pos_vec_air(3)
+REAL(dp)                        :: tOHvec_disp_vec(3)
 INTEGER                         :: Udonnor_count, Udonnor_count2
 CHARACTER(LEN=2)                :: dummy_char
 REAL(dp)                        :: r
@@ -153,7 +156,7 @@ END DO
 CLOSE(UNIT=20)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F15.5,A20)', "Positions:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Positions:",finish-start,"seconds elapsed"
 
 ! A ----------------------------------------------- Read velocities
 start = OMP_get_wtime()
@@ -174,7 +177,7 @@ DO k = 1, 3
 END DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F15.5,A20)', "Velocities:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Velocities:",finish-start,"seconds elapsed"
 
 ! ----------------------------------------------- Since the number of points for the IS isn't constant, count it.
 IF (file_surf .NE. "0") THEN
@@ -194,13 +197,13 @@ IF (file_surf .NE. "0") THEN
     nb_max_pt=CEILING(1.0*nb_line/nb_step)*2
 
     finish = OMP_get_wtime()
-    PRINT'(A40,F15.5,A20)', "IS grid:",finish-start,"seconds elapsed"
+    PRINT'(A40,F14.2,A20)', "IS grid:",finish-start,"seconds elapsed"
 END IF
 
 ! A ----------------------------------------------- Read surface
 IF (file_surf .NE. "0") THEN
 
-    ALLOCATE(surf_mat(5,nb_max_pt,nb_step))
+    ALLOCATE(surf_mat(13,nb_max_pt,nb_step))
     ALLOCATE(nb_surf(nb_step))
     surf_mat(:,:,:) = 0.0_dp
     nb_surf(:) = 0
@@ -214,7 +217,8 @@ IF (file_surf .NE. "0") THEN
         j = 0
         DO i=1,nb_surf(s)
             READ(22, *) dummy_char, surf_mat(1,i,s), surf_mat(2,i,s), surf_mat(3,i,s)
-            surf_mat(5,i,s) = j + 1
+            j = j + 1
+            surf_mat(5,i,s) = j
             IF (surf_mat(3,i,s) .LT. 10.0) THEN
                 surf_mat(4,i,s) = 1
             ELSE
@@ -228,7 +232,7 @@ IF (file_surf .NE. "0") THEN
     CLOSE(UNIT=22)
 
     finish = OMP_get_wtime()
-    PRINT'(A40,F15.5,A20)', "IS:",finish-start,"seconds elapsed"
+    PRINT'(A40,F14.2,A20)', "IS:",finish-start,"seconds elapsed"
 END IF
 
 ! ----------------------------------------------- Get number of relevent atom types
@@ -281,7 +285,7 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F15.5,A20)', "OH groups:"&
+PRINT'(A40,F14.2,A20)', "OH groups:"&
     ,finish-start,"seconds elapsed"
 
 ! C ----------------------------------------------- OH/O Hbonds
@@ -348,7 +352,7 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F15.5,A20)', "OH/O Hbonds:"&
+PRINT'(A40,F14.2,A20)', "OH/O Hbonds:"&
     ,finish-start,"seconds elapsed"
 
 ! D ----------------------------------------------- Proximity between functionnal groups and any OH group
@@ -393,7 +397,7 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F15.5,A20)', "Proximity FG and OH group:"&
+PRINT'(A40,F14.2,A20)', "Proximity FG and OH group:"&
     ,finish-start,"seconds elapsed"
 
 ! E ----------------------------------------------- Proximity between functionnal groups and any O atom
@@ -438,7 +442,7 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F15.5,A20)', "Proximity FG and O atoms:"&
+PRINT'(A40,F14.2,A20)', "Proximity FG and O atoms:"&
     ,finish-start,"seconds elapsed"
 
 
@@ -448,7 +452,9 @@ IF (file_surf .NE. "0") THEN
 
     !nb_step, nb_atm, always shared.
     !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,OHvec_mat,nb_o,surf_mat,nb_surf)&
-    !$OMP PRIVATE(s,i,j,k,tSOHvec_disp_vec,tSOHvec_norm)
+    !$OMP PRIVATE(s,i,j,k,tSOHvec_disp_vec,tSOHvec_norm,tSS_disp_vec,tss_norm)&
+    !$OMP PRIVATE(tS1S2_disp_uvec_go,tS1S3_disp_uvec_go,tS1S2_disp_uvec_air,tS1S3_disp_uvec_air)&
+    !$OMP PRIVATE(tPS_uvec_go,tPS_uvec_air,tPS_OOHvec_pos_vec_go,tPS_OOHvec_pos_vec_air,tOHvec_disp_vec)
     DO s = 1, nb_step
         F2:DO i = 1, nb_o*3
             IF (OHvec_mat(1,i,s) .EQ. 0) THEN
@@ -502,34 +508,66 @@ IF (file_surf .NE. "0") THEN
                         surf_mat(6,INT(OHvec_mat(34,i,s)),s) = surf_mat(5,j,s)
                         surf_mat(7,INT(OHvec_mat(34,i,s)),s) = tSS_norm
                         tS1S2_disp_uvec_go(:) = tSS_disp_vec(:) / tSS_norm
-                    ELSE IF ( (tSS_norm .LT. surf_mat(9,j,s)) .OR.&
+                    ELSE IF ( (tSS_norm .LT. surf_mat(9,INT(OHvec_mat(34,i,s)),s)) .OR.&
                      ( (surf_mat(7,INT(OHvec_mat(34,i,s)),s) .NE. 0.0) .AND.&
                      (surf_mat(9,INT(OHvec_mat(34,i,s)),s) .EQ. 0) ) ) THEN
                         surf_mat(8,INT(OHvec_mat(34,i,s)),s) = surf_mat(5,j,s)
                         surf_mat(9,INT(OHvec_mat(34,i,s)),s) = tSS_norm
                         tS1S3_disp_uvec_go(:) = tSS_disp_vec(:) / tSS_norm
                     END IF
+                ELSEIF (surf_mat(4,j,s) .EQ. 2) THEN
+                    DO k = 1, 3
+                        tSS_disp_vec(k) = surf_mat(k,j,s) - surf_mat(k,INT(OHvec_mat(35,i,s)),s)
+                        tSS_disp_vec(k) = tSS_disp_vec(k) - box(k) * ANINT(tSS_disp_vec(k)/box(k))
+                    END DO
+                    tSS_norm = NORM2(tSS_disp_vec)
+                    IF ( (tSS_norm .LT. surf_mat(10,INT(OHvec_mat(35,i,s)),s)) .OR.&
+                        (surf_mat(10,INT(OHvec_mat(35,i,s)),s) .EQ. 0.0 ) ) THEN
+                        surf_mat(11,INT(OHvec_mat(35,i,s)),s) = surf_mat(5,j,s)
+                        surf_mat(10,INT(OHvec_mat(35,i,s)),s) = tSS_norm
+                        tS1S2_disp_uvec_air(:) = tSS_disp_vec(:) / tSS_norm
+                    ELSE IF ( (tSS_norm .LT. surf_mat(12,INT(OHvec_mat(35,i,s)),s)) .OR.&
+                        ( (surf_mat(10,INT(OHvec_mat(35,i,s)),s) .NE. 0.0) .AND.&
+                        (surf_mat(12,INT(OHvec_mat(35,i,s)),s) .EQ. 0) ) ) THEN
+                        surf_mat(13,INT(OHvec_mat(35,i,s)),s) = surf_mat(5,j,s)
+                        surf_mat(12,INT(OHvec_mat(35,i,s)),s) = tSS_norm
+                        tS1S3_disp_uvec_air(:) = tSS_disp_vec(:) / tSS_norm
+                    END IF
+
+
                  END IF
             END DO
+            tPS_uvec_air(1) = tS1S2_disp_uvec_air(2) * tS1S3_disp_uvec_air(3) - tS1S2_disp_uvec_air(3) * tS1S3_disp_uvec_air(2)
+            tPS_uvec_air(2) = tS1S2_disp_uvec_air(3) * tS1S3_disp_uvec_air(1) - tS1S2_disp_uvec_air(1) * tS1S3_disp_uvec_air(3)
+            tPS_uvec_air(3) = tS1S2_disp_uvec_air(1) * tS1S3_disp_uvec_air(2) - tS1S2_disp_uvec_air(2) * tS1S3_disp_uvec_air(1)
+
             tPS_uvec_go(1) = tS1S2_disp_uvec_go(2) * tS1S3_disp_uvec_go(3) - tS1S2_disp_uvec_go(3) * tS1S3_disp_uvec_go(2)
             tPS_uvec_go(2) = tS1S2_disp_uvec_go(3) * tS1S3_disp_uvec_go(1) - tS1S2_disp_uvec_go(1) * tS1S3_disp_uvec_go(3)
             tPS_uvec_go(3) = tS1S2_disp_uvec_go(1) * tS1S3_disp_uvec_go(2) - tS1S2_disp_uvec_go(2) * tS1S3_disp_uvec_go(1)
             DO k=1,3
-                tPS_OOHvec_pos_vec(k) = OHvec_mat(k+8,i,s)+tPS_uvec_go(k)
-                temp_vec(k) = OHvec_mat(k+2,i,s)
+                tPS_OOHvec_pos_vec_go(k) = OHvec_mat(k+8,i,s)+tPS_uvec_go(k)
+                tPS_OOHvec_pos_vec_air(k) = OHvec_mat(k+8,i,s)+tPS_uvec_air(k)
+                tOHvec_disp_vec(k) = OHvec_mat(k+2,i,s)
             END DO
-            tPS_OOHvec_dist = NORM2(tPS_OOHvec_pos_vec(:))
-            IF (tPS_OOHvec_dist .LT. OHvec_mat(27,i,s)) THEN
+            IF (NORM2(tPS_OOHvec_pos_vec_go(:)) .LT. OHvec_mat(24,i,s)) THEN
                 tPS_uvec_go(:) = -1.0 * tPS_uvec_go(:)
             END IF
-            OHvec_mat(36,i,s) = DOT_PRODUCT(tPS_uvec_go(:),temp_vec(:))
-
+            IF (NORM2(tPS_OOHvec_pos_vec_air(:)) .LT. OHvec_mat(27,i,s)) THEN
+                tPS_uvec_air(:) = -1.0 * tPS_uvec_air(:)
+            END IF 
+            OHvec_mat(36,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_go(:), tOHvec_disp_vec(:)))
+            OHvec_mat(37,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_air(:), tOHvec_disp_vec(:)))
         END DO F2
     END DO
     !$OMP END PARALLEL DO
-
+    DO j = 1, nb_surf(1)
+        PRINT*,surf_mat(:,j,1)
+    END DO
+    DO j = 1, nb_o*3
+        PRINT*,OHvec_mat(:,j,1)
+    END DO
     finish = OMP_get_wtime()
-    PRINT'(A40,F15.5,A20)', "Proximity IS and OH groups:"&
+    PRINT'(A40,F14.2,A20)', "Proximity IS and OH groups:"&
         ,finish-start,"seconds elapsed"
 END IF
 
@@ -582,7 +620,7 @@ IF (file_surf .NE. "0") THEN
     !$OMP END PARALLEL DO
 
     finish = OMP_get_wtime()
-    PRINT'(A40,F15.5,A20)', "Proximity IS and O atoms:"&
+    PRINT'(A40,F14.2,A20)', "Proximity IS and O atoms:"&
         ,finish-start,"seconds elapsed"
 END IF
 
@@ -607,23 +645,24 @@ IF (hbond_output .EQ. 1) THEN
     CLOSE(UNIT=31)
 
     OPEN(UNIT=32, FILE = suffix//"_OH_hbonds.dat")
-    WRITE(32,'(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24)')&
+    WRITE(32,'(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24,A24,A24)')&
         "O_id","O_type","H_id","step","Don","UDon","TAcc","C","OE"&
-    ,"OH","OA","C9","TDon", "TUDon", "TAcc", "DistToISGo", "DistToISAir"
+    ,"OH","OA","C9","TDon", "TUDon", "TAcc", "dist_IS_go", "dist_IS_air"&
+    , "Angle OH/NIS_go", "Angle OH/NIS_air"
     DO s = 1, nb_step
         DO i = 1, nb_max_OHvec(s)
-            WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14)')&
+            WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14,E24.14,E24.14)')&
                 INT(OHvec_mat(1,i,s)), INT(OHvec_mat(23,i,s))&
             , INT(OHvec_mat(2,i,s)), s, INT(OHvec_mat(17,i,s)) , INT(OHvec_mat(18,i,s)), INT(OHvec_mat(16,i,s))&
             , INT(OHvec_mat(19,i,s)), INT(OHvec_mat(20,i,s)), INT(OHvec_mat(21,i,s)), INT(OHvec_mat(22,i,s))&
             , INT(OHvec_mat(30,i,s)), INT(OHvec_mat(31,i,s)), INT(OHvec_mat(32,i,s)), INT(OHvec_mat(33,i,s))&
-            , (OHvec_mat(24,i,s)*OHvec_mat(25,i,s)), (OHvec_mat(27,i,s)*OHvec_mat(28,i,s))
+            , (OHvec_mat(24,i,s)*OHvec_mat(25,i,s)), (OHvec_mat(27,i,s)*OHvec_mat(28,i,s)), OHvec_mat(36,i,s), OHvec_mat(37,i,s)
         END DO
     END DO
     CLOSE(UNIT=32)
 
     finish = OMP_get_wtime()
-    PRINT'(A40,F15.5,A20)', "O/OH Hbonds output:"&
+    PRINT'(A40,F14.2,A20)', "O/OH Hbonds output:"&
         ,finish-start,"seconds elapsed"
 END IF
     
@@ -710,7 +749,7 @@ IF ( (file_surf .NE. "0") .AND. (density_output .EQ. 1) ) THEN
     DEALLOCATE(avg_dens_go,avg_dens_air)
 
     finish = OMP_get_wtime()
-    PRINT'(A40,F15.5,A20)', "Density profiles:"&
+    PRINT'(A40,F14.2,A20)', "Density profiles:"&
         ,finish-start,"seconds elapsed"
 END IF
 
@@ -908,7 +947,7 @@ IF (vvcf_c .EQ. 1 ) THEN
     avg_timigs = (SUM(timings(:)) / (mcs+1-mcsb) )
     finish = OMP_get_wtime()
     
-    PRINT'(A40,F15.5,A20,A20,F15.5)', "Done with VVCF_xxz:",finish-start,"seconds elapsed","avg per step:",avg_timigs
+    PRINT'(A40,F14.2,A20,A20,F14.2)', "Done with VVCF_xxz:",finish-start,"seconds elapsed","avg per step:",avg_timigs
 
     start = OMP_get_wtime()
 
@@ -920,7 +959,7 @@ IF (vvcf_c .EQ. 1 ) THEN
     CLOSE(UNIT=51)
 
     finish = OMP_get_wtime()
-    PRINT'(A40,F15.5,A20)', "Done with VVCF_xxz output:",finish-start,"seconds elapsed"
+    PRINT'(A40,F14.2,A20)', "Done with VVCF_xxz output:",finish-start,"seconds elapsed"
 
 DEALLOCATE(vvcf_xxz)
 END IF
