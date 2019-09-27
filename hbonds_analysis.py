@@ -50,8 +50,6 @@ for n,o,p in zip(list_type,list_donnor,list_acceptor):
         i = i+1
         print('----')
 
-del oh
-
 oh={}
 for n,o,p in zip(list_L,list_Ld,list_Lu):
     oh[n]={}

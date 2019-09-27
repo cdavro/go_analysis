@@ -24,11 +24,7 @@ INTEGER, ALLOCATABLE            :: nb_surf(:)
 ! ----------------------------------------------- Temp variables
 REAL(dp)                        :: tOH_disp_vec(3), tOH_norm, tOOHvec_disp_vec(3), tOOHvec_norm
 REAL(dp)                        :: tXOHvec_disp_vec(3), tXOHvec_norm, tXOvec_disp_vec(3), tXOvec_norm
-<<<<<<< HEAD
 REAL(dp)                        :: tSOHvec_disp_vec(3), tSOHvec_norm, tSOvec_disp_vec(3), tSOvec_norm
-=======
-REAL(dp)                        :: tSOHvec_disp_vec(3), tSOHvec_norm
->>>>>>> 9e8c043377d594d3301f02a018d792894e70f9ee
 INTEGER                         :: Udonnor_count, Udonnor_count2
 CHARACTER(LEN=2)                :: dummy_char
 REAL(dp)                        :: r
@@ -70,11 +66,7 @@ REAL(dp)                        :: box(3)
 REAL(dp), PARAMETER             :: dr = 0.5_dp
 INTEGER, PARAMETER              :: dens_step = 75
 REAL(dp), PARAMETER             :: timestep_fs = 0.5_dp
-<<<<<<< HEAD
 INTEGER, PARAMETER              :: hbond_output = 1, density_output = 1
-=======
-INTEGER, PARAMETER              :: hbond_output = 0, density_output = 0
->>>>>>> 9e8c043377d594d3301f02a018d792894e70f9ee
 INTEGER, PARAMETER              :: vvcf_c = 0
 INTEGER, PARAMETER              :: hbonds = 0, hbonds_c = 0
 INTEGER, PARAMETER              :: layers = 0, layers_c = 0
@@ -82,11 +74,7 @@ INTEGER, PARAMETER              :: layers = 0, layers_c = 0
 
 ! ----------------------------------------------- Allocate function for reading files
 ! DEFINE AS: atm_id, atm_nb, atm_x, atm_y, atm_z, vel_x, vel_y, vel_z, nb_OH
-<<<<<<< HEAD
 ALLOCATE(atm_mat(23,nb_atm,nb_step))
-=======
-ALLOCATE(atm_mat(17,nb_atm,nb_step))
->>>>>>> 9e8c043377d594d3301f02a018d792894e70f9ee
 atm_mat(:,:,:) = 0.0_dp
 
 ! ----------------------------------------------- Get arguments (filenames, choices)
@@ -108,7 +96,10 @@ CALL GET_COMMAND_ARGUMENT(1,file_xyz)
 file_xyz=TRIM(file_xyz)
 CALL GET_COMMAND_ARGUMENT(2,file_vel)
 file_vel=TRIM(file_vel)
-
+IF ( (file_surf .EQ. "0") .AND. (layers .EQ. 0) ) THEN
+    PRINT*, "Need surface to vvcf layers"
+END IF
+ 
 ! ----------------------------------------------- Calculate the box size
 box(1) = xhi - xlo
 box(2) = yhi - ylo
@@ -159,7 +150,7 @@ END DO
 CLOSE(UNIT=20)
 
 finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with positions:",finish-start,"seconds elapsed"
+PRINT'(A40,F15.5,A20)', "Positions:",finish-start,"seconds elapsed"
 
 ! A ----------------------------------------------- Read velocities
 start = OMP_get_wtime()
@@ -180,7 +171,7 @@ DO k = 1, 3
 END DO
 
 finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with velocities:",finish-start,"seconds elapsed"
+PRINT'(A40,F15.5,A20)', "Velocities:",finish-start,"seconds elapsed"
 
 ! ----------------------------------------------- Since the number of points for the IS isn't constant, count it.
 IF (file_surf .NE. "0") THEN
@@ -200,7 +191,7 @@ IF (file_surf .NE. "0") THEN
     nb_max_pt=CEILING(1.0*nb_line/nb_step)*2
 
     finish = OMP_get_wtime()
-    PRINT'(A90,F15.5,A20)', "Done with getting the number of points for the IS:",finish-start,"seconds elapsed"
+    PRINT'(A40,F15.5,A20)', "IS grid:",finish-start,"seconds elapsed"
 END IF
 
 ! A ----------------------------------------------- Read surface
@@ -232,14 +223,14 @@ IF (file_surf .NE. "0") THEN
     CLOSE(UNIT=22)
 
     finish = OMP_get_wtime()
-    PRINT'(A90,F15.5,A20)', "Done with surface:",finish-start,"seconds elapsed"
+    PRINT'(A40,F15.5,A20)', "IS:",finish-start,"seconds elapsed"
 END IF
 
 ! ----------------------------------------------- Get number of relevent atom types
 nb_o = COUNT(atm_mat(2,:,1) .EQ. 16, DIM=1)
 nb_h = COUNT(atm_mat(2,:,1) .EQ. 1, DIM=1)
 
-! B ----------------------------------------------- Search and calculate OH displacements/velocities and position of corresponding O
+! B ----------------------------------------------- OH groups and corresponding values
 start = OMP_get_wtime()
 ALLOCATE(OHvec_mat(33,nb_o*3,nb_step))
 ALLOCATE(nb_max_OHvec(nb_step))
@@ -285,10 +276,10 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with searching the OH groups and calculating values (disp,vel,O/Hpos):"&
+PRINT'(A40,F15.5,A20)', "OH groups:"&
     ,finish-start,"seconds elapsed"
 
-! C ----------------------------------------------- Search if OH groups are engaged in Hbonds
+! C ----------------------------------------------- OH/O Hbonds
 start = OMP_get_wtime()
 
 !nb_step, nb_atm, rOH_cut, always shared.
@@ -352,10 +343,10 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with searching OH groups Hbonds:"&
+PRINT'(A40,F15.5,A20)', "OH/O Hbonds:"&
     ,finish-start,"seconds elapsed"
 
-! D ----------------------------------------------- Search if OH groups are close to specific groups
+! D ----------------------------------------------- Proximity between functionnal groups and any OH group
 start = OMP_get_wtime()
 
 !nb_step, nb_atm, rXOH_cut, always shared.
@@ -397,10 +388,10 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with searching OH groups are close to specific groups:"&
+PRINT'(A40,F15.5,A20)', "Proximity FG and OH group:"&
     ,finish-start,"seconds elapsed"
 
-! E ----------------------------------------------- Search if O atoms are close to specific groups
+! E ----------------------------------------------- Proximity between functionnal groups and any O atom
 start = OMP_get_wtime()
 
 !nb_step, nb_atm, rXO_cut, always shared.
@@ -442,153 +433,116 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with searching O atoms are close to specific groups:"&
+PRINT'(A40,F15.5,A20)', "Proximity FG and O atoms:"&
     ,finish-start,"seconds elapsed"
 
-<<<<<<< HEAD
 
-=======
-! E ----------------------------------------------- Write OH BOND
-IF (hbond_output .EQ. 1) THEN
+! F ----------------------------------------------- Calculate closest distance between IS and any OH groups
+IF (file_surf .NE. "0") THEN
     start = OMP_get_wtime()
 
-    OPEN(UNIT=31, FILE = suffix//"_O_hbonds.dat")
-    WRITE(31,'(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10)') "O_id","step","Don","UDon","Acc","C","OE","OH","OA","C9","O_type"
+    !nb_step, nb_atm, always shared.
+    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,OHvec_mat,nb_o,surf_mat,nb_surf)&
+    !$OMP PRIVATE(s,i,j,k,tSOHvec_disp_vec,tSOHvec_norm)
     DO s = 1, nb_step
-        DO i = 1, nb_atm
-            IF (atm_mat(2,i,s) .EQ. 16) THEN
-                WRITE(31,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10)') INT(atm_mat(1,i,s)), s, INT(atm_mat(11,i,s))&
-            , INT(atm_mat(12,i,s)), INT(atm_mat(10,i,s)), INT(atm_mat(13,i,s)), INT(atm_mat(14,i,s))&
-            , INT(atm_mat(15,i,s)), INT(atm_mat(16,i,s)), INT(atm_mat(17,i,s)), INT(atm_mat(9,i,s))
-        END IF
-        END DO
-    END DO
-    CLOSE(UNIT=31)
-
-    OPEN(UNIT=32, FILE = suffix//"_OH_hbonds.dat")
-    WRITE(32,'(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10)')&
-     "O_id","O_type","H_id","step","Don","UDon","TAcc","C","OE"&
-    ,"OH","OA","C9","TDon", "TUDon", "TAcc"
-    DO s = 1, nb_step
-        DO i = 1, nb_max_OHvec(s)
-            WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10)') INT(OHvec_mat(1,i,s)), INT(OHvec_mat(23,i,s))&
-            , INT(OHvec_mat(2,i,s)), s, INT(OHvec_mat(17,i,s)) , INT(OHvec_mat(18,i,s)), INT(OHvec_mat(16,i,s))&
-            , INT(OHvec_mat(19,i,s)), INT(OHvec_mat(20,i,s)), INT(OHvec_mat(21,i,s)), INT(OHvec_mat(22,i,s))&
-            , INT(OHvec_mat(30,i,s)), INT(OHvec_mat(31,i,s)), INT(OHvec_mat(32,i,s)), INT(OHvec_mat(33,i,s))
-        END DO
-    END DO
-    CLOSE(UNIT=32)
-
-    finish = OMP_get_wtime()
-    PRINT'(A90,F15.5,A20)', "Done with writing O/OH Hbonds:"&
-        ,finish-start,"seconds elapsed"
-END IF
->>>>>>> 9e8c043377d594d3301f02a018d792894e70f9ee
-
-! F ----------------------------------------------- Calculate closest distance to surface to OH groups
-start = OMP_get_wtime()
-
-!nb_step, nb_atm, always shared.
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,OHvec_mat,nb_o,surf_mat,nb_surf)&
-!$OMP PRIVATE(s,i,j,k,tSOHvec_disp_vec,tSOHvec_norm)
-DO s = 1, nb_step
-    F2:DO i = 1, nb_o*3
-        IF (OHvec_mat(1,i,s) .EQ. 0) THEN
-            CYCLE F2
-        END IF
-        DO j = 1, nb_surf(s)
-            IF (surf_mat(4,j,s) .EQ. 1) THEN
-                DO k = 1, 3
-                    tSOHvec_disp_vec(k) = surf_mat(k,j,s) - OHvec_mat(k+8,i,s)
-                    tSOHvec_disp_vec(k) = tSOHvec_disp_vec(k) - box(k) * ANINT(tSOHvec_disp_vec(k)/box(k))
-                END DO
-                tSOHvec_norm = NORM2(tSOHvec_disp_vec)
-                IF ( (tSOHvec_norm .LT. OHvec_mat(24,i,s)) .OR. OHvec_mat(24,i,s) .EQ. 0.0 ) THEN
-                    OHvec_mat(24,i,s) = tSOHvec_norm
-                    IF (OHvec_mat(11,i,s) .LT. surf_mat(3,j,s)) THEN
-                        OHvec_mat(25,i,s) = -1
-                    ELSE
-                        OHvec_mat(25,i,s) = 1
-                    END IF
-                    OHvec_mat(26,i,s) = surf_mat(3,j,s)
-                END IF
-            ELSE IF (surf_mat(4,j,s) .EQ. 2) THEN
-                DO k = 1, 3
-                    tSOHvec_disp_vec(k) = surf_mat(k,j,s) - OHvec_mat(k+8,i,s)
-                    tSOHvec_disp_vec(k) = tSOHvec_disp_vec(k) - box(k) * ANINT(tSOHvec_disp_vec(k)/box(k))
-                END DO
-                tSOHvec_norm = NORM2(tSOHvec_disp_vec)
-                IF ( (tSOHvec_norm .LT. OHvec_mat(27,i,s)) .OR. OHvec_mat(27,i,s) .EQ. 0.0 ) THEN
-                    OHvec_mat(27,i,s) = tSOHvec_norm
-                    IF (OHvec_mat(11,i,s) .GT. surf_mat(3,j,s)) THEN
-                        OHvec_mat(28,i,s) = -1
-                    ELSE
-                        OHvec_mat(28,i,s) = 1
-                    END IF
-                    OHvec_mat(29,i,s) = surf_mat(3,j,s)
-                END IF
+        F2:DO i = 1, nb_o*3
+            IF (OHvec_mat(1,i,s) .EQ. 0) THEN
+                CYCLE F2
             END IF
-        END DO
-    END DO F2
-END DO
-!$OMP END PARALLEL DO
-
-finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with calculating closest distances OHvec/surface:"&
-    ,finish-start,"seconds elapsed"
-<<<<<<< HEAD
-    
-
-! X ----------------------------------------------- Calculate closest distance to surface to O
-start = OMP_get_wtime()
-
-!nb_step, nb_atm, always shared.
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,nb_o,surf_mat,nb_surf)&
-!$OMP PRIVATE(s,i,j,k,tSOvec_disp_vec,tSOvec_norm)
-DO s = 1, nb_step
-    DO i = 1, nb_atm
-        IF (atm_mat(2,i,s) .EQ. 16) THEN
             DO j = 1, nb_surf(s)
                 IF (surf_mat(4,j,s) .EQ. 1) THEN
                     DO k = 1, 3
-                        tSOvec_disp_vec(k) = surf_mat(k,j,s) - atm_mat(k+2,i,s)
-                        tSOvec_disp_vec(k) = tSOvec_disp_vec(k) - box(k) * ANINT(tSOvec_disp_vec(k)/box(k))
+                        tSOHvec_disp_vec(k) = surf_mat(k,j,s) - OHvec_mat(k+8,i,s)
+                        tSOHvec_disp_vec(k) = tSOHvec_disp_vec(k) - box(k) * ANINT(tSOHvec_disp_vec(k)/box(k))
                     END DO
-                    tSOvec_norm = NORM2(tSOvec_disp_vec)
-                    IF ( (tSOvec_norm .LT. atm_mat(18,i,s)) .OR. atm_mat(18,i,s) .EQ. 0.0 ) THEN
-                        atm_mat(18,i,s) = tSOvec_norm
-                        IF (atm_mat(5,i,s) .LT. surf_mat(3,j,s)) THEN
-                            atm_mat(19,i,s) = -1
+                    tSOHvec_norm = NORM2(tSOHvec_disp_vec)
+                    IF ( (tSOHvec_norm .LT. OHvec_mat(24,i,s)) .OR. OHvec_mat(24,i,s) .EQ. 0.0 ) THEN
+                        OHvec_mat(24,i,s) = tSOHvec_norm
+                        IF (OHvec_mat(11,i,s) .LT. surf_mat(3,j,s)) THEN
+                            OHvec_mat(25,i,s) = -1
                         ELSE
-                            atm_mat(19,i,s) = 1
+                            OHvec_mat(25,i,s) = 1
                         END IF
-                        atm_mat(20,i,s) = surf_mat(3,j,s)
+                        OHvec_mat(26,i,s) = surf_mat(3,j,s)
                     END IF
                 ELSE IF (surf_mat(4,j,s) .EQ. 2) THEN
                     DO k = 1, 3
-                        tSOvec_disp_vec(k) = surf_mat(k,j,s) - atm_mat(k+2,i,s)
-                        tSOvec_disp_vec(k) = tSOvec_disp_vec(k) - box(k) * ANINT(tSOvec_disp_vec(k)/box(k))
+                        tSOHvec_disp_vec(k) = surf_mat(k,j,s) - OHvec_mat(k+8,i,s)
+                        tSOHvec_disp_vec(k) = tSOHvec_disp_vec(k) - box(k) * ANINT(tSOHvec_disp_vec(k)/box(k))
                     END DO
-                    tSOvec_norm = NORM2(tSOvec_disp_vec)
-                    IF ( (tSOvec_norm .LT. atm_mat(21,i,s)) .OR. atm_mat(21,i,s) .EQ. 0.0 ) THEN
-                        atm_mat(21,i,s) = tSOvec_norm
-                        IF (atm_mat(5,i,s) .GT. surf_mat(3,j,s)) THEN
-                            atm_mat(22,i,s) = -1
+                    tSOHvec_norm = NORM2(tSOHvec_disp_vec)
+                    IF ( (tSOHvec_norm .LT. OHvec_mat(27,i,s)) .OR. OHvec_mat(27,i,s) .EQ. 0.0 ) THEN
+                        OHvec_mat(27,i,s) = tSOHvec_norm
+                        IF (OHvec_mat(11,i,s) .GT. surf_mat(3,j,s)) THEN
+                            OHvec_mat(28,i,s) = -1
                         ELSE
-                            atm_mat(22,i,s) = 1
+                            OHvec_mat(28,i,s) = 1
                         END IF
-                        atm_mat(23,i,s) = surf_mat(3,j,s)
+                        OHvec_mat(29,i,s) = surf_mat(3,j,s)
                     END IF
                 END IF
             END DO
-        END IF
+        END DO F2
     END DO
-END DO
-!$OMP END PARALLEL DO
+    !$OMP END PARALLEL DO
 
-finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with calculating closest distances OHvec/surface:"&
-    ,finish-start,"seconds elapsed"
+    finish = OMP_get_wtime()
+    PRINT'(A40,F15.5,A20)', "Proximity IS and OH groups:"&
+        ,finish-start,"seconds elapsed"
+END IF
+
+! X ----------------------------------------------- Calculate closest distance between IS and any O atom
+IF (file_surf .NE. "0") THEN
+    start = OMP_get_wtime()
+
+    !nb_step, nb_atm, always shared.
+    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,nb_o,surf_mat,nb_surf)&
+    !$OMP PRIVATE(s,i,j,k,tSOvec_disp_vec,tSOvec_norm)
+    DO s = 1, nb_step
+        DO i = 1, nb_atm
+            IF (atm_mat(2,i,s) .EQ. 16) THEN
+                DO j = 1, nb_surf(s)
+                    IF (surf_mat(4,j,s) .EQ. 1) THEN
+                        DO k = 1, 3
+                            tSOvec_disp_vec(k) = surf_mat(k,j,s) - atm_mat(k+2,i,s)
+                            tSOvec_disp_vec(k) = tSOvec_disp_vec(k) - box(k) * ANINT(tSOvec_disp_vec(k)/box(k))
+                        END DO
+                        tSOvec_norm = NORM2(tSOvec_disp_vec)
+                        IF ( (tSOvec_norm .LT. atm_mat(18,i,s)) .OR. atm_mat(18,i,s) .EQ. 0.0 ) THEN
+                            atm_mat(18,i,s) = tSOvec_norm
+                            IF (atm_mat(5,i,s) .LT. surf_mat(3,j,s)) THEN
+                                atm_mat(19,i,s) = -1
+                            ELSE
+                                atm_mat(19,i,s) = 1
+                            END IF
+                            atm_mat(20,i,s) = surf_mat(3,j,s)
+                        END IF
+                    ELSE IF (surf_mat(4,j,s) .EQ. 2) THEN
+                        DO k = 1, 3
+                            tSOvec_disp_vec(k) = surf_mat(k,j,s) - atm_mat(k+2,i,s)
+                            tSOvec_disp_vec(k) = tSOvec_disp_vec(k) - box(k) * ANINT(tSOvec_disp_vec(k)/box(k))
+                        END DO
+                        tSOvec_norm = NORM2(tSOvec_disp_vec)
+                        IF ( (tSOvec_norm .LT. atm_mat(21,i,s)) .OR. atm_mat(21,i,s) .EQ. 0.0 ) THEN
+                            atm_mat(21,i,s) = tSOvec_norm
+                            IF (atm_mat(5,i,s) .GT. surf_mat(3,j,s)) THEN
+                                atm_mat(22,i,s) = -1
+                            ELSE
+                                atm_mat(22,i,s) = 1
+                            END IF
+                            atm_mat(23,i,s) = surf_mat(3,j,s)
+                        END IF
+                    END IF
+                END DO
+            END IF
+        END DO
+    END DO
+    !$OMP END PARALLEL DO
+
+    finish = OMP_get_wtime()
+    PRINT'(A40,F15.5,A20)', "Proximity IS and O atoms:"&
+        ,finish-start,"seconds elapsed"
+END IF
 
 ! X ----------------------------------------------- Write OH BOND
 IF (hbond_output .EQ. 1) THEN
@@ -627,15 +581,12 @@ IF (hbond_output .EQ. 1) THEN
     CLOSE(UNIT=32)
 
     finish = OMP_get_wtime()
-    PRINT'(A90,F15.5,A20)', "Done with writing O/OH Hbonds:"&
+    PRINT'(A40,F15.5,A20)', "O/OH Hbonds output:"&
         ,finish-start,"seconds elapsed"
 END IF
     
-=======
-
->>>>>>> 9e8c043377d594d3301f02a018d792894e70f9ee
 ! G ----------------------------------------------- Density profiles
-IF (density_output .EQ. 1) THEN
+IF ( (file_surf .NE. "0") .AND. (density_output .EQ. 1) ) THEN
     start = OMP_get_wtime()
 
     ! GO-WATER
@@ -717,7 +668,7 @@ IF (density_output .EQ. 1) THEN
     DEALLOCATE(avg_dens_go,avg_dens_air)
 
     finish = OMP_get_wtime()
-    PRINT'(A90,F15.5,A20)', "Done with calculating density profiles:"&
+    PRINT'(A40,F15.5,A20)', "Density profiles:"&
         ,finish-start,"seconds elapsed"
 END IF
 
@@ -915,7 +866,7 @@ IF (vvcf_c .EQ. 1 ) THEN
     avg_timigs = (SUM(timings(:)) / (mcs+1-mcsb) )
     finish = OMP_get_wtime()
     
-    PRINT'(A90,F15.5,A20,A20,F15.5)', "Done with VVCF_xxz:",finish-start,"seconds elapsed","avg per step:",avg_timigs
+    PRINT'(A40,F15.5,A20,A20,F15.5)', "Done with VVCF_xxz:",finish-start,"seconds elapsed","avg per step:",avg_timigs
 
     start = OMP_get_wtime()
 
@@ -927,7 +878,7 @@ IF (vvcf_c .EQ. 1 ) THEN
     CLOSE(UNIT=51)
 
     finish = OMP_get_wtime()
-    PRINT'(A90,F15.5,A20)', "Done with VVCF_xxz output:",finish-start,"seconds elapsed"
+    PRINT'(A40,F15.5,A20)', "Done with VVCF_xxz output:",finish-start,"seconds elapsed"
 
 DEALLOCATE(vvcf_xxz)
 END IF

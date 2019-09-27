@@ -25,11 +25,7 @@ CHARACTER(LEN=64)               :: dummy
 ! ----------------------------------------------- SYSTEM DEPENDANT
 INTEGER,PARAMETER               :: nb_step=1000
 CHARACTER(LEN=2)                :: suffix="00"
-<<<<<<< HEAD
-REAL(dp), PARAMETER             :: xlo=-6.2472485529980304e-02_dp,xhi=2.1062472485526186e+01_dp
-=======
 REAL(dp), PARAMETER             :: xlo=0.0_dp,xhi=21.8489966560_dp
->>>>>>> 9e8c043377d594d3301f02a018d792894e70f9ee
 REAL(dp), PARAMETER             :: ylo=0.0_dp,yhi=21.2373561788_dp
 REAL(dp), PARAMETER             :: zlo=0.0_dp,zhi=70.0_dp
 REAL(dp)                        :: box(3)
