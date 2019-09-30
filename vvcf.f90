@@ -698,7 +698,7 @@ IF (hbond_output .EQ. 1) THEN
     , "Angle OH/NIS_go", "Angle OH/NIS_air"
     DO s = 1, nb_step
         DO i = 1, nb_max_OHvec(s)
-            WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14,E24.14,E24.14,I10)')&
+            WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14,E24.14,E24.14)')&
                 INT(OHvec_mat(1,i,s)), INT(OHvec_mat(23,i,s))&
             , INT(OHvec_mat(2,i,s)), s, INT(OHvec_mat(17,i,s)) , INT(OHvec_mat(18,i,s)), INT(OHvec_mat(16,i,s))&
             , INT(OHvec_mat(19,i,s)), INT(OHvec_mat(20,i,s)), INT(OHvec_mat(21,i,s)), INT(OHvec_mat(22,i,s))&
