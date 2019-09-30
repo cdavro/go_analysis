@@ -30,7 +30,7 @@ REAL(dp)                        :: tS1S2_disp_uvec_go(3),tS1S3_disp_uvec_go(3)
 REAL(dp)                        :: tS1S2_disp_uvec_air(3),tS1S3_disp_uvec_air(3)
 REAL(dp)                        :: tPS_uvec_go(3), tPS_OOHvec_pos_vec_go(3)
 REAL(dp)                        :: tPS_uvec_air(3), tPS_OOHvec_pos_vec_air(3)
-REAL(dp)                        :: tOHvec_disp_vec(3)
+REAL(dp)                        :: tOHvec_disp_vec(3), tOHvec_disp_uvec(3)
 INTEGER                         :: Udonnor_count, Udonnor_count2
 CHARACTER(LEN=2)                :: dummy_char
 REAL(dp)                        :: r
@@ -454,7 +454,8 @@ IF (file_surf .NE. "0") THEN
     !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,OHvec_mat,nb_o,surf_mat,nb_surf)&
     !$OMP PRIVATE(s,i,j,k,tSOHvec_disp_vec,tSOHvec_norm,tSS_disp_vec,tss_norm)&
     !$OMP PRIVATE(tS1S2_disp_uvec_go,tS1S3_disp_uvec_go,tS1S2_disp_uvec_air,tS1S3_disp_uvec_air)&
-    !$OMP PRIVATE(tPS_uvec_go,tPS_uvec_air,tPS_OOHvec_pos_vec_go,tPS_OOHvec_pos_vec_air,tOHvec_disp_vec)
+    !$OMP PRIVATE(tPS_uvec_go,tPS_uvec_air,tPS_OOHvec_pos_vec_go,tPS_OOHvec_pos_vec_air)&
+    !$OMP PRIVATE(tOHvec_disp_vec,tOHvec_disp_uvec)
     DO s = 1, nb_step
         F2:DO i = 1, nb_o*3
             IF (OHvec_mat(1,i,s) .EQ. 0) THEN
@@ -496,47 +497,68 @@ IF (file_surf .NE. "0") THEN
                 END IF
             END DO
 
-            DO j = 1, nb_surf(s)
+            tS1S2_disp_uvec_go = 0.0_dp
+            tS1S2_disp_uvec_air = 0.0_dp
+            tS1S3_disp_uvec_go = 0.0_dp
+            tS1S3_disp_uvec_air = 0.0_dp
+
+         F3:DO j = 1, nb_surf(s)
+                IF ( (surf_mat(5,j,s) .EQ. surf_mat(5,INT(OHvec_mat(34,i,s)),s)) .OR.&
+                (surf_mat(5,j,s) .EQ. surf_mat(5,INT(OHvec_mat(35,i,s)),s)) ) THEN
+                    CYCLE F3
+                END IF
+                IF ((s .eq. 1) .AND. (surf_mat(5,INT(OHvec_mat(34,i,s)),s) .eq. 1 )) THEN
+                    PRINT*,surf_mat(:,1,1),j,s,omp_get_thread_num(),i
+                END IF
                 IF (surf_mat(4,j,s) .EQ. 1) THEN
                     DO k = 1, 3
                         tSS_disp_vec(k) = surf_mat(k,j,s) - surf_mat(k,INT(OHvec_mat(34,i,s)),s)
                         tSS_disp_vec(k) = tSS_disp_vec(k) - box(k) * ANINT(tSS_disp_vec(k)/box(k))
                     END DO
                     tSS_norm = NORM2(tSS_disp_vec)
-                    IF ( (tSS_norm .LT. surf_mat(7,INT(OHvec_mat(34,i,s)),s)) .OR.&
-                     (surf_mat(7,INT(OHvec_mat(34,i,s)),s) .EQ. 0.0 ) ) THEN
+                    IF ( ( (tSS_norm .LT. surf_mat(7,INT(OHvec_mat(34,i,s)),s)) .OR.&
+                    (surf_mat(7,INT(OHvec_mat(34,i,s)),s) .EQ. 0.0 ) ) .AND.&
+                    (surf_mat(5,j,s) .NE. surf_mat(6,INT(OHvec_mat(34,i,s)),s)) ) THEN
+                        surf_mat(8,INT(OHvec_mat(34,i,s)),s) = surf_mat(6,INT(OHvec_mat(34,i,s)),s)
+                        surf_mat(9,INT(OHvec_mat(34,i,s)),s) = surf_mat(7,INT(OHvec_mat(34,i,s)),s)
+                        tS1S3_disp_uvec_go(:) = tS1S2_disp_uvec_go(:)
                         surf_mat(6,INT(OHvec_mat(34,i,s)),s) = surf_mat(5,j,s)
                         surf_mat(7,INT(OHvec_mat(34,i,s)),s) = tSS_norm
                         tS1S2_disp_uvec_go(:) = tSS_disp_vec(:) / tSS_norm
-                    ELSE IF ( (tSS_norm .LT. surf_mat(9,INT(OHvec_mat(34,i,s)),s)) .OR.&
-                     ( (surf_mat(7,INT(OHvec_mat(34,i,s)),s) .NE. 0.0) .AND.&
-                     (surf_mat(9,INT(OHvec_mat(34,i,s)),s) .EQ. 0) ) ) THEN
+                    ELSE IF ( ( (tSS_norm .LT. surf_mat(9,INT(OHvec_mat(34,i,s)),s)) .OR.&
+                    ( (surf_mat(7,INT(OHvec_mat(34,i,s)),s) .NE. 0.0) .AND.&
+                    (surf_mat(9,INT(OHvec_mat(34,i,s)),s) .EQ. 0.0) ) ) .AND.&
+                    (surf_mat(5,j,s) .NE. surf_mat(6,INT(OHvec_mat(34,i,s)),s)) ) THEN
                         surf_mat(8,INT(OHvec_mat(34,i,s)),s) = surf_mat(5,j,s)
                         surf_mat(9,INT(OHvec_mat(34,i,s)),s) = tSS_norm
                         tS1S3_disp_uvec_go(:) = tSS_disp_vec(:) / tSS_norm
                     END IF
-                ELSEIF (surf_mat(4,j,s) .EQ. 2) THEN
+                ELSE IF (surf_mat(4,j,s) .EQ. 2) THEN
                     DO k = 1, 3
                         tSS_disp_vec(k) = surf_mat(k,j,s) - surf_mat(k,INT(OHvec_mat(35,i,s)),s)
                         tSS_disp_vec(k) = tSS_disp_vec(k) - box(k) * ANINT(tSS_disp_vec(k)/box(k))
                     END DO
                     tSS_norm = NORM2(tSS_disp_vec)
-                    IF ( (tSS_norm .LT. surf_mat(10,INT(OHvec_mat(35,i,s)),s)) .OR.&
-                        (surf_mat(10,INT(OHvec_mat(35,i,s)),s) .EQ. 0.0 ) ) THEN
-                        surf_mat(11,INT(OHvec_mat(35,i,s)),s) = surf_mat(5,j,s)
-                        surf_mat(10,INT(OHvec_mat(35,i,s)),s) = tSS_norm
+                    IF ( ( (tSS_norm .LT. surf_mat(11,INT(OHvec_mat(35,i,s)),s)) .OR.&
+                    (surf_mat(11,INT(OHvec_mat(35,i,s)),s) .EQ. 0.0 ) ) .AND.&
+                    (surf_mat(5,j,s) .NE. surf_mat(10,INT(OHvec_mat(35,i,s)),s)) ) THEN
+                        surf_mat(12,INT(OHvec_mat(35,i,s)),s) = surf_mat(10,INT(OHvec_mat(35,i,s)),s)
+                        surf_mat(13,INT(OHvec_mat(35,i,s)),s) = surf_mat(11,INT(OHvec_mat(35,i,s)),s)
+                        tS1S3_disp_uvec_air(:) = tS1S2_disp_uvec_air(:)
+                        surf_mat(10,INT(OHvec_mat(35,i,s)),s) = surf_mat(5,j,s)
+                        surf_mat(11,INT(OHvec_mat(35,i,s)),s) = tSS_norm
                         tS1S2_disp_uvec_air(:) = tSS_disp_vec(:) / tSS_norm
-                    ELSE IF ( (tSS_norm .LT. surf_mat(12,INT(OHvec_mat(35,i,s)),s)) .OR.&
-                        ( (surf_mat(10,INT(OHvec_mat(35,i,s)),s) .NE. 0.0) .AND.&
-                        (surf_mat(12,INT(OHvec_mat(35,i,s)),s) .EQ. 0) ) ) THEN
-                        surf_mat(13,INT(OHvec_mat(35,i,s)),s) = surf_mat(5,j,s)
-                        surf_mat(12,INT(OHvec_mat(35,i,s)),s) = tSS_norm
+                    ELSE IF ( ( (tSS_norm .LT. surf_mat(13,INT(OHvec_mat(35,i,s)),s)) .OR.&
+                    ( (surf_mat(11,INT(OHvec_mat(35,i,s)),s) .NE. 0.0) .AND.&
+                    (surf_mat(13,INT(OHvec_mat(35,i,s)),s) .EQ. 0.0) ) ) .AND.&
+                    (surf_mat(5,j,s) .NE. surf_mat(10,INT(OHvec_mat(35,i,s)),s)) ) THEN
+                        surf_mat(12,INT(OHvec_mat(35,i,s)),s) = surf_mat(5,j,s)
+                        surf_mat(13,INT(OHvec_mat(35,i,s)),s) = tSS_norm
                         tS1S3_disp_uvec_air(:) = tSS_disp_vec(:) / tSS_norm
                     END IF
+                END IF
+            END DO F3
 
-
-                 END IF
-            END DO
             tPS_uvec_air(1) = tS1S2_disp_uvec_air(2) * tS1S3_disp_uvec_air(3) - tS1S2_disp_uvec_air(3) * tS1S3_disp_uvec_air(2)
             tPS_uvec_air(2) = tS1S2_disp_uvec_air(3) * tS1S3_disp_uvec_air(1) - tS1S2_disp_uvec_air(1) * tS1S3_disp_uvec_air(3)
             tPS_uvec_air(3) = tS1S2_disp_uvec_air(1) * tS1S3_disp_uvec_air(2) - tS1S2_disp_uvec_air(2) * tS1S3_disp_uvec_air(1)
@@ -544,19 +566,28 @@ IF (file_surf .NE. "0") THEN
             tPS_uvec_go(1) = tS1S2_disp_uvec_go(2) * tS1S3_disp_uvec_go(3) - tS1S2_disp_uvec_go(3) * tS1S3_disp_uvec_go(2)
             tPS_uvec_go(2) = tS1S2_disp_uvec_go(3) * tS1S3_disp_uvec_go(1) - tS1S2_disp_uvec_go(1) * tS1S3_disp_uvec_go(3)
             tPS_uvec_go(3) = tS1S2_disp_uvec_go(1) * tS1S3_disp_uvec_go(2) - tS1S2_disp_uvec_go(2) * tS1S3_disp_uvec_go(1)
+
+
             DO k=1,3
-                tPS_OOHvec_pos_vec_go(k) = OHvec_mat(k+8,i,s)+tPS_uvec_go(k)
-                tPS_OOHvec_pos_vec_air(k) = OHvec_mat(k+8,i,s)+tPS_uvec_air(k)
+                tPS_OOHvec_pos_vec_go(k) = OHvec_mat(k+8,i,s) + tPS_uvec_go(k)
+                tPS_OOHvec_pos_vec_go(k) = tPS_OOHvec_pos_vec_go(k) - box(k) * ANINT(tPS_OOHvec_pos_vec_go(k)/box(k))
+                tPS_OOHvec_pos_vec_air(k) = OHvec_mat(k+8,i,s) + tPS_uvec_air(k)
+                tPS_OOHvec_pos_vec_air(k) = tPS_OOHvec_pos_vec_air(k) - box(k) * ANINT(tPS_OOHvec_pos_vec_air(k)/box(k))
                 tOHvec_disp_vec(k) = OHvec_mat(k+2,i,s)
             END DO
+            tOHvec_disp_uvec(:) = tOHvec_disp_vec(:) / NORM2(tOHvec_disp_vec(:))
             IF (NORM2(tPS_OOHvec_pos_vec_go(:)) .LT. OHvec_mat(24,i,s)) THEN
                 tPS_uvec_go(:) = -1.0 * tPS_uvec_go(:)
             END IF
             IF (NORM2(tPS_OOHvec_pos_vec_air(:)) .LT. OHvec_mat(27,i,s)) THEN
                 tPS_uvec_air(:) = -1.0 * tPS_uvec_air(:)
             END IF 
-            OHvec_mat(36,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_go(:), tOHvec_disp_vec(:)))
-            OHvec_mat(37,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_air(:), tOHvec_disp_vec(:)))
+            !IF (s .eq. 1) THEN
+            !print*, tPS_uvec_go(:), tPS_uvec_air(:), tOHvec_disp_vec(:), tOHvec_disp_uvec(:), i
+            !END IF
+            OHvec_mat(36,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_go(:), tOHvec_disp_uvec(:)))
+            OHvec_mat(37,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_air(:), tOHvec_disp_uvec(:)))
+
         END DO F2
     END DO
     !$OMP END PARALLEL DO
@@ -651,12 +682,13 @@ IF (hbond_output .EQ. 1) THEN
     , "Angle OH/NIS_go", "Angle OH/NIS_air"
     DO s = 1, nb_step
         DO i = 1, nb_max_OHvec(s)
-            WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14,E24.14,E24.14)')&
+            WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14,E24.14,E24.14,I10)')&
                 INT(OHvec_mat(1,i,s)), INT(OHvec_mat(23,i,s))&
             , INT(OHvec_mat(2,i,s)), s, INT(OHvec_mat(17,i,s)) , INT(OHvec_mat(18,i,s)), INT(OHvec_mat(16,i,s))&
             , INT(OHvec_mat(19,i,s)), INT(OHvec_mat(20,i,s)), INT(OHvec_mat(21,i,s)), INT(OHvec_mat(22,i,s))&
             , INT(OHvec_mat(30,i,s)), INT(OHvec_mat(31,i,s)), INT(OHvec_mat(32,i,s)), INT(OHvec_mat(33,i,s))&
-            , (OHvec_mat(24,i,s)*OHvec_mat(25,i,s)), (OHvec_mat(27,i,s)*OHvec_mat(28,i,s)), OHvec_mat(36,i,s), OHvec_mat(37,i,s)
+            , (OHvec_mat(24,i,s)*OHvec_mat(25,i,s)), (OHvec_mat(27,i,s)*OHvec_mat(28,i,s)), OHvec_mat(36,i,s), OHvec_mat(37,i,s)&
+            , i
         END DO
     END DO
     CLOSE(UNIT=32)
