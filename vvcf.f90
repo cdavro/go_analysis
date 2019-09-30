@@ -675,7 +675,7 @@ END IF
 IF (hbond_output .EQ. 1) THEN
     start = OMP_get_wtime()
 
-    OPEN(UNIT=31, FILE = suffix//"_O_hbonds.dat")
+    OPEN(UNIT=31, FILE = suffix//"_O_hbonds.txt")
     WRITE(31,'(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10)') "O_id","step","Don","UDon","Acc"&
     ,"C","OE","OH","OA","C9","O_type", "DistToISGo", "DistToISAir"
     DO s = 1, nb_step
@@ -691,7 +691,7 @@ IF (hbond_output .EQ. 1) THEN
     END DO
     CLOSE(UNIT=31)
 
-    OPEN(UNIT=32, FILE = suffix//"_OH_hbonds.dat")
+    OPEN(UNIT=32, FILE = suffix//"_OH_hbonds.txt")
     WRITE(32,'(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24,A24,A24)')&
         "O_id","O_type","H_id","step","Don","UDon","TAcc","C","OE"&
     ,"OH","OA","C9","TDon", "TUDon", "TAcc", "dist_IS_go", "dist_IS_air"&
@@ -767,8 +767,8 @@ IF ( (file_surf .NE. "0") .AND. (density_output .EQ. 1) ) THEN
         avg_dens_air(j) = SUM(dens_air(j,:)) / nb_step
     END DO
 
-    OPEN(UNIT=41, FILE = suffix//"_density_profile_go.dat")
-    OPEN(UNIT=42, FILE = suffix//"_density_profile_air.dat")
+    OPEN(UNIT=41, FILE = suffix//"_density_profile_go.txt")
+    OPEN(UNIT=42, FILE = suffix//"_density_profile_air.txt")
     WRITE(41, '(A24,A24,A24,A24)') "step","[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
     WRITE(42, '(A24,A24,A24,A24)') "step","[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
     DO s = 1, nb_step
@@ -782,8 +782,8 @@ IF ( (file_surf .NE. "0") .AND. (density_output .EQ. 1) ) THEN
 
     DEALLOCATE(dens_go,dens_air)
 
-    OPEN(UNIT=43, FILE = suffix//"_avg_density_profile_go.dat")
-    OPEN(UNIT=44, FILE = suffix//"_avg_density_profile_air.dat")
+    OPEN(UNIT=43, FILE = suffix//"_avg_density_profile_go.txt")
+    OPEN(UNIT=44, FILE = suffix//"_avg_density_profile_air.txt")
     WRITE(43, '(A24,A24,A24)') "[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
     WRITE(44, '(A24,A24,A24)') "[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
     DO j = 1, dens_step
@@ -998,7 +998,7 @@ IF (vvcf_c .EQ. 1 ) THEN
 
     start = OMP_get_wtime()
 
-    open(UNIT=51, FILE = suffix//"_vvcf_xxz.dat")
+    open(UNIT=51, FILE = suffix//"_vvcf_xxz.txt")
     WRITE(51,'(A20,A20)') "Time (fs)","VVCF_xxz (Å2.fs2)"
     DO t = mcsb, mcs+1
         WRITE(51,'(E24.14,E24.14)') (t-1)*timestep_fs, vvcf_xxz(t)

@@ -204,7 +204,7 @@ PRINT'(A90,F15.5,A20)', "Done with searching the oxygen groups topology:"&
 ! ----------------------------------------------- Print counts
 start = OMP_get_wtime()
 
-OPEN(UNIT=50, FILE = suffix//"_oxygen_groups_population.dat")
+OPEN(UNIT=50, FILE = suffix//"_oxygen_groups_population.txt")
 WRITE(50,'(A15,A15,A15,A15,A15,A15,A15,A15,A15)') "Step", "Expoxide", "Alcohol", "Alkoxide", "Water"&
 , "Hydroxide", "Hydronium", "Total", "Total_O"
 DO s = 1, nb_step
