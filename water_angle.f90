@@ -26,6 +26,7 @@ REAL(dp)                        :: tSS_disp_vec(3), tSS_norm
 REAL(dp)                        :: tPS_uvec_go(3), tPS_OOHvec_pos_vec_go(3), tPS_HHvec_pos_vec(3)
 REAL(dp)                        :: tPS_uvec_air(3), tPS_OOHvec_pos_vec_air(3)
 REAL(dp)                        :: tOHvec_disp_vec(3), tOHvec_disp_uvec(3),tHHvec_disp_vec(3)
+REAL(dp)                        :: tHHvec_disp_uvec(3)
 CHARACTER(LEN=2)                :: dummy_char
 
 ! ----------------------------------------------- Count variables
@@ -347,7 +348,7 @@ IF (file_surf .NE. "0") THEN
     !$OMP PRIVATE(s,i,j,k,tSOHvec_disp_vec,tSOHvec_norm,tSS_disp_vec,tss_norm)&
     !$OMP PRIVATE(tPS_uvec_go,tPS_uvec_air,tPS_OOHvec_pos_vec_go,tPS_OOHvec_pos_vec_air)&
     !$OMP PRIVATE(tPS_HHvec_pos_vec)&
-    !$OMP PRIVATE(tOHvec_disp_vec,tOHvec_disp_uvec,thhvec_disp_vec)
+    !$OMP PRIVATE(tOHvec_disp_vec,tOHvec_disp_uvec,tHHvec_disp_vec,tHHvec_disp_uvec)
     DO s = 1, nb_step
         F2:DO i = 1, nb_o*3
             IF (OHvec_mat(1,i,s) .EQ. 0) THEN
@@ -488,16 +489,21 @@ IF (file_surf .NE. "0") THEN
             DO k=1,3
                 tPS_uvec_go(k) = surf_mat(k+25,INT(OHvec_mat(34,i,s)),s)
                 tPS_uvec_air(k) = surf_mat(k+28,INT(OHvec_mat(35,i,s)),s)
+
                 tPS_OOHvec_pos_vec_go(k) = OHvec_mat(k+1,i,s) + surf_mat(k+25,INT(OHvec_mat(34,i,s)),s)
                 tPS_OOHvec_pos_vec_go(k) = tPS_OOHvec_pos_vec_go(k) - box(k) * ANINT(tPS_OOHvec_pos_vec_go(k)/box(k))
                 tPS_OOHvec_pos_vec_air(k) = OHvec_mat(k+1,i,s) + surf_mat(k+28,INT(OHvec_mat(35,i,s)),s)
                 tPS_OOHvec_pos_vec_air(k) = tPS_OOHvec_pos_vec_air(k) - box(k) * ANINT(tPS_OOHvec_pos_vec_air(k)/box(k))
                 tPS_HHvec_pos_vec(k) = OHvec_mat(k+1,i,s) + OHvec_mat(k+39,i,s)
+
                 tPS_HHvec_pos_vec(k) = tPS_HHvec_pos_vec(k) - box(k) * ANINT(tPS_HHvec_pos_vec(k)/box(k))
                 tOHvec_disp_vec(k) = OHvec_mat(k+17,i,s)
                 tHHvec_disp_vec(k) = OHvec_mat(k+39,i,s)
             END DO
+
             tOHvec_disp_uvec(:) = tOHvec_disp_vec(:) / NORM2(tOHvec_disp_vec(:))
+            tHHvec_disp_uvec(:) = tHHvec_disp_vec(:) / NORM2(tHHvec_disp_vec(:))
+
             IF (NORM2(tPS_OOHvec_pos_vec_go(:)) .LT. OHvec_mat(24,i,s)) THEN
                 tPS_uvec_go(:) = -1.0 * tPS_uvec_go(:)
             END IF
@@ -506,18 +512,18 @@ IF (file_surf .NE. "0") THEN
             END IF
 
             IF (NORM2(tPS_HHvec_pos_vec(:)) .GT. OHvec_mat(24,i,s)) THEN
-                tHHvec_disp_vec(:) = -1.0 *  tHHvec_disp_vec(:)
+                tHHvec_disp_uvec(:) = -1.0 *  tHHvec_disp_uvec(:)
             END IF
 
-            OHvec_mat(36,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_go(:),  tOHvec_disp_vec(:)))
-            OHvec_mat(44,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_go(:),  tHHvec_disp_vec(:)))
+            OHvec_mat(36,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_go(:),  tOHvec_disp_uvec(:)))
+            OHvec_mat(44,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_go(:),  tHHvec_disp_uvec(:)))
 
             IF (NORM2(tPS_HHvec_pos_vec(:)) .GT. OHvec_mat(27,i,s)) THEN
-                tHHvec_disp_vec(:) = -1.0 *  tHHvec_disp_vec(:)
+                tHHvec_disp_uvec(:) = -1.0 *  tHHvec_disp_vec(:)
             END IF
-        
+
             OHvec_mat(37,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_air(:), tOHvec_disp_uvec(:)))
-            OHvec_mat(45,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_air(:),  tHHvec_disp_vec(:)))
+            OHvec_mat(45,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_air(:), tHHvec_disp_uvec(:)))
 
         END DO F2
     END DO
@@ -533,13 +539,13 @@ IF (hbond_output .EQ. 1) THEN
     start = OMP_get_wtime()
 
     OPEN(UNIT=32, FILE = suffix//"_HOH_hbonds.txt")
-    WRITE(32,'(A10,A10,A24,A24,A24,A24,A24,A24)')&
+    WRITE(32,'(A10,A10,A14,A14,A14,A14,A14,A14)')&
         "O_id", "C9", "dist_IS_go", "dist_IS_air"&
     , "Angle OH/NIS_go", "Angle OH/NIS_air"&
     , "Angle HH/NIS_go", "Angle HH/NIS_air"
     DO s = 1, nb_step
         DO i = 1, nb_max_OHvec(s)
-            WRITE(32,'(I10,I10,E24.14,E24.14,E24.14,E24.14,E24.14,E24.14)')&
+            WRITE(32,'(I10,I10,E14.7,E14.7,E14.7,E14.7,E14.7,E14.7)')&
                 INT(OHvec_mat(1,i,s)),INT(OHvec_mat(39,i,s))&
             , (OHvec_mat(24,i,s)*OHvec_mat(25,i,s)), (OHvec_mat(27,i,s)*OHvec_mat(28,i,s)), OHvec_mat(36,i,s), OHvec_mat(37,i,s)&
             , OHvec_mat(44,i,s), OHvec_mat(45,i,s)
