@@ -42,7 +42,7 @@ INTEGER, PARAMETER              :: nb_Cgo=180
 
 ! ----------------------------------------------- Allocate function for reading files
 ! DEFINE AS: atm_id, atm_nb, atm_x, atm_y, atm_z, vel_x, vel_y, vel_z, nb_H, nb_C
-ALLOCATE(atm_mat(10,nb_atm,nb_step))
+ALLOCATE(atm_mat(12,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
 ! ----------------------------------------------- Get arguments (filenames, choices)
@@ -148,6 +148,8 @@ ALLOCATE(nb_oxygen_group(nb_step))
 nb_max_OHvec = 0
 atm_mat(9,:,:) = -1
 atm_mat(10,:,:) = -1
+atm_mat(11,:,:) = -1
+atm_mat(12,:,:) = -1
 
 !nb_step, nb_atm, rOH_cut, rOC_cut are parameters, always shared.
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box)&
@@ -169,6 +171,7 @@ DO s=1,nb_step
                     tOH_norm = NORM2(tOH_disp_vec)
                     IF(tOH_norm .LE. rOH_cut) THEN
                         atm_mat(9,i,s) = atm_mat(9,i,s) + 1
+                        atm_mat(11,j,s) = atm_mat(1,i,s)
                     END IF
 
                 ELSE IF (atm_mat(2,j,s) .EQ. 12) THEN ! Compare with Carbons
@@ -181,6 +184,11 @@ DO s=1,nb_step
                         atm_mat(10,i,s) = atm_mat(10,i,s) + 1
                     END IF
 
+                END IF
+            END DO
+            DO j=1,nb_atm
+                IF (atm_mat(1,i,s) .EQ. atm_mat(11,j,s)) THEN
+                    atm_mat(12,j,s) = atm_mat(9,i,s)
                 END IF
             END DO
         END IF
@@ -242,6 +250,10 @@ DO s = 1, nb_step
             type = "OM"
         ELSE IF ((atm_mat(10,i,s) .EQ. 0) .AND. (atm_mat(9,i,s) .EQ. 3)) THEN
             type = "OP"
+        ELSE IF ((atm_mat(10,i,s) .EQ. -1) .AND. (atm_mat(12,i,s) .EQ. 2)) THEN
+            type = "HW"
+        ELSE IF ((atm_mat(10,i,s) .EQ. -1) .AND. (atm_mat(12,i,s) .EQ. 1)) THEN
+            type = "HO"
         ELSE IF ((atm_mat(10,i,s) .EQ. -1) .AND. (atm_mat(9,i,s) .EQ. -1)) THEN
             type = atm_el(i)
         ELSE
