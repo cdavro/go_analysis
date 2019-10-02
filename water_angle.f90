@@ -132,6 +132,9 @@ DO s = 1, nb_step
 END DO
 CLOSE(UNIT=20)
 
+nb_o = COUNT(atm_mat(2,:,1) .EQ. 16, DIM=1)
+nb_h = COUNT(atm_mat(2,:,1) .EQ. 1, DIM=1)
+
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Positions:",finish-start,"seconds elapsed"
 
@@ -155,13 +158,12 @@ finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "IS grid:",finish-start,"seconds elapsed"
 
 ! A ----------------------------------------------- Read surface
+start = OMP_get_wtime()
 
 ALLOCATE(surf_mat(19,nb_max_pt,nb_step))
 ALLOCATE(nb_surf(nb_step))
 surf_mat(:,:,:) = 0.0_dp
 nb_surf(:) = 0
-
-start = OMP_get_wtime()
 
 OPEN(UNIT=21,FILE=file_surf,STATUS='old',FORM='formatted',ACTION='READ')
 DO s = 1, nb_step
@@ -187,12 +189,7 @@ CLOSE(UNIT=21)
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "IS:",finish-start,"seconds elapsed"
 
-
-! ----------------------------------------------- Get number of relevent atom types
-nb_o = COUNT(atm_mat(2,:,1) .EQ. 16, DIM=1)
-nb_h = COUNT(atm_mat(2,:,1) .EQ. 1, DIM=1)
-
-! B ----------------------------------------------- OH groups and corresponding values
+! B ----------------------------------------------- Water
 start = OMP_get_wtime()
 ALLOCATE(OHvec_mat(45,nb_o*3,nb_step))
 ALLOCATE(nb_max_OHvec(nb_step))
@@ -260,11 +257,11 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "OH groups:"&
+PRINT'(A40,F14.2,A20)', "WAT groups:"&
     ,finish-start,"seconds elapsed"
 
 
-! D ----------------------------------------------- Proximity between functionnal groups and any OH group
+! D ----------------------------------------------- Proximity between functionnal groups and any WAT groups
 start = OMP_get_wtime()
 
 !nb_step, nb_atm, rXOH_cut, always shared.
@@ -306,7 +303,7 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Proximity FG and OH group:"&
+PRINT'(A40,F14.2,A20)', "Proximity FG and WAT group:"&
     ,finish-start,"seconds elapsed"
 
 ! F ----------------------------------------------- Calculate closest distance between IS and any OH groups
@@ -543,13 +540,13 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Proximity IS and OH groups:"&
+PRINT'(A40,F14.2,A20)', "Proximity IS and WAT groups:"&
     ,finish-start,"seconds elapsed"
 
 ! X ----------------------------------------------- Write OH BOND
 start = OMP_get_wtime()
 
-OPEN(UNIT=32, FILE = suffix//"_HOH_hbonds.txt")
+OPEN(UNIT=32, FILE = suffix//"_water_angle.txt")
 WRITE(32,'(A10,A10,A20,A20,A20,A20,A20,A20)')&
     "O_id", "C9", "dist_IS_go", "dist_IS_air"&
 , "Angle OH/NIS_go", "Angle OH/NIS_air"&
@@ -565,14 +562,9 @@ END DO
 CLOSE(UNIT=32)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "O/OH Hbonds output:"&
+PRINT'(A40,F14.2,A20)', "WAT angle output:"&
     ,finish-start,"seconds elapsed"
-DO i = 1,nb_surf(1)
-        print*,surf_mat(:,i,1)
-END DO
-DO i = 1,nb_o*3
-    print*,OHvec_mat(:,i,1)
-END DO
+
 ! ----------------------------------------------- Deallocate and exit
 DEALLOCATE(OHvec_mat,atm_mat,surf_mat)
 END PROGRAM vvcf
