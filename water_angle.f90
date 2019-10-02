@@ -558,7 +558,7 @@ PRINT'(A40,F14.2,A20)', "Proximity IS and WAT groups:"&
 ! X ----------------------------------------------- Write OH BOND
 start = OMP_get_wtime()
 
-OPEN(UNIT=32, FILE = suffix//"_water_angle.txt")
+OPEN(UNIT=32, FILE = suffix//"_water-angle.txt")
 WRITE(32,'(A10,A10,A20,A20,A20,A20,A20,A20)')&
     "O_id", "C9", "dist_IS_go", "dist_IS_air"&
 , "Angle OH/NIS_go", "Angle OH/NIS_air"&
