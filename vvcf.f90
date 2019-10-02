@@ -18,8 +18,10 @@ CHARACTER(LEN=64)               :: file_xyz, file_vel, file_surf
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:), OHvec_mat(:,:,:), surf_mat(:,:,:)
 CHARACTER(LEN=2), ALLOCATABLE   :: atm_el(:)
 REAL(dp), ALLOCATABLE           :: dens_go(:,:), dens_air(:,:), avg_dens_go(:), avg_dens_air(:)
+REAL(dp), ALLOCATABLE           :: dens_go_c(:,:), avg_dens_go_c(:)
 INTEGER                         :: nb_line, nb_max_pt
 INTEGER, ALLOCATABLE            :: nb_surf(:)
+REAL(dp), ALLOCATABLE           :: avg_z(:)
 
 ! ----------------------------------------------- Temp variables
 REAL(dp)                        :: tOH_disp_vec(3), tOH_norm, tOOHvec_disp_vec(3), tOOHvec_norm
@@ -32,7 +34,7 @@ REAL(dp)                        :: tOHvec_disp_vec(3), tOHvec_disp_uvec(3)
 INTEGER                         :: Udonnor_count, Udonnor_count2
 CHARACTER(LEN=2)                :: dummy_char
 REAL(dp)                        :: r
-INTEGER                         :: count_dens_go, count_dens_air
+INTEGER                         :: count_dens_go, count_dens_air, count_dens_go_c
 
 ! ----------------------------------------------- VVCF
 REAL(dp)                        :: mct, mctb
@@ -70,7 +72,7 @@ REAL(dp)                        :: box(3)
 REAL(dp), PARAMETER             :: dr = 0.5_dp
 INTEGER, PARAMETER              :: dens_step = 75
 REAL(dp), PARAMETER             :: timestep_fs = 0.5_dp
-INTEGER, PARAMETER              :: hbond_output = 1, density_output = 1
+INTEGER, PARAMETER              :: hbond_output = 0, density_output = 1
 INTEGER, PARAMETER              :: vvcf_c = 0
 INTEGER, PARAMETER              :: hbonds = 0, hbonds_c = 0
 INTEGER, PARAMETER              :: layers = 0, layers_c = 0
@@ -794,6 +796,82 @@ IF ( (file_surf .NE. "0") .AND. (density_output .EQ. 1) ) THEN
     CLOSE(UNIT=44)
 
     DEALLOCATE(avg_dens_go,avg_dens_air)
+
+    finish = OMP_get_wtime()
+    PRINT'(A40,F14.2,A20)', "Density profiles:"&
+        ,finish-start,"seconds elapsed"
+END IF
+
+! H -----------------------------------------------
+IF ( (file_surf .NE. "0") .AND. (density_output .EQ. 1) ) THEN
+    start = OMP_get_wtime()
+
+    ! GO-WATER
+    ALLOCATE(dens_go_c(dens_step,nb_step))
+    ALLOCATE(avg_z(nb_step))
+
+    dens_go_c(:,:) = 0.0_dp
+    avg_z(:) = 0.0_dp
+    !nb_step, always shared.
+    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(box,OHvec_mat,nb_o,dens_go_c,avg_z,atm_mat)&
+    !$OMP PRIVATE(s,r,j,i,count_dens_go_c,o)
+    DO s = 1, nb_step
+        o = 0
+        DO i = 1, nb_atm
+            IF (atm_mat(2,i,s) .EQ. 12) THEN
+                avg_z(s) = avg_z(s) + atm_mat(5,i,s) 
+                o = o + 1
+            END IF
+        END DO
+        avg_z(s) = avg_z(s) / o
+        r = -10.0_dp
+        DO j = 1, dens_step
+            count_dens_go_c = 0
+        N1:DO i = 1, nb_o*3
+                IF (OHvec_mat(1,i,s) .EQ. 0) THEN
+                    CYCLE N1
+                END IF
+                IF (OHvec_mat(23,i,s) .NE. 13) THEN
+                    CYCLE N1
+                END IF
+                IF ( ( (avg_z(s) - OHvec_mat(11,i,s)) .GE. r) .AND. ((avg_z(s) - OHvec_mat(11,i,s)) .LT. r+dr)) THEN
+                    count_dens_go_c = count_dens_go_c + 1
+                END IF
+            END DO N1
+            dens_go_c(j,s) = (18.0 * count_dens_go_c ) / (box(1) *  box(2) * dr * 1d-24 * 6.02214086d23)
+            r = r + dr
+        END DO
+    END DO
+    !$OMP END PARALLEL DO
+
+    dens_go_c = dens_go_c / 2.0
+
+    ALLOCATE(avg_dens_go_c(dens_step))
+    avg_dens_go_c(:) = 0.0_dp
+
+    DO j = 1, dens_step
+        avg_dens_go_c(j) = SUM(dens_go_c(j,:)) / nb_step
+    END DO
+
+    OPEN(UNIT=41, FILE = suffix//"_density_profile_go.txt")
+    WRITE(41, '(A24,A24,A24,A24)') "step","[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
+    DO s = 1, nb_step
+        DO j = 1, dens_step
+            WRITE(41, '(I24,E24.14,E24.14,E24.14)') s, (-10.0 + (j-1) * dr), (-10.0 + j * dr), dens_go_c(j,s)
+        END DO
+    END DO
+    CLOSE(UNIT=41)
+
+    DEALLOCATE(dens_go_c)
+
+    OPEN(UNIT=43, FILE = suffix//"_avg_density_profile_go.txt")
+    WRITE(43, '(A24,A24,A24)') "[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
+    DO j = 1, dens_step
+        WRITE(43, '(E24.14,E24.14,E24.14)') (-10.0 + (j-1) * dr), (-10.0 + j * dr), avg_dens_go_c(j)
+    END DO
+    CLOSE(UNIT=43)
+
+    DEALLOCATE(avg_dens_go_c)
 
     finish = OMP_get_wtime()
     PRINT'(A40,F14.2,A20)', "Density profiles:"&
