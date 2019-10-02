@@ -14,7 +14,6 @@ else:
 
 list_filename=["00","01","02","03","04","05"]
 
-list_L=["all","L1","L2","L3"]
 #list_Ld=[-20.0,-20.0,2.75,5.25]
 #list_Lu=[20.0,2.75,5.25,20.0]
 list_Ld=[-20.0,-20.0,3.25,6.50]
@@ -33,11 +32,11 @@ WA_revPBED3=np.delete(WA_revPBED3,(0),axis=0)
 
 plt.rcParams["figure.figsize"] = [14,7]
 fig1, ax1 = plt.subplots(dpi=300)
-sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>-20.0) &(WA_revPBED3[:,1]<=2.75)][:,2])
+sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[1]) &(WA_revPBED3[:,1]<=list_Lu[1])][:,2])
     ,hist=False,bins=bin_0_180_01,kde_kws={'clip': (-1,1) , "linestyle":"-","linewidth":"3.0","color":"gold"}, label=r'$L1$')
-sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>2.75) &(WA_revPBED3[:,1]<=5.25)][:,2])
+sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[2]) &(WA_revPBED3[:,1]<=list_Lu[2])][:,2])
     ,hist=False,bins=bin_0_180_01,kde_kws={'clip': (-1,1) , "linestyle":"--","linewidth":"3.0","color":"red"}, label=r'$L2$')
-sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>5.25) &(WA_revPBED3[:,1]<=20)][:,2])
+sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[3]) &(WA_revPBED3[:,1]<=list_Lu[3])][:,2])
     ,hist=False,bins=bin_0_180_01,kde_kws={'clip': (-1,1), "linestyle":":","linewidth":"3.0","color":"black"}, label=r'$L3$')
 plt.ylabel(r'P(cos(θ$_{DW}$))', fontsize=28)
 plt.xlabel(r'cos(θ$_{DW}$)', fontsize=28)
