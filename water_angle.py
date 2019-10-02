@@ -25,7 +25,7 @@ bin_0_180_01=np.flip(np.asarray(bin_0_180_01))
 
 WA_revPBED3=np.zeros((1,4))
 for f in list_filename:
-    filename = (f+'_water_angle.'+ext)
+    filename = (f+'_water-angle.'+ext)
     if (os.path.isfile(filename)):
         WA_revPBED3 = np.append(WA_revPBED3, np.genfromtxt(filename,dtype='float64',skip_header=1,usecols=(1,2,4,6)), axis=0)
 WA_revPBED3=np.delete(WA_revPBED3,(0),axis=0)
