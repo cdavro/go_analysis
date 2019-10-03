@@ -1,3 +1,7 @@
+!Author: Rolf David
+!License: MIT
+!UTF-8, CRLF, Fortran2003, OpenMP
+
 PROGRAM surface_wrap
 USE OMP_LIB
 
@@ -21,6 +25,7 @@ INTEGER                         :: nb_line, nb_max_pt
 ! ----------------------------------------------- Counters
 INTEGER                         :: i, s
 CHARACTER(LEN=64)               :: dummy
+INTEGER                         :: CAC
 
 ! ----------------------------------------------- SYSTEM DEPENDANT
 INTEGER,PARAMETER               :: nb_step=1000
@@ -31,6 +36,12 @@ REAL(dp), PARAMETER             :: zlo=0.0_dp,zhi=70.0_dp
 REAL(dp)                        :: box(3)
 
 ! ----------------------------------------------- Get arguments (filenames, choices)
+CAC = COMMAND_ARGUMENT_COUNT()
+
+IF (CAC .NE. 1) THEN
+    STOP
+END IF
+
 CALL GET_COMMAND_ARGUMENT(1,file_surf)
 file_surf=TRIM(file_surf)
 
@@ -51,7 +62,7 @@ REWIND(20)
 nb_max_pt=CEILING(1.0*nb_line/nb_step)*2
 
 finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with getting the number of points for the IS:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "IS grid:",finish-start,"seconds elapsed"
 
 ! ----------------------------------------------- Allocate function for reading files
 ! DEFINED AS: pt_x, pt_y, pt_z
@@ -79,7 +90,7 @@ END DO
 CLOSE(UNIT=20)
 
 finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with positions:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "IS:",finish-start,"seconds elapsed"
 
 ! ----------------------------------------------- Wrap and write
 start = OMP_get_wtime()
@@ -101,7 +112,7 @@ END DO
 CLOSE(UNIT=40)
 
 finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with wrapping/writing:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Center/Wrap:",finish-start,"seconds elapsed"
 
 ! ----------------------------------------------- Deallocate and exit
 DEALLOCATE(pt_mat,nb_pt)
