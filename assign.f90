@@ -1,3 +1,6 @@
+!Author: Rolf David
+!License: MIT
+!UTF-8, CRLF, Fortran2003, OpenMP
 
 PROGRAM assign
 USE OMP_LIB
@@ -10,7 +13,7 @@ INTEGER, PARAMETER              :: dp=KIND(0.0d0)
 REAL(dp)                        :: start,finish
 
 ! ----------------------------------------------- Filenames
-CHARACTER(LEN=64)               :: file_xyz, file_vel
+CHARACTER(LEN=64)               :: file_pos, file_vel
 
 ! ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:)
@@ -25,11 +28,13 @@ CHARACTER(LEN=2)                :: type
 
 ! ----------------------------------------------- Count variables
 INTEGER                         :: nb_o, nb_h
-INTEGER, ALLOCATABLE            :: nb_epoxide(:), nb_alcohol(:), nb_alkoxide(:), nb_water(:), nb_hydronium(:), nb_hydroxide(:)
+INTEGER, ALLOCATABLE            :: nb_epoxide(:), nb_alcohol(:), nb_alkoxide(:)
+INTEGER, ALLOCATABLE             :: nb_water(:), nb_hydronium(:), nb_hydroxide(:)
 INTEGER, ALLOCATABLE            :: nb_oxygen_group(:)
 
 ! ----------------------------------------------- Counters
 INTEGER                         :: i, s, k, j
+INTEGER                         :: CAC
 
 ! ----------------------------------------------- SYSTEM DEPENDANT
 INTEGER,PARAMETER               :: nb_atm=1039, nb_step=1000
@@ -39,6 +44,8 @@ REAL(dp), PARAMETER             :: ylo=0.0_dp,yhi=21.2373561788_dp
 REAL(dp), PARAMETER             :: zlo=0.0_dp,zhi=70.0_dp
 REAL(dp), PARAMETER             :: rOH_cut=1.30, rOC_cut=1.75
 INTEGER, PARAMETER              :: nb_Cgo=180
+INTEGER                         :: waterlist=1
+INTEGER                         :: vel_c=0
 
 ! ----------------------------------------------- Allocate function for reading files
 ! DEFINE AS: atm_id, atm_nb, atm_x, atm_y, atm_z, vel_x, vel_y, vel_z, nb_H, nb_C
@@ -46,10 +53,27 @@ ALLOCATE(atm_mat(12,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
 ! ----------------------------------------------- Get arguments (filenames, choices)
-CALL GET_COMMAND_ARGUMENT(1,file_xyz)
-file_xyz=TRIM(file_xyz)
-CALL GET_COMMAND_ARGUMENT(2,file_vel)
-file_vel=TRIM(file_vel)
+CAC = COMMAND_ARGUMENT_COUNT()
+
+IF (CAC .EQ. 0) THEN
+    PRINT*,"No arguments"
+    STOP
+ELSE IF (CAC .EQ. 1) THEN
+    PRINT*, "Assuming only positions file"
+    vel_c = 0
+ELSE IF (CAC .EQ. 2) THEN
+    PRINT*, "Assuming positions/velocities file"
+    vel_c = 1
+ELSE
+    PRINT*, "Error with arguments"
+END IF
+
+CALL GET_COMMAND_ARGUMENT(1,file_pos)
+file_pos=TRIM(file_pos)
+IF (vel_c .EQ. 1) THEN
+    CALL GET_COMMAND_ARGUMENT(2,file_vel)
+    file_vel=TRIM(file_vel)
+END IF
 
 ! ----------------------------------------------- Calculate the box size
 box(1) = xhi - xlo
@@ -60,7 +84,7 @@ box(3) = zhi - zlo
 start = OMP_get_wtime()
 ALLOCATE(atm_el(nb_atm))
 
-OPEN(UNIT=20,FILE=file_xyz,STATUS='old',FORM='formatted',ACTION='READ')
+OPEN(UNIT=20,FILE=file_pos,STATUS='old',FORM='formatted',ACTION='READ')
 DO s=1,nb_step
     READ(20, *)
     READ(20, *)
@@ -78,28 +102,29 @@ DO s=1,nb_step
 END DO
 CLOSE(UNIT=20)
 
-finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with positions:",finish-start,"seconds elapsed"
-
-! ----------------------------------------------- Read velocities
-start = OMP_get_wtime()
-
-OPEN(UNIT=21,FILE=file_vel,STATUS='old',FORM='formatted',ACTION='READ')
-DO s=1,nb_step
-    READ(21, *)
-    READ(21, *)
-    DO i=1,nb_atm
-        READ(21, *) atm_el(i), atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
-    END DO
-END DO
-CLOSE(UNIT=21)
-
-finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with velocities:",finish-start,"seconds elapsed"
-
-! ----------------------------------------------- Get number of relevent atom types
 nb_o = COUNT(atm_mat(2,:,1) .EQ. 16, DIM=1)
 nb_h = COUNT(atm_mat(2,:,1) .EQ. 1, DIM=1)
+
+finish = OMP_get_wtime()
+PRINT'(A40,F14.2,A20)', "Positions:",finish-start,"seconds elapsed"
+
+! ----------------------------------------------- Read velocities
+IF (vel_c .EQ. 1) THEN
+    start = OMP_get_wtime()
+
+    OPEN(UNIT=21,FILE=file_vel,STATUS='old',FORM='formatted',ACTION='READ')
+    DO s=1,nb_step
+        READ(21, *)
+        READ(21, *)
+        DO i=1,nb_atm
+            READ(21, *) atm_el(i), atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
+        END DO
+    END DO
+    CLOSE(UNIT=21)
+
+    finish = OMP_get_wtime()
+    PRINT'(A40,F14.2,A20)', "Velocities:",finish-start,"seconds elapsed"
+END IF
 
 ! ----------------------------------------------- Calculate geom center of go carbons and center so Zcarbon_avg = 0.0
 start = OMP_get_wtime()
@@ -108,6 +133,7 @@ ALLOCATE(Cgo_avgpos(3,nb_step))
 
 DO s=1,nb_step
     Cgo_avgpos(:,s) = 0.0_dp
+
     DO i=1,nb_atm
         IF (atm_mat(2,i,s) .EQ. 12) THEN
             DO k=1,3
@@ -131,7 +157,7 @@ END DO
 DEALLOCATE(Cgo_avgpos)
 
 finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with centering:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Center/Wrap:",finish-start,"seconds elapsed"
 
 ! ----------------------------------------------- Search the topology, water and oxygen groups
 start = OMP_get_wtime()
@@ -206,17 +232,16 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with searching the oxygen groups topology:"&
-    ,finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Oxygen groups topologies:",finish-start,"seconds elapsed"
 
 ! ----------------------------------------------- Print counts
 start = OMP_get_wtime()
 
 OPEN(UNIT=50, FILE = suffix//"_oxygen_groups_population.txt")
-WRITE(50,'(A15,A15,A15,A15,A15,A15,A15,A15,A15)') "Step", "Expoxide", "Alcohol", "Alkoxide", "Water"&
+WRITE(50,'(A12,A12,A12,A12,A12,A12,A12,A12,A12)') "Step", "Expoxide", "Alcohol", "Alkoxide", "Water"&
 , "Hydroxide", "Hydronium", "Total", "Total_O"
 DO s = 1, nb_step
-    WRITE(50,'(I15,I15,I15,I15,I15,I15,I15,I15,I15)') s, nb_epoxide(s), nb_alcohol(s), nb_alkoxide(s)&
+    WRITE(50,'(I12,I12,I12,I12,I12,I12,I12,I12,I12)') s, nb_epoxide(s), nb_alcohol(s), nb_alkoxide(s)&
     , nb_water(s),nb_hydroxide(s), nb_hydronium(s), nb_oxygen_group(s), nb_o
 END DO
 CLOSE(UNIT=50)
@@ -224,19 +249,18 @@ CLOSE(UNIT=50)
 DEALLOCATE(nb_max_OHvec,nb_epoxide,nb_alcohol,nb_alkoxide,nb_water,nb_hydronium,nb_hydroxide,nb_oxygen_group)
 
 finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with writing output for the oxygen groups topology:"&
-    ,finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Oxygen groups topologies output:",finish-start,"seconds elapsed"
 
 ! ----------------------------------------------- Print the xyz and velocities files
 start = OMP_get_wtime()
 
-OPEN(UNIT=40, FILE = suffix//"_wrapped_"//file_xyz)
+IF (vel_c .EQ. 1) OPEN(UNIT=40, FILE = suffix//"_wrapped_"//file_pos)
 OPEN(UNIT=41, FILE = suffix//"_wrapped_"//file_vel)
 DO s = 1, nb_step
     WRITE(40,'(I10)') nb_atm
-    WRITE(41,'(I10)') nb_atm
+    IF (vel_c .EQ. 1) WRITE(41,'(I10)') nb_atm
     WRITE(40,'(A10,I10)') "Step nb:", s
-    WRITE(41,'(A10,I10)') "Step nb:", s
+    IF (vel_c .EQ. 1) WRITE(41,'(A10,I10)') "Step nb:", s
     DO i = 1, nb_atm
         IF ((atm_mat(10,i,s) .EQ. 2) .AND. (atm_mat(9,i,s) .EQ. 0)) THEN
             type = "OE"
@@ -260,34 +284,34 @@ DO s = 1, nb_step
             type = "O"
         END IF
         WRITE(40,'(A10,E24.14,E24.14,E24.14)') type, atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
-        WRITE(41,'(A10,E24.14,E24.14,E24.14)') type, atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
+        IF (vel_c .EQ. 1) WRITE(41,'(A10,E24.14,E24.14,E24.14)') type, atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
     END DO
 END DO
 CLOSE(UNIT=40)
-CLOSE(UNIT=41)
+IF (vel_c .EQ. 1) CLOSE(UNIT=41)
 
 finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with xyz/vel writing:"&
-    ,finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)',"Positions/Velocities output:",finish-start,"seconds elapsed"
 
 ! ----------------------------------------------- Print the waterlist (mask indices for surf)
-start = OMP_get_wtime()
+IF (waterlist .EQ. 1) THEN
+    start = OMP_get_wtime()
 
-OPEN(UNIT=42, FILE = suffix//"_waterlist")
-DO s=1,nb_step
-    WRITE(42,'(A14)',advance="no")"mask = indices "
-    DO i=1,nb_atm
-        IF (atm_mat(10,i,s) .EQ. 0) THEN
-            WRITE(42,'(I5)',advance="no") INT(atm_mat(1,i,s))
-        END IF
+    OPEN(UNIT=42, FILE = suffix//"_waterlist.txt")
+    DO s=1,nb_step
+        WRITE(42,'(A14)',advance="no")"mask = indices "
+        DO i=1,nb_atm
+            IF (atm_mat(10,i,s) .EQ. 0) THEN
+                WRITE(42,'(I5)',advance="no") INT(atm_mat(1,i,s))
+            END IF
+        END DO
+        WRITE(42,*)
     END DO
-    WRITE(42,*)
-END DO
-CLOSE(UNIT=42)
+    CLOSE(UNIT=42)
 
-finish = OMP_get_wtime()
-PRINT'(A90,F15.5,A20)', "Done with the waterlist:"&
-    ,finish-start,"seconds elapsed"
+    finish = OMP_get_wtime()
+    PRINT'(A40,F14.2,A20)',"Waterlist (surf):",finish-start,"seconds elapsed"
+END IF
 
 ! ----------------------------------------------- Deallocate and exit
 DEALLOCATE(atm_el,atm_mat)
