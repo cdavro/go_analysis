@@ -27,10 +27,6 @@ REAL(dp), ALLOCATABLE           :: avg_z(:)
 REAL(dp)                        :: tOH_disp_vec(3), tOH_norm, tOOHvec_disp_vec(3), tOOHvec_norm
 REAL(dp)                        :: tXOHvec_disp_vec(3), tXOHvec_norm, tXOvec_disp_vec(3), tXOvec_norm
 REAL(dp)                        :: tSOHvec_disp_vec(3), tSOHvec_norm, tSOvec_disp_vec(3), tSOvec_norm
-REAL(dp)                        :: tSS_disp_vec(3), tSS_norm
-REAL(dp)                        :: tPS_uvec_go(3), tPS_OOHvec_pos_vec_go(3)
-REAL(dp)                        :: tPS_uvec_air(3), tPS_OOHvec_pos_vec_air(3)
-REAL(dp)                        :: tOHvec_disp_vec(3), tOHvec_disp_uvec(3)
 INTEGER                         :: Udonnor_count, Udonnor_count2
 CHARACTER(LEN=2)                :: dummy_char
 REAL(dp)                        :: r
@@ -147,6 +143,12 @@ DO s = 1, nb_step
         ELSE IF (atm_el(i) .EQ. "O") THEN
             atm_mat(2,i,s) = 16
             atm_mat(9,i,s) = -1
+        ELSE IF (atm_el(i) .EQ. "HW") THEN
+            atm_mat(2,i,s) = 1
+            atm_mat(9,i,s) = 23
+        ELSE IF (atm_el(i) .EQ. "HO") THEN
+            atm_mat(2,i,s) = 1
+            atm_mat(9,i,s) = 21
         ELSE IF (atm_el(i) .EQ. "H") THEN
             atm_mat(2,i,s) = 1
             atm_mat(9,i,s) = -1
@@ -451,9 +453,7 @@ IF (file_surf .NE. "0") THEN
 
     !nb_step, nb_atm, always shared.
     !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,OHvec_mat,nb_o,surf_mat,nb_surf)&
-    !$OMP PRIVATE(s,i,j,k,tSOHvec_disp_vec,tSOHvec_norm,tSS_disp_vec,tss_norm)&
-    !$OMP PRIVATE(tPS_uvec_go,tPS_uvec_air,tPS_OOHvec_pos_vec_go,tPS_OOHvec_pos_vec_air)&
-    !$OMP PRIVATE(tOHvec_disp_vec,tOHvec_disp_uvec)
+    !$OMP PRIVATE(s,i,j,k,tSOHvec_disp_vec,tSOHvec_norm)
     DO s = 1, nb_step
         F2:DO i = 1, nb_o*3
             IF (OHvec_mat(1,i,s) .EQ. 0) THEN
@@ -494,123 +494,6 @@ IF (file_surf .NE. "0") THEN
                     END IF
                 END IF
             END DO
-
-            IF ((surf_mat(32,INT(OHvec_mat(34,i,s)),s) .NE. 1) .OR.&
-             (surf_mat(33,INT(OHvec_mat(35,i,s)),s) .NE. 1)) THEN
-
-             F3:DO j = 1, nb_surf(s)
-
-                    IF ( (surf_mat(5,j,s) .EQ. surf_mat(5,INT(OHvec_mat(34,i,s)),s)) .OR.&
-                    (surf_mat(5,j,s) .EQ. surf_mat(5,INT(OHvec_mat(35,i,s)),s)) ) THEN
-                        CYCLE F3
-                    END IF
-
-                    IF (surf_mat(4,j,s) .EQ. 1) THEN
-                        DO k = 1, 3
-                            tSS_disp_vec(k) = surf_mat(k,j,s) - surf_mat(k,INT(OHvec_mat(34,i,s)),s)
-                            tSS_disp_vec(k) = tSS_disp_vec(k) - box(k) * ANINT(tSS_disp_vec(k)/box(k))
-                        END DO
-                        tSS_norm = NORM2(tSS_disp_vec)
-
-                        IF ( ( (tSS_norm .LT. surf_mat(7,INT(OHvec_mat(34,i,s)),s)) .OR.&
-                        (surf_mat(7,INT(OHvec_mat(34,i,s)),s) .EQ. 0.0 ) ) .AND.&
-                        (surf_mat(5,j,s) .NE. surf_mat(6,INT(OHvec_mat(34,i,s)),s)) ) THEN
-                            surf_mat(11,INT(OHvec_mat(34,i,s)),s) = surf_mat(6,INT(OHvec_mat(34,i,s)),s)
-                            surf_mat(12,INT(OHvec_mat(34,i,s)),s) = surf_mat(7,INT(OHvec_mat(34,i,s)),s)
-                            surf_mat(6,INT(OHvec_mat(34,i,s)),s) = surf_mat(5,j,s)
-                            surf_mat(7,INT(OHvec_mat(34,i,s)),s) = tSS_norm
-                            DO k=1,3
-                                surf_mat(k+12,INT(OHvec_mat(34,i,s)),s) = surf_mat(k+7,INT(OHvec_mat(34,i,s)),s) !13/14/15
-                                surf_mat(k+7,INT(OHvec_mat(34,i,s)),s) = tSS_disp_vec(k) / tSS_norm !8,9,10
-                            END DO
-                        ELSE IF ( ( (tSS_norm .LT. surf_mat(12,INT(OHvec_mat(34,i,s)),s)) .OR.&
-                        ( (surf_mat(7,INT(OHvec_mat(34,i,s)),s) .NE. 0.0) .AND.&
-                        (surf_mat(12,INT(OHvec_mat(34,i,s)),s) .EQ. 0.0) ) ) .AND.&
-                        (surf_mat(5,j,s) .NE. surf_mat(6,INT(OHvec_mat(34,i,s)),s)) ) THEN
-                            surf_mat(11,INT(OHvec_mat(34,i,s)),s) = surf_mat(5,j,s)
-                            surf_mat(12,INT(OHvec_mat(34,i,s)),s) = tSS_norm
-                            DO k=1,3
-                                surf_mat(k+12,INT(OHvec_mat(34,i,s)),s) = tSS_disp_vec(k) / tSS_norm !13/14/15
-                            END DO
-                        END IF
-
-                    ELSE IF (surf_mat(4,j,s) .EQ. 2) THEN
-                        DO k = 1, 3
-                            tSS_disp_vec(k) = surf_mat(k,j,s) - surf_mat(k,INT(OHvec_mat(35,i,s)),s)
-                            tSS_disp_vec(k) = tSS_disp_vec(k) - box(k) * ANINT(tSS_disp_vec(k)/box(k))
-                        END DO
-                        tSS_norm = NORM2(tSS_disp_vec)
-
-                        IF ( ( (tSS_norm .LT. surf_mat(17,INT(OHvec_mat(35,i,s)),s)) .OR.&
-                        (surf_mat(17,INT(OHvec_mat(35,i,s)),s) .EQ. 0.0 ) ) .AND.&
-                        (surf_mat(5,j,s) .NE. surf_mat(16,INT(OHvec_mat(35,i,s)),s)) ) THEN
-                            surf_mat(21,INT(OHvec_mat(35,i,s)),s) = surf_mat(16,INT(OHvec_mat(35,i,s)),s)
-                            surf_mat(22,INT(OHvec_mat(35,i,s)),s) = surf_mat(17,INT(OHvec_mat(35,i,s)),s)
-                            surf_mat(16,INT(OHvec_mat(35,i,s)),s) = surf_mat(5,j,s)
-                            surf_mat(17,INT(OHvec_mat(35,i,s)),s) = tSS_norm
-                            DO k=1,3
-                                surf_mat(k+22,INT(OHvec_mat(35,i,s)),s) = surf_mat(k+17,INT(OHvec_mat(35,i,s)),s) !23/24/25
-                                surf_mat(k+17,INT(OHvec_mat(35,i,s)),s) = tSS_disp_vec(k) / tSS_norm !18,19,20
-                            END DO
-                        ELSE IF ( ( (tSS_norm .LT. surf_mat(22,INT(OHvec_mat(35,i,s)),s)) .OR.&
-                        ( (surf_mat(17,INT(OHvec_mat(35,i,s)),s) .NE. 0.0) .AND.&
-                        (surf_mat(22,INT(OHvec_mat(35,i,s)),s) .EQ. 0.0) ) ) .AND.&
-                        (surf_mat(5,j,s) .NE. surf_mat(16,INT(OHvec_mat(35,i,s)),s)) ) THEN
-                            surf_mat(21,INT(OHvec_mat(35,i,s)),s) = surf_mat(5,j,s)
-                            surf_mat(22,INT(OHvec_mat(35,i,s)),s) = tSS_norm
-                            DO k=1,3
-                                surf_mat(k+22,INT(OHvec_mat(35,i,s)),s) = tSS_disp_vec(k) / tSS_norm !23/24/25
-                            END DO
-                        END IF
-
-                    END IF
-                END DO F3
-
-                surf_mat(26,INT(OHvec_mat(34,i,s)),s) = surf_mat(9,INT(OHvec_mat(34,i,s)),s) *&
-                surf_mat(15,INT(OHvec_mat(34,i,s)),s) - surf_mat(10,INT(OHvec_mat(34,i,s)),s) *&
-                 surf_mat(14,INT(OHvec_mat(34,i,s)),s)
-                surf_mat(27,INT(OHvec_mat(34,i,s)),s) = surf_mat(10,INT(OHvec_mat(34,i,s)),s) *&
-                surf_mat(13,INT(OHvec_mat(34,i,s)),s) - surf_mat(8,INT(OHvec_mat(34,i,s)),s) *&
-                 surf_mat(15,INT(OHvec_mat(34,i,s)),s)
-                surf_mat(28,INT(OHvec_mat(34,i,s)),s) = surf_mat(8,INT(OHvec_mat(34,i,s)),s) *&
-                surf_mat(14,INT(OHvec_mat(34,i,s)),s) - surf_mat(9,INT(OHvec_mat(34,i,s)),s) *&
-                 surf_mat(13,INT(OHvec_mat(34,i,s)),s)
-
-                surf_mat(29,INT(OHvec_mat(35,i,s)),s) = surf_mat(19,INT(OHvec_mat(35,i,s)),s) *&
-                surf_mat(25,INT(OHvec_mat(35,i,s)),s) - surf_mat(20,INT(OHvec_mat(35,i,s)),s) *&
-                 surf_mat(24,INT(OHvec_mat(35,i,s)),s)
-                surf_mat(30,INT(OHvec_mat(35,i,s)),s) = surf_mat(20,INT(OHvec_mat(35,i,s)),s) *&
-                surf_mat(23,INT(OHvec_mat(35,i,s)),s) - surf_mat(28,INT(OHvec_mat(35,i,s)),s) *&
-                 surf_mat(25,INT(OHvec_mat(35,i,s)),s)
-                surf_mat(31,INT(OHvec_mat(35,i,s)),s) = surf_mat(28,INT(OHvec_mat(35,i,s)),s) *&
-                surf_mat(24,INT(OHvec_mat(35,i,s)),s) - surf_mat(29,INT(OHvec_mat(35,i,s)),s) *&
-                 surf_mat(23,INT(OHvec_mat(35,i,s)),s)
-
-                surf_mat(32,INT(OHvec_mat(34,i,s)),s) = 1
-                surf_mat(33,INT(OHvec_mat(35,i,s)),s) = 1
-
-            END IF
-
-            DO k=1,3
-                tPS_uvec_go(k) = surf_mat(k+25,INT(OHvec_mat(34,i,s)),s)
-                tPS_uvec_air(k) = surf_mat(k+28,INT(OHvec_mat(35,i,s)),s)
-                tPS_OOHvec_pos_vec_go(k) = OHvec_mat(k+8,i,s) + surf_mat(k+25,INT(OHvec_mat(34,i,s)),s)
-                tPS_OOHvec_pos_vec_go(k) = tPS_OOHvec_pos_vec_go(k) - box(k) * ANINT(tPS_OOHvec_pos_vec_go(k)/box(k))
-                tPS_OOHvec_pos_vec_air(k) = OHvec_mat(k+8,i,s) + surf_mat(k+28,INT(OHvec_mat(35,i,s)),s)
-                tPS_OOHvec_pos_vec_air(k) = tPS_OOHvec_pos_vec_air(k) - box(k) * ANINT(tPS_OOHvec_pos_vec_air(k)/box(k))
-                tOHvec_disp_vec(k) = OHvec_mat(k+2,i,s)
-            END DO
-            tOHvec_disp_uvec(:) = tOHvec_disp_vec(:) / NORM2(tOHvec_disp_vec(:))
-            IF (NORM2(tPS_OOHvec_pos_vec_go(:)) .LT. OHvec_mat(24,i,s)) THEN
-                tPS_uvec_go(:) = -1.0 * tPS_uvec_go(:)
-            END IF
-            IF (NORM2(tPS_OOHvec_pos_vec_air(:)) .LT. OHvec_mat(27,i,s)) THEN
-                tPS_uvec_air(:) = -1.0 * tPS_uvec_air(:)
-            END IF
-
-            OHvec_mat(36,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_go(:), tOHvec_disp_uvec(:)))
-            OHvec_mat(37,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_air(:), tOHvec_disp_uvec(:)))
-
         END DO F2
     END DO
     !$OMP END PARALLEL DO
@@ -694,18 +577,17 @@ IF (hbond_output .EQ. 1) THEN
     CLOSE(UNIT=31)
 
     OPEN(UNIT=32, FILE = suffix//"_OH_hbonds.txt")
-    WRITE(32,'(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24,A24,A24)')&
+    WRITE(32,'(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24)')&
         "O_id","O_type","H_id","step","Don","UDon","TAcc","C","OE"&
-    ,"OH","OA","C9","TDon", "TUDon", "TAcc", "dist_IS_go", "dist_IS_air"&
-    , "Angle OH/NIS_go", "Angle OH/NIS_air"
+    ,"OH","OA","C9","TDon", "TUDon", "TAcc", "dist_IS_go", "dist_IS_air"
     DO s = 1, nb_step
         DO i = 1, nb_max_OHvec(s)
-            WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14,E24.14,E24.14)')&
+            WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14)')&
                 INT(OHvec_mat(1,i,s)), INT(OHvec_mat(23,i,s))&
             , INT(OHvec_mat(2,i,s)), s, INT(OHvec_mat(17,i,s)) , INT(OHvec_mat(18,i,s)), INT(OHvec_mat(16,i,s))&
             , INT(OHvec_mat(19,i,s)), INT(OHvec_mat(20,i,s)), INT(OHvec_mat(21,i,s)), INT(OHvec_mat(22,i,s))&
             , INT(OHvec_mat(30,i,s)), INT(OHvec_mat(31,i,s)), INT(OHvec_mat(32,i,s)), INT(OHvec_mat(33,i,s))&
-            , (OHvec_mat(24,i,s)*OHvec_mat(25,i,s)), (OHvec_mat(27,i,s)*OHvec_mat(28,i,s)), OHvec_mat(36,i,s), OHvec_mat(37,i,s)
+            , (OHvec_mat(24,i,s)*OHvec_mat(25,i,s)), (OHvec_mat(27,i,s)*OHvec_mat(28,i,s))
         END DO
     END DO
     CLOSE(UNIT=32)
@@ -834,7 +716,7 @@ IF ( (file_surf .NE. "0") .AND. (density_output .EQ. 1) ) THEN
                 IF (OHvec_mat(23,i,s) .NE. 13) THEN
                     CYCLE N1
                 END IF
-                IF ( ( (avg_z(s) - OHvec_mat(11,i,s)) .GE. r) .AND. ((avg_z(s) - OHvec_mat(11,i,s)) .LT. r+dr)) THEN
+                IF ( ((OHvec_mat(11,i,s) - avg_z(s)) .GE. r) .AND. ( (OHvec_mat(11,i,s) - avg_z(s)) .LT. r+dr)) THEN
                     count_dens_go_c = count_dens_go_c + 1
                 END IF
             END DO N1
@@ -853,7 +735,7 @@ IF ( (file_surf .NE. "0") .AND. (density_output .EQ. 1) ) THEN
         avg_dens_go_c(j) = SUM(dens_go_c(j,:)) / nb_step
     END DO
 
-    OPEN(UNIT=41, FILE = suffix//"_density_profile_go.txt")
+    OPEN(UNIT=41, FILE = suffix//"_density_profile_go_c.txt")
     WRITE(41, '(A24,A24,A24,A24)') "step","[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
     DO s = 1, nb_step
         DO j = 1, dens_step
@@ -864,7 +746,7 @@ IF ( (file_surf .NE. "0") .AND. (density_output .EQ. 1) ) THEN
 
     DEALLOCATE(dens_go_c)
 
-    OPEN(UNIT=43, FILE = suffix//"_avg_density_profile_go.txt")
+    OPEN(UNIT=43, FILE = suffix//"_avg_density_profile_go_c.txt")
     WRITE(43, '(A24,A24,A24)') "[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
     DO j = 1, dens_step
         WRITE(43, '(E24.14,E24.14,E24.14)') (-10.0 + (j-1) * dr), (-10.0 + j * dr), avg_dens_go_c(j)
