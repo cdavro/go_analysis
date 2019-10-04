@@ -23,13 +23,11 @@ INTEGER, ALLOCATABLE            :: nb_surf(:)
 REAL(dp)                        :: tOH_disp_vec(3), tOH_norm, tXOHvec_disp_vec(3), tXOHvec_norm
 REAL(dp)                        :: tSOHvec_disp_vec(3), tSOHvec_norm
 REAL(dp)                        :: tSS_disp_vec(3), tSS_norm,tSS1_disp_vec(3), tSS1_norm
-REAL(dp)                        :: tPS_uvec_go(3),tPS_uvec_air(3)
-REAL(dp)                        :: tOHvec_disp_vec(3), tOHvec_disp_uvec(3),tHHvec_disp_vec(3)
-REAL(dp)                        :: tPS_OOHvec_pos_go_new(3),tPS_OOHvec_pos_air_new(3)
-REAL(dp)                        :: tPS_OOHvec_disp_vec_go_new(3), tPS_OOHvec_disp_vec_air_new(3)
-REAL(dp)                        :: tPS_HHvec_pos_new(3)
-REAL(dp)                        :: tPS_HHvec_disp_vec_go_new(3), tPS_HHvec_disp_vec_air_new(3)
-REAL(dp)                        :: tHHvec_disp_uvec(3)
+REAL(dp)                        :: tPSuvec_go(3),tPSuvec_air(3)
+REAL(dp)                        :: tWDvec(3), tHHvec(3),tWDuvec(3), tHHuvec(3)
+REAL(dp)                        :: tO_pos_iPS_go(3), tO_pos_iPS_air(3), tS_pos_PS_go(3), tS_pos_PS_air(3)
+REAL(dp)                        :: tOS_disp_oPS_go(3), tOS_disp_oPS_air(3)
+REAL(dp)                        :: tO_pos_iHH(3), tS_pos_HH_go(3), tOS_disp_oHH_go(3), tS_pos_HH_air(3),tOS_disp_oHH_air(3)
 CHARACTER(LEN=2)                :: dummy_char
 
 ! ----------------------------------------------- Count variables
@@ -46,7 +44,8 @@ REAL(dp), PARAMETER             :: aut_to_fs=0.0241888432658569977_dp
 REAL(dp), PARAMETER             :: pi=4.0_dp*DATAN(1.0_dp)
 
 ! ----------------------------------------------- SYSTEM DEPENDANT
-INTEGER, PARAMETER              :: nb_atm=1039, nb_step=1000
+!INTEGER, PARAMETER              :: nb_atm=1039, nb_step=1000
+INTEGER, PARAMETER              :: nb_atm=6, nb_step=1
 CHARACTER(LEN=2)                :: suffix="00"
 REAL(dp), PARAMETER             :: xlo=0.0_dp,xhi=21.8489966560_dp
 REAL(dp), PARAMETER             :: ylo=0.0_dp,yhi=21.2373561788_dp
@@ -247,10 +246,10 @@ DO s = 1, nb_step
     DO i=1,nb_o*3
         DO k=1,3
             OHvec_mat(k+39,i,s) = OHvec_mat(k+11,i,s) - OHvec_mat(k+6,i,s)
-            OHvec_mat(k+39,i,s) = OHvec_mat(k+39,i,s) - box(k) * ANINT(OHvec_mat(k+39,i,s)/box(k))
-            OHvec_mat(k+14,i,s) = OHvec_mat(k+6,i,s) + OHvec_mat(k+39,i,s)/2.0
-            OHvec_mat(k+17,i,s) = OHvec_mat(k+14,i,s) - OHvec_mat(k+1,i,s)
-            OHvec_mat(k+17,i,s) = OHvec_mat(k+17,i,s) - box(k) * ANINT(OHvec_mat(k+17,i,s)/box(k))
+            OHvec_mat(k+39,i,s) = OHvec_mat(k+39,i,s) - box(k) * ANINT(OHvec_mat(k+39,i,s)/box(k)) ! HH Vector
+            OHvec_mat(k+14,i,s) = OHvec_mat(k+6,i,s) + OHvec_mat(k+39,i,s)/2.0 ! Center of HH 
+            OHvec_mat(k+17,i,s) = OHvec_mat(k+14,i,s) - OHvec_mat(k+1,i,s) 
+            OHvec_mat(k+17,i,s) = OHvec_mat(k+17,i,s) - box(k) * ANINT(OHvec_mat(k+17,i,s)/box(k)) ! (O to center HH) vector (Inverse of of the Dipole Moment)
         END DO
     END DO
     nb_max_OHvec(s) = COUNT(OHvec_mat(1,:,s) .NE. 0, DIM=1)
@@ -304,7 +303,7 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Proximity FG and WAT group:"&
+PRINT'(A40,F14.2,A20)', "Proximity WAT groups and FG groups:"&
     ,finish-start,"seconds elapsed"
 
 ! F ----------------------------------------------- Calculate closest distance between IS and any OH groups
@@ -313,10 +312,9 @@ start = OMP_get_wtime()
 !nb_step, nb_atm, always shared.
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,OHvec_mat,nb_o,surf_mat,nb_surf)&
 !$OMP PRIVATE(s,i,j,k,tSOHvec_disp_vec,tSOHvec_norm,tSS_disp_vec,tss_norm,tSS1_disp_vec,tSS1_norm)&
-!$OMP PRIVATE(tPS_uvec_go,tPS_uvec_air, tPS_OOHvec_disp_vec_go_new,tPS_OOHvec_disp_vec_air_new)&
-!$OMP PRIVATE(tOHvec_disp_vec,tOHvec_disp_uvec,tHHvec_disp_vec,tHHvec_disp_uvec)&
-!$OMP PRIVATE(tPS_HHvec_pos_new,tPS_OOHvec_pos_go_new, tPS_OOHvec_pos_air_new)&
-!$OMP PRIVATE(tPS_HHvec_disp_vec_go_new, tPS_HHvec_disp_vec_air_new)
+!$OMP PRIVATE(tPSuvec_go,tPSuvec_air,tWDvec,tHHvec,tWDuvec,tHHuvec)&
+!$OMP PRIVATE(tO_pos_iPS_go,tO_pos_iPS_air,tS_pos_PS_go,tS_pos_PS_air)&
+!$OMP PRIVATE(tOS_disp_oPS_go,tOS_disp_oPS_air,tO_pos_iHH,tS_pos_HH_go,tOS_disp_oHH_go,tS_pos_HH_air,tOS_disp_oHH_air)
 DO s = 1, nb_step
     F2:DO i = 1, nb_o*3
         IF (OHvec_mat(1,i,s) .EQ. 0) THEN
@@ -499,60 +497,68 @@ DO s = 1, nb_step
         END IF
 
         DO k=1,3
-            tPS_uvec_go(k) = surf_mat(k+15,INT(OHvec_mat(34,i,s)),s)
-            tPS_uvec_air(k) = surf_mat(k+15,INT(OHvec_mat(35,i,s)),s)
+            tPSuvec_go(k) = surf_mat(k+15,INT(OHvec_mat(34,i,s)),s)
+            tPSuvec_air(k) = surf_mat(k+15,INT(OHvec_mat(35,i,s)),s)
+            tWDvec(k) = OHvec_mat(k+17,i,s)
+            tHHvec(k) = OHvec_mat(k+39,i,s)
 
-            tPS_OOHvec_pos_go_new(k) = OHvec_mat(k+1,i,s) + surf_mat(k+15,INT(OHvec_mat(34,i,s)),s)
-            tPS_OOHvec_pos_go_new(k) = tPS_OOHvec_pos_go_new(k) - box(k) * ANINT(tPS_OOHvec_pos_go_new(k)/box(k))
-            tPS_OOHvec_disp_vec_go_new(k) = surf_mat(k,INT(OHvec_mat(34,i,s)),s) - tPS_OOHvec_pos_go_new(k)
-            tPS_OOHvec_disp_vec_go_new(k) = tPS_OOHvec_disp_vec_go_new(k) - box(k) * ANINT(tPS_OOHvec_disp_vec_go_new(k)/box(k))
+            tO_pos_iPS_go(k) = OHvec_mat(k+1,i,s) - surf_mat(k+15,INT(OHvec_mat(34,i,s)),s)
+            tO_pos_iPS_go(k) = tO_pos_iPS_go(k) - box(k) * ANINT(tO_pos_iPS_go(k)/box(k))
+            tS_pos_PS_go(k) = surf_mat(k,INT(OHvec_mat(34,i,s)),s) + surf_mat(k+15,INT(OHvec_mat(34,i,s)),s)
+            tS_pos_PS_go(k) = tS_pos_PS_go(k) - box(k) * ANINT(tS_pos_PS_go(k)/box(k))
+            tOS_disp_oPS_go(k) = tS_pos_PS_go(k) - tO_pos_iPS_go(k)
+            tOS_disp_oPS_go(k) = tOS_disp_oPS_go(k) - box(k) * ANINT(tOS_disp_oPS_go(k)/box(k))
 
-            tPS_OOHvec_pos_air_new(k) = OHvec_mat(k+1,i,s) + surf_mat(k+15,INT(OHvec_mat(35,i,s)),s)
-            tPS_OOHvec_pos_air_new(k) = tPS_OOHvec_pos_air_new(k) - box(k) * ANINT(tPS_OOHvec_pos_air_new(k)/box(k))
-            tPS_OOHvec_disp_vec_air_new(k) = surf_mat(k,INT(OHvec_mat(35,i,s)),s) - tPS_OOHvec_pos_air_new(k)
-            tPS_OOHvec_disp_vec_air_new(k) = tPS_OOHvec_disp_vec_air_new(k) - box(k) * ANINT(tPS_OOHvec_disp_vec_air_new(k)/box(k))
+            tO_pos_iPS_air(k) = OHvec_mat(k+1,i,s) - surf_mat(k+15,INT(OHvec_mat(35,i,s)),s)
+            tO_pos_iPS_air(k) = tO_pos_iPS_air(k) - box(k) * ANINT(tO_pos_iPS_air(k)/box(k))
+            tS_pos_PS_air(k) = surf_mat(k,INT(OHvec_mat(35,i,s)),s) + surf_mat(k+15,INT(OHvec_mat(35,i,s)),s)
+            tS_pos_PS_air(k) = tS_pos_PS_air(k) - box(k) * ANINT(tS_pos_PS_air(k)/box(k))
+            tOS_disp_oPS_air(k) = tS_pos_PS_air(k) - tO_pos_iPS_air(k)
+            tOS_disp_oPS_air(k) = tOS_disp_oPS_air(k) - box(k) * ANINT(tOS_disp_oPS_air(k)/box(k))
 
-            tPS_HHvec_pos_new(k) = OHvec_mat(k+1,i,s) + OHvec_mat(k+39,i,s)
-            tPS_HHvec_pos_new(k) = tPS_HHvec_pos_new(k) - box(k) * ANINT(tPS_HHvec_pos_new(k)/box(k))
-            tPS_HHvec_disp_vec_go_new(k) = surf_mat(k,INT(OHvec_mat(34,i,s)),s) - tPS_HHvec_pos_new(k)
-            tPS_HHvec_disp_vec_go_new(k) = tPS_HHvec_disp_vec_go_new(k) - box(k) * ANINT(tPS_HHvec_disp_vec_go_new(k)/box(k))
-            tPS_HHvec_disp_vec_air_new(k) = surf_mat(k,INT(OHvec_mat(35,i,s)),s) - tPS_HHvec_pos_new(k)
-            tPS_HHvec_disp_vec_air_new(k) = tPS_HHvec_disp_vec_air_new(k) - box(k) * ANINT(tPS_HHvec_disp_vec_air_new(k)/box(k))
+            tO_pos_iHH(k) = OHvec_mat(k+1,i,s) - OHvec_mat(k+39,i,s)
+            tO_pos_iHH(k) = tO_pos_iHH(k) - box(k) * ANINT(tO_pos_iHH(k)/box(k))
+            tS_pos_HH_go(k) = surf_mat(k,INT(OHvec_mat(34,i,s)),s) + OHvec_mat(k+39,i,s)
+            tS_pos_HH_go(k) = tS_pos_HH_go(k) - box(k) * ANINT(tS_pos_HH_go(k)/box(k))
+            tOS_disp_oHH_go(k) =  tS_pos_HH_go(k) -  tO_pos_iHH(k)
+            tOS_disp_oHH_go(k) = tOS_disp_oHH_go(k) - box(k) * ANINT(tOS_disp_oHH_go(k)/box(k))
+            tS_pos_HH_air(k) = surf_mat(k,INT(OHvec_mat(35,i,s)),s) + OHvec_mat(k+39,i,s)
+            tS_pos_HH_air(k) = tS_pos_HH_air(k) - box(k) * ANINT(tS_pos_HH_air(k)/box(k))
+            tOS_disp_oHH_air(k) =  tS_pos_HH_air(k) -  tO_pos_iHH(k)
+            tOS_disp_oHH_air(k) = tOS_disp_oHH_air(k) - box(k) * ANINT(tOS_disp_oHH_air(k)/box(k))
 
-            tOHvec_disp_vec(k) = OHvec_mat(k+17,i,s)
-            tHHvec_disp_vec(k) = OHvec_mat(k+39,i,s)
         END DO
 
-        tOHvec_disp_uvec(:) = tOHvec_disp_vec(:) / NORM2(tOHvec_disp_vec(:))
-        tHHvec_disp_uvec(:) = tHHvec_disp_vec(:) / NORM2(tHHvec_disp_vec(:))
+        tWDuvec(:) = tWDvec(:) / NORM2(tWDvec(:))
+        tHHuvec(:) = tHHvec(:) / NORM2(tHHvec(:))
 
-        IF (NORM2(tPS_OOHvec_disp_vec_go_new(:)) .LT. OHvec_mat(24,i,s)) THEN
-            tPS_uvec_go(:) = -1.0 * tPS_uvec_go(:)
+        IF (NORM2(tOS_disp_oPS_go(:)) .GT. OHvec_mat(24,i,s)) THEN
+            tPSuvec_go(:) = -1.0 * tPSuvec_go(:)
         END IF
-        IF (NORM2( tPS_OOHvec_disp_vec_air_new(:)) .LT. OHvec_mat(27,i,s)) THEN
-            tPS_uvec_air(:) = -1.0 * tPS_uvec_air(:)
-        END IF
-
-        IF (NORM2(tPS_HHvec_disp_vec_go_new(:)) .GT. OHvec_mat(24,i,s)) THEN
-            tHHvec_disp_uvec(:) = -1.0 *  tHHvec_disp_uvec(:)
+        IF (NORM2(tOS_disp_oPS_air(:)) .GT. OHvec_mat(27,i,s)) THEN
+            tPSuvec_air(:) = -1.0 * tPSuvec_air(:)
         END IF
 
-        OHvec_mat(36,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_go(:), tOHvec_disp_uvec(:)))
-        OHvec_mat(44,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_go(:), tHHvec_disp_uvec(:)))
-
-        IF (NORM2(tPS_HHvec_disp_vec_air_new(:)) .GT. OHvec_mat(27,i,s)) THEN
-            tHHvec_disp_uvec(:) = -1.0 *  tHHvec_disp_uvec(:)
+        IF (NORM2(tOS_disp_oHH_go(:)) .GT. OHvec_mat(24,i,s)) THEN
+            tHHuvec(:) = -1.0 * tHHuvec(:)
         END IF
 
-        OHvec_mat(37,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_air(:), tOHvec_disp_uvec(:)))
-        OHvec_mat(45,i,s) = ACOS(DOT_PRODUCT(tPS_uvec_air(:), tHHvec_disp_uvec(:)))
+        OHvec_mat(36,i,s) = ACOS(DOT_PRODUCT(tPSuvec_go(:), tWDuvec(:)))
+        OHvec_mat(44,i,s) = ACOS(DOT_PRODUCT(tPSuvec_go(:), tHHuvec(:)))
+
+        IF (NORM2(tOS_disp_oHH_air(:)) .GT. OHvec_mat(27,i,s)) THEN
+            tHHuvec(:) = -1.0 *  tHHuvec(:)
+        END IF
+
+        OHvec_mat(36,i,s) = ACOS(DOT_PRODUCT(tPSuvec_air(:), tWDuvec(:)))
+        OHvec_mat(44,i,s) = ACOS(DOT_PRODUCT(tPSuvec_air(:), tHHuvec(:)))
 
     END DO F2
 END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Proximity IS and WAT groups:"&
+PRINT'(A40,F14.2,A20)', "Proximity WAT groups and IS:"&
     ,finish-start,"seconds elapsed"
 
 ! X ----------------------------------------------- Write OH BOND
@@ -574,7 +580,7 @@ END DO
 CLOSE(UNIT=32)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "WAT angle output:"&
+PRINT'(A40,F14.2,A20)', "WAT angles output:"&
     ,finish-start,"seconds elapsed"
 
 ! ----------------------------------------------- Deallocate and exit
