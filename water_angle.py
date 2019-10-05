@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from matplotlib.ticker import FormatStrFormatter, AutoMinorLocator
 
 if (len(sys.argv) == 1):
     ext='txt'
@@ -14,14 +14,30 @@ else:
 
 list_filename=["00","01","02","03","04","05"]
 
-#list_Ld=[-20.0,-20.0,2.75,5.25]
-#list_Lu=[20.0,2.75,5.25,20.0]
-list_Ld=[-20.0,-20.0,3.25,6.50]
-list_Lu=[20.0,3.25,6.50,20.0]
+list_Ld=[-20.0,-20.0,2.75,5.25]
+list_Lu=[20.0,2.75,5.25,20.0]
+#list_Ld=[-20.0,-20.0,3.25,6.50]
+#list_Lu=[20.0,3.25,6.50,20.0]
 
-# Bins de merde (1° width)
-bin_0_180_01=[1,0.99985,0.99939,0.99863,0.99756,0.99619,0.99452,0.99255,0.99027,0.98769,0.98481,0.98163,0.97815,0.97437,0.9703,0.96593,0.96126,0.9563,0.95106,0.94552,0.93969,0.93358,0.92718,0.9205,0.91355,0.90631,0.89879,0.89101,0.88295,0.87462,0.86603,0.85717,0.84805,0.83867,0.82904,0.81915,0.80902,0.79864,0.78801,0.77715,0.76604,0.75471,0.74314,0.73135,0.71934,0.70711,0.69466,0.682,0.66913,0.65606,0.64279,0.62932,0.61566,0.60182,0.58779,0.57358,0.55919,0.54464,0.52992,0.51504,0.5,0.48481,0.46947,0.45399,0.43837,0.42262,0.40674,0.39073,0.37461,0.35837,0.34202,0.32557,0.30902,0.29237,0.27564,0.25882,0.24192,0.22495,0.20791,0.19081,0.17365,0.15643,0.13917,0.12187,0.10453,0.08716,0.06976,0.05234,0.0349,0.01745,0,-0.01745,-0.0349,-0.05234,-0.06976,-0.08716,-0.10453,-0.12187,-0.13917,-0.15643,-0.17365,-0.19081,-0.20791,-0.22495,-0.24192,-0.25882,-0.27564,-0.29237,-0.30902,-0.32557,-0.34202,-0.35837,-0.37461,-0.39073,-0.40674,-0.42262,-0.43837,-0.45399,-0.46947,-0.48481,-0.5,-0.51504,-0.52992,-0.54464,-0.55919,-0.57358,-0.58779,-0.60182,-0.61566,-0.62932,-0.64279,-0.65606,-0.66913,-0.682,-0.69466,-0.70711,-0.71934,-0.73135,-0.74314,-0.75471,-0.76604,-0.77715,-0.78801,-0.79864,-0.80902,-0.81915,-0.82904,-0.83867,-0.84805,-0.85717,-0.86603,-0.87462,-0.88295,-0.89101,-0.89879,-0.90631,-0.91355,-0.9205,-0.92718,-0.93358,-0.93969,-0.94552,-0.95106,-0.9563,-0.96126,-0.96593,-0.9703,-0.97437,-0.97815,-0.98163,-0.98481,-0.98769,-0.99027,-0.99255,-0.99452,-0.99619,-0.99756,-0.99863,-0.99939,-0.99985,-1]
+bin_0_180_01=[]
+for i in np.arange(0,181,1):
+    bin_0_180_01.append(np.cos(np.radians(i)))
 bin_0_180_01=np.flip(np.asarray(bin_0_180_01))
+
+bin_90_180_01=[]
+for i in np.arange(90,181,1):
+    bin_90_180_01.append(np.cos(np.radians(i)))
+bin_0_180_01=np.flip(np.asarray(bin_90_180_01))
+
+bin_0_180=[]
+for i in np.arange(0,185,5):
+    bin_0_180.append(np.cos(np.radians(i)))
+bin_0_180=np.flip(np.asarray(bin_0_180))
+
+bin_90_180=[]
+for i in np.arange(90,185,5):
+    bin_90_180.append(np.cos(np.radians(i)))
+bin_90_180=np.flip(np.asarray(bin_90_180))
 
 WA_revPBED3=np.zeros((1,4))
 for f in list_filename:
@@ -30,6 +46,7 @@ for f in list_filename:
         WA_revPBED3 = np.append(WA_revPBED3, np.genfromtxt(filename,dtype='float64',skip_header=1,usecols=(1,2,4,6)), axis=0)
 WA_revPBED3=np.delete(WA_revPBED3,(0),axis=0)
 
+# ---------------------------------------------------------------------------------------------------------------------------------------
 plt.rcParams["figure.figsize"] = [14,7]
 fig1, ax1 = plt.subplots(dpi=300)
 sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[1]) &(WA_revPBED3[:,1]<=list_Lu[1])][:,2])
@@ -38,24 +55,481 @@ sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_L
     ,hist=False,bins=bin_0_180_01,kde_kws={'clip': (-1,1) , "linestyle":"--","linewidth":"3.0","color":"red"}, label=r'$L2$')
 sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[3]) &(WA_revPBED3[:,1]<=list_Lu[3])][:,2])
     ,hist=False,bins=bin_0_180_01,kde_kws={'clip': (-1,1), "linestyle":":","linewidth":"3.0","color":"black"}, label=r'$L3$')
-plt.ylabel(r'P(cos(θ$_{DW}$))', fontsize=28)
-plt.xlabel(r'cos(θ$_{DW}$)', fontsize=28)
-ax1.legend(fontsize=20,framealpha=0.3,fancybox=True)
-plt.yticks(fontweight='bold',fontsize=20)
-plt.xlim(-1, 1)
-#plt.ylim(0, 1.2)
-plt.xticks(np.arange(-1, 1.25, 0.25), fontweight='bold',fontsize=20)
-#plt.yticks(np.arange(0,1.4,0.2), fontweight='bold',fontsize=12)
-ax1.xaxis.set_minor_locator(MultipleLocator(0.05))
-#ax1.yaxis.set_minor_locator(MultipleLocator(0.1))
+
 plt.setp(ax1.spines.values(), linewidth=4)
+ax1.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
+ax1.yaxis.set_minor_locator(AutoMinorLocator(2))
 ax1.axes.tick_params(which='minor',size=6,width=2)
 ax1.axes.tick_params(which='major',size=8,width=4)
-ax1.grid(axis='x',which='minor', alpha=0.3)
+ax1.grid(axis='both',which='minor', alpha=0.2)
 ax1.grid(axis='both',which='major', alpha=0.6)
 ax1.xaxis.labelpad = 15
 ax1.yaxis.labelpad = 15
-plt.tight_layout()
-plt.savefig('figure_cos_DW_revPBED3', bbox_inches='tight', transparent = True, dpi = 300)
 
+ax1.set_xlim(-1,1)
+#ax1.set_ylim(-1,1)
+
+ax1.axes.set_xticks(np.arange(-1, 1.25, 0.25))
+ax1.axes.set_xticklabels(['{0:.2f}'.format(x) for x in np.arange(-1, 1.25, 0.25)],{'fontsize':16,'fontweight':'bold'})
+ax1.axes.set_xlabel(r'cos(θ$_{DW}$)',{'fontsize':24,'fontweight':'normal'})
+
+ax1.axes.set_yticks(ax1.axes.get_yticks())
+ax1.axes.set_yticklabels(['{0:.2f}'.format(x) for x in ax1.axes.get_yticks()],{'fontsize':16,'fontweight':'bold'})
+ax1.axes.set_ylabel(r'P(cos(θ$_{DW}$))',{'fontsize':25,'fontweight':'normal'})
+
+plt.savefig('figure_cos_DW_revPBED3', bbox_inches='tight', transparent = True, dpi = 300)
+plt.clf()
+plt.cla()
+plt.close()
+
+# ---------------------------------------------------------------------------------------------------------------------------------------
+plt.rcParams["figure.figsize"] = [14,7]
+fig1, ax1 = plt.subplots(dpi=300)
+sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[1]) &(WA_revPBED3[:,1]<=list_Lu[1])][:,3])
+    ,hist=False,bins=bin_90_180_01,kde_kws={'clip': (-1,0) , "linestyle":"-","linewidth":"3.0","color":"gold"}, label=r'$L1$')
+sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[2]) &(WA_revPBED3[:,1]<=list_Lu[2])][:,3])
+    ,hist=False,bins=bin_90_180_01,kde_kws={'clip': (-1,0) , "linestyle":"--","linewidth":"3.0","color":"red"}, label=r'$L2$')
+sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[3]) &(WA_revPBED3[:,1]<=list_Lu[3])][:,3])
+    ,hist=False,bins=bin_90_180_01,kde_kws={'clip': (-1,0), "linestyle":":","linewidth":"3.0","color":"black"}, label=r'$L3$')
+
+plt.setp(ax1.spines.values(), linewidth=4)
+ax1.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
+ax1.yaxis.set_minor_locator(AutoMinorLocator(2))
+ax1.axes.tick_params(which='minor',size=6,width=2)
+ax1.axes.tick_params(which='major',size=8,width=4)
+ax1.grid(axis='both',which='minor', alpha=0.2)
+ax1.grid(axis='both',which='major', alpha=0.6)
+ax1.xaxis.labelpad = 15
+ax1.yaxis.labelpad = 15
+
+ax1.set_xlim(-1,1)
+#ax1.set_ylim(-1,1)
+
+ax1.axes.set_xticks(np.arange(-1, 0.25, 0.25))
+ax1.axes.set_xticklabels(['{0:.2f}'.format(x) for x in np.arange(-1, 0.25, 0.25)],{'fontsize':16,'fontweight':'bold'})
+ax1.axes.set_xlabel(r'cos(θ$_{HH}$)',{'fontsize':24,'fontweight':'normal'})
+
+ax1.axes.set_yticks(ax1.axes.get_yticks())
+ax1.axes.set_yticklabels(['{0:.2f}'.format(x) for x in ax1.axes.get_yticks()],{'fontsize':16,'fontweight':'bold'})
+ax1.axes.set_ylabel(r'P(cos(θ$_{HH}$))',{'fontsize':25,'fontweight':'normal'})
+
+plt.savefig('figure_cos_HH_revPBED3', bbox_inches='tight', transparent = True, dpi = 300)
+plt.clf()
+plt.cla()
+plt.close()
+
+# ---------------------------------------------------------------------------------------------------------------------------------------
+plt.rcParams["figure.figsize"] = [14,14]
+fig1, ax = plt.subplots(dpi=300)
+
+ax1 = plt.subplot(211)
+sns.distplot(np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[1]) &(WA_revPBED3[:,1]<=list_Lu[1])][:,2])
+    ,hist=False,bins=180,kde_kws={'clip': (0,180) , "linestyle":"-","linewidth":"3.0","color":"gold"}, label=r'$L1$')
+sns.distplot(np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[2]) &(WA_revPBED3[:,1]<=list_Lu[2])][:,2])
+    ,hist=False,bins=180,kde_kws={'clip': (0,180) , "linestyle":"--","linewidth":"3.0","color":"red"}, label=r'$L2$')
+sns.distplot(np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[3]) &(WA_revPBED3[:,1]<=list_Lu[3])][:,2])
+    ,hist=False,bins=180,kde_kws={'clip': (0,180), "linestyle":":","linewidth":"3.0","color":"black"}, label=r'$L3$')
+
+plt.setp(ax1.spines.values(), linewidth=4)
+ax1.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
+ax1.yaxis.set_minor_locator(AutoMinorLocator(2))
+ax1.axes.tick_params(which='minor',size=6,width=2)
+ax1.axes.tick_params(which='major',size=8,width=4)
+ax1.grid(axis='both',which='minor', alpha=0.2)
+ax1.grid(axis='both',which='major', alpha=0.6)
+ax1.xaxis.labelpad = 15
+ax1.yaxis.labelpad = 15
+
+ax1.set_xlim(0,180)
+#ax1.set_ylim(-1,1)
+
+ax1.axes.set_xticks(np.arange(0, 200, 20))
+ax1.axes.set_xticklabels(['{0:.0f}'.format(x) for x in np.arange(0, 200, 20)],{'fontsize':16,'fontweight':'bold'})
+ax1.axes.set_xlabel(r'θ$_{DW}$',{'fontsize':24,'fontweight':'normal'})
+
+ax1.axes.set_yticks(ax1.axes.get_yticks())
+ax1.axes.set_yticklabels(['{0:.3f}'.format(x) for x in ax1.axes.get_yticks()],{'fontsize':16,'fontweight':'bold'})
+ax1.axes.set_ylabel(r'P(θ$_{DW}$)',{'fontsize':25,'fontweight':'normal'})
+
+
+ax2 = plt.subplot(212)
+sns.distplot(np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[1]) &(WA_revPBED3[:,1]<=list_Lu[1])][:,3])
+    ,hist=False,bins=90,kde_kws={'clip': (90,180) , "linestyle":"-","linewidth":"3.0","color":"gold"}, label=r'$L1$')
+sns.distplot(np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[2]) &(WA_revPBED3[:,1]<=list_Lu[2])][:,3])
+    ,hist=False,bins=90,kde_kws={'clip': (90,180) , "linestyle":"--","linewidth":"3.0","color":"red"}, label=r'$L2$')
+sns.distplot(np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[3]) &(WA_revPBED3[:,1]<=list_Lu[3])][:,3])
+    ,hist=False,bins=90,kde_kws={'clip': (90,180), "linestyle":":","linewidth":"3.0","color":"black"}, label=r'$L3$')
+
+plt.setp(ax2.spines.values(), linewidth=4)
+ax2.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax2.xaxis.set_minor_locator(AutoMinorLocator(5))
+ax2.yaxis.set_minor_locator(AutoMinorLocator(2))
+ax2.axes.tick_params(which='minor',size=6,width=2)
+ax2.axes.tick_params(which='major',size=8,width=4)
+ax2.grid(axis='both',which='minor', alpha=0.2)
+ax2.grid(axis='both',which='major', alpha=0.6)
+ax2.xaxis.labelpad = 15
+ax2.yaxis.labelpad = 15
+
+ax2.set_xlim(0,180)
+#ax1.set_ylim(-1,1)
+
+ax2.axes.set_xticks(np.arange(0, 200, 20))
+ax2.axes.set_xticklabels(['{0:.0f}'.format(x) for x in np.arange(0, 200, 20)],{'fontsize':16,'fontweight':'bold'})
+ax2.axes.set_xlabel(r'θ$_{HH}$',{'fontsize':24,'fontweight':'normal'})
+
+ax2.axes.set_yticks(ax2.axes.get_yticks())
+ax2.axes.set_yticklabels(['{0:.3f}'.format(x) for x in ax2.axes.get_yticks()],{'fontsize':16,'fontweight':'bold'})
+ax2.axes.set_ylabel(r'P(θ$_{HH}$)',{'fontsize':25,'fontweight':'normal'})
+
+plt.savefig('figure_DW_HH_revPBED3', bbox_inches='tight', transparent = True, dpi = 300)
+plt.clf()
+plt.cla()
+plt.close()
+
+# ---------------------------------------------------------------------------------------------------------------------------------------
+plt.rcParams["figure.figsize"] = [14,14]
+fig1, ax = plt.subplots(dpi=300)
+
+ax1 = plt.subplot(211)
+sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[1]) &(WA_revPBED3[:,1]<=list_Lu[1])][:,2])
+    ,hist=False,bins=bin_0_180_01,kde_kws={'clip': (-1,1) , "linestyle":"-","linewidth":"3.0","color":"gold"}, label=r'$L1$')
+sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[2]) &(WA_revPBED3[:,1]<=list_Lu[2])][:,2])
+    ,hist=False,bins=bin_0_180_01,kde_kws={'clip': (-1,1) , "linestyle":"--","linewidth":"3.0","color":"red"}, label=r'$L2$')
+sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[3]) &(WA_revPBED3[:,1]<=list_Lu[3])][:,2])
+    ,hist=False,bins=bin_0_180_01,kde_kws={'clip': (-1,1), "linestyle":":","linewidth":"3.0","color":"black"}, label=r'$L3$')
+
+plt.setp(ax1.spines.values(), linewidth=4)
+ax1.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
+ax1.yaxis.set_minor_locator(AutoMinorLocator(2))
+ax1.axes.tick_params(which='minor',size=6,width=2)
+ax1.axes.tick_params(which='major',size=8,width=4)
+ax1.grid(axis='both',which='minor', alpha=0.2)
+ax1.grid(axis='both',which='major', alpha=0.6)
+ax1.xaxis.labelpad = 15
+ax1.yaxis.labelpad = 15
+
+ax1.set_xlim(-1,1)
+#ax1.set_ylim(-1,1)
+
+ax1.axes.set_xticks(np.arange(-1, 1.25, 0.25))
+ax1.axes.set_xticklabels(['{0:.2f}'.format(x) for x in np.arange(-1, 1.25, 0.25)],{'fontsize':16,'fontweight':'bold'})
+ax1.axes.set_xlabel(r'cos(θ$_{DW}$)',{'fontsize':24,'fontweight':'normal'})
+
+ax1.axes.set_yticks(ax1.axes.get_yticks())
+ax1.axes.set_yticklabels(['{0:.3f}'.format(x) for x in ax1.axes.get_yticks()],{'fontsize':16,'fontweight':'bold'})
+ax1.axes.set_ylabel(r'P(cos(θ$_{DW}$))',{'fontsize':25,'fontweight':'normal'})
+
+
+ax2 = plt.subplot(212)
+sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[1]) &(WA_revPBED3[:,1]<=list_Lu[1])][:,3])
+    ,hist=False,bins=bin_90_180_01,kde_kws={'clip': (-1,0) , "linestyle":"-","linewidth":"3.0","color":"gold"}, label=r'$L1$')
+sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[2]) &(WA_revPBED3[:,1]<=list_Lu[2])][:,3])
+    ,hist=False,bins=bin_90_180_01,kde_kws={'clip': (-1,0) , "linestyle":"--","linewidth":"3.0","color":"red"}, label=r'$L2$')
+sns.distplot(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[3]) &(WA_revPBED3[:,1]<=list_Lu[3])][:,3])
+    ,hist=False,bins=bin_90_180_01,kde_kws={'clip': (-1,0), "linestyle":":","linewidth":"3.0","color":"black"}, label=r'$L3$')
+
+plt.setp(ax2.spines.values(), linewidth=4)
+ax2.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax2.xaxis.set_minor_locator(AutoMinorLocator(5))
+ax2.yaxis.set_minor_locator(AutoMinorLocator(2))
+ax2.axes.tick_params(which='minor',size=6,width=2)
+ax2.axes.tick_params(which='major',size=8,width=4)
+ax2.grid(axis='both',which='minor', alpha=0.2)
+ax2.grid(axis='both',which='major', alpha=0.6)
+ax2.xaxis.labelpad = 15
+ax2.yaxis.labelpad = 15
+
+ax2.set_xlim(-1,1)
+#ax1.set_ylim(-1,1)
+
+ax2.axes.set_xticks(np.arange(-1, 1.25, 0.25))
+ax2.axes.set_xticklabels(['{0:.2f}'.format(x) for x in np.arange(-1, 1.25, 0.25)],{'fontsize':16,'fontweight':'bold'})
+ax2.axes.set_xlabel(r'cos(θ$_{HH}$)',{'fontsize':24,'fontweight':'normal'})
+
+ax2.axes.set_yticks(ax2.axes.get_yticks())
+ax2.axes.set_yticklabels(['{0:.3f}'.format(x) for x in ax2.axes.get_yticks()],{'fontsize':16,'fontweight':'bold'})
+ax2.axes.set_ylabel(r'P(cos(θ$_{HH}$))',{'fontsize':25,'fontweight':'normal'})
+
+plt.savefig('figure_cos_DW_HH_revPBED3', bbox_inches='tight', transparent = True, dpi = 300)
+plt.clf()
+plt.cla()
+plt.close()
+
+# ---------------------------------------------------------------------------------------------------------------------------------------
+plt.rcParams["figure.figsize"] = [20,12]
+fig1, ax = plt.subplots(dpi=300)
+                        
+ax1 = plt.subplot(221)
+plt.hist2d(np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[0]) &(WA_revPBED3[:,1]<=list_Lu[0])][:,2]),
+    np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[0]) &(WA_revPBED3[:,1]<=list_Lu[0])][:,3]),
+    range=((0,180),(90,180)),bins=[36,18],cmap="Blues")
+cb1 = plt.colorbar()
+cb1.set_label("Occurences",size=20)
+cb1.outline.set_linewidth(4)
+cb1.ax.tick_params(which='major',size=6,width=4,labelsize=16)
+
+plt.setp(ax1.spines.values(), linewidth=4)
+#ax1.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax1.xaxis.set_minor_locator(AutoMinorLocator(2))
+ax1.yaxis.set_minor_locator(AutoMinorLocator(2))
+ax1.axes.tick_params(which='minor',size=6,width=2)
+ax1.axes.tick_params(which='major',size=8,width=4)
+ax1.grid(axis='both',which='minor', alpha=0.2)
+ax1.grid(axis='both',which='major', alpha=0.6)
+ax1.xaxis.labelpad = 15
+ax1.yaxis.labelpad = 15
+
+ax1.set_xlim(0,180)
+ax1.set_ylim(90,180)
+ax1.axes.set_xticks(np.arange(0,200,20))
+ax1.axes.set_xticklabels(['{0:.0f}'.format(x) for x in np.arange(0,200,20)],{'fontsize':16,'fontweight':'bold'})
+ax1.axes.set_xlabel(r'θ$_{DW}$',{'fontsize':24,'fontweight':'normal'})
+
+ax1.axes.set_yticks(np.arange(90,190,10))
+ax1.axes.set_yticklabels(['{0:.0f}'.format(x) for x in np.arange(90,190,10)],{'fontsize':16,'fontweight':'bold'})
+ax1.axes.set_ylabel(r'P(θ$_{HH}$)',{'fontsize':25,'fontweight':'normal'})
+ax1.text(0.02, 0.02, "(revPBE-D3-All)", transform=ax1.transAxes, fontsize=14, fontweight='bold')
+
+
+ax2 = plt.subplot(222)
+plt.hist2d(np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[1]) &(WA_revPBED3[:,1]<=list_Lu[1])][:,2]),
+    np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[1]) &(WA_revPBED3[:,1]<=list_Lu[1])][:,3]),
+    range=((0,180),(90,180)),bins=[36,18],cmap="Blues")
+cb2 = plt.colorbar()
+cb2.set_label("Occurences",size=20)
+cb2.outline.set_linewidth(4)
+cb2.ax.tick_params(which='major',size=6,width=4,labelsize=16)
+
+plt.setp(ax2.spines.values(), linewidth=4)
+#ax2.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax2.xaxis.set_minor_locator(AutoMinorLocator(2))
+ax2.yaxis.set_minor_locator(AutoMinorLocator(2))
+ax2.axes.tick_params(which='minor',size=6,width=2)
+ax2.axes.tick_params(which='major',size=8,width=4)
+ax2.grid(axis='both',which='minor', alpha=0.2)
+ax2.grid(axis='both',which='major', alpha=0.6)
+ax2.xaxis.labelpad = 15
+ax2.yaxis.labelpad = 15
+
+ax2.set_xlim(0,180)
+ax2.set_ylim(90,180)
+ax2.axes.set_xticks(np.arange(0,200,20))
+ax2.axes.set_xticklabels(['{0:.0f}'.format(x) for x in np.arange(0,200,20)],{'fontsize':16,'fontweight':'bold'})
+ax2.axes.set_xlabel(r'θ$_{DW}$',{'fontsize':24,'fontweight':'normal'})
+
+ax2.axes.set_yticks(np.arange(90,190,10))
+ax2.axes.set_yticklabels(['{0:.0f}'.format(x) for x in np.arange(90,190,10)],{'fontsize':16,'fontweight':'bold'})
+ax2.axes.set_ylabel(r'P(θ$_{HH}$)',{'fontsize':25,'fontweight':'normal'})
+ax2.text(0.02, 0.02, "(revPBE-D3-L1)", transform=ax2.transAxes, fontsize=14, fontweight='bold')
+
+
+ax3 = plt.subplot(223)
+plt.hist2d(np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[2]) &(WA_revPBED3[:,1]<=list_Lu[2])][:,2]),
+    np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[2]) &(WA_revPBED3[:,1]<=list_Lu[2])][:,3]),
+    range=((0,180),(90,180)),bins=[36,18],cmap="Blues")
+cb3 = plt.colorbar()
+cb3.set_label("Occurences",size=20)
+cb3.outline.set_linewidth(4)
+cb3.ax.tick_params(which='major',size=6,width=4,labelsize=16)
+
+plt.setp(ax3.spines.values(), linewidth=4)
+#ax3.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax3.xaxis.set_minor_locator(AutoMinorLocator(2))
+ax3.yaxis.set_minor_locator(AutoMinorLocator(2))
+ax3.axes.tick_params(which='minor',size=6,width=2)
+ax3.axes.tick_params(which='major',size=8,width=4)
+ax3.grid(axis='both',which='minor', alpha=0.2)
+ax3.grid(axis='both',which='major', alpha=0.6)
+ax3.xaxis.labelpad = 15
+ax3.yaxis.labelpad = 15
+
+ax3.set_xlim(0,180)
+ax3.set_ylim(90,180)
+ax3.axes.set_xticks(np.arange(0,200,20))
+ax3.axes.set_xticklabels(['{0:.0f}'.format(x) for x in np.arange(0,200,20)],{'fontsize':16,'fontweight':'bold'})
+ax3.axes.set_xlabel(r'θ$_{DW}$',{'fontsize':24,'fontweight':'normal'})
+
+ax3.axes.set_yticks(np.arange(90,190,10))
+ax3.axes.set_yticklabels(['{0:.0f}'.format(x) for x in np.arange(90,190,10)],{'fontsize':16,'fontweight':'bold'})
+ax3.axes.set_ylabel(r'P(θ$_{HH}$)',{'fontsize':25,'fontweight':'normal'})
+ax3.text(0.02, 0.02, "(revPBE-D3-L2)", transform=ax3.transAxes, fontsize=14, fontweight='bold')
+
+ax4 = plt.subplot(224)
+plt.hist2d(np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[3]) &(WA_revPBED3[:,1]<=list_Lu[3])][:,2]),
+    np.degrees(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[3]) &(WA_revPBED3[:,1]<=list_Lu[3])][:,3]),
+    range=((0,180),(90,180)),bins=[36,18],cmap="Blues")
+cb4 = plt.colorbar()
+cb4.set_label("Occurences",size=20)
+cb4.outline.set_linewidth(4)
+cb4.ax.tick_params(which='major',size=6,width=4,labelsize=16)
+
+plt.setp(ax4.spines.values(), linewidth=4)
+#ax4.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax4.xaxis.set_minor_locator(AutoMinorLocator(2))
+ax4.yaxis.set_minor_locator(AutoMinorLocator(2))
+ax4.axes.tick_params(which='minor',size=6,width=2)
+ax4.axes.tick_params(which='major',size=8,width=4)
+ax4.grid(axis='both',which='minor', alpha=0.2)
+ax4.grid(axis='both',which='major', alpha=0.6)
+ax4.xaxis.labelpad = 15
+ax4.yaxis.labelpad = 15
+
+ax4.set_xlim(0,180)
+ax4.set_ylim(90,180)
+ax4.axes.set_xticks(np.arange(0,200,20))
+ax4.axes.set_xticklabels(['{0:.0f}'.format(x) for x in np.arange(0,200,20)],{'fontsize':16,'fontweight':'bold'})
+ax4.axes.set_xlabel(r'θ$_{DW}$',{'fontsize':24,'fontweight':'normal'})
+
+ax4.axes.set_yticks(np.arange(90,190,10))
+ax4.axes.set_yticklabels(['{0:.0f}'.format(x) for x in np.arange(90,190,10)],{'fontsize':16,'fontweight':'bold'})
+ax4.axes.set_ylabel(r'P(θ$_{HH}$)',{'fontsize':25,'fontweight':'normal'})
+ax4.text(0.02, 0.02, "(revPBE-D3-L3)", transform=ax4.transAxes, fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.savefig('figure_DW-HH_revPBED3', bbox_inches='tight', transparent = True, dpi = 300)
+plt.clf()
+plt.cla()
+plt.close()
+
+# ---------------------------------------------------------------------------------------------------------------------------------------
+plt.rcParams["figure.figsize"] = [20,12]
+fig1, ax = plt.subplots(dpi=300)
+                        
+ax1 = plt.subplot(221)
+plt.hist2d(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[0]) &(WA_revPBED3[:,1]<=list_Lu[0])][:,2]),
+    np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[0]) &(WA_revPBED3[:,1]<=list_Lu[0])][:,3]),
+    range=((-1,1),(-1,0)),bins=[bin_0_180,bin_90_180],cmap="Blues")
+
+cb1 = plt.colorbar()
+cb1.set_label("Occurences",size=20)
+cb1.outline.set_linewidth(4)
+cb1.ax.tick_params(which='major',size=6,width=4,labelsize=16)
+
+plt.setp(ax1.spines.values(), linewidth=4)
+#ax1.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax1.xaxis.set_minor_locator(AutoMinorLocator(2))
+ax1.yaxis.set_minor_locator(AutoMinorLocator(2))
+ax1.axes.tick_params(which='minor',size=6,width=2)
+ax1.axes.tick_params(which='major',size=8,width=4)
+ax1.grid(axis='both',which='minor', alpha=0.2)
+ax1.grid(axis='both',which='major', alpha=0.6)
+ax1.xaxis.labelpad = 15
+ax1.yaxis.labelpad = 15
+
+ax1.set_xlim(-1,1)
+ax1.set_ylim(-1,0)
+ax1.axes.set_xticks(np.arange(-1, 1.2, 0.2))
+ax1.axes.set_xticklabels(['{0:.2f}'.format(x) for x in np.arange(-1, 1.2, 0.2)],{'fontsize':16,'fontweight':'bold'})
+ax1.axes.set_xlabel(r'θ$_{DW}$',{'fontsize':24,'fontweight':'normal'})
+
+ax1.axes.set_yticks(np.arange(-1, 0.2, 0.2))
+ax1.axes.set_yticklabels(['{0:.2f}'.format(x) for x in np.arange(-1, 0.2, 0.2)],{'fontsize':16,'fontweight':'bold'})
+ax1.axes.set_ylabel(r'P(θ$_{HH}$)',{'fontsize':25,'fontweight':'normal'})
+ax1.text(0.02, 0.02, "(revPBE-D3-All)", transform=ax1.transAxes, fontsize=14, fontweight='bold')
+
+
+ax2 = plt.subplot(222)
+plt.hist2d(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[1]) &(WA_revPBED3[:,1]<=list_Lu[1])][:,2]),
+    np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[1]) &(WA_revPBED3[:,1]<=list_Lu[1])][:,3]),
+    range=((-1,1),(-1,0)),bins=[bin_0_180,bin_90_180],cmap="Blues")
+cb2 = plt.colorbar()
+cb2.set_label("Occurences",size=20)
+cb2.outline.set_linewidth(4)
+cb2.ax.tick_params(which='major',size=6,width=4,labelsize=16)
+
+plt.setp(ax2.spines.values(), linewidth=4)
+#ax2.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax2.xaxis.set_minor_locator(AutoMinorLocator(2))
+ax2.yaxis.set_minor_locator(AutoMinorLocator(2))
+ax2.axes.tick_params(which='minor',size=6,width=2)
+ax2.axes.tick_params(which='major',size=8,width=4)
+ax2.grid(axis='both',which='minor', alpha=0.2)
+ax2.grid(axis='both',which='major', alpha=0.6)
+ax2.xaxis.labelpad = 15
+ax2.yaxis.labelpad = 15
+
+ax2.set_xlim(-1,1)
+ax2.set_ylim(-1,0)
+ax2.axes.set_xticks(np.arange(-1, 1.2, 0.2))
+ax2.axes.set_xticklabels(['{0:.2f}'.format(x) for x in np.arange(-1, 1.2, 0.2)],{'fontsize':16,'fontweight':'bold'})
+ax2.axes.set_xlabel(r'θ$_{DW}$',{'fontsize':24,'fontweight':'normal'})
+
+ax2.axes.set_yticks(np.arange(-1, 0.2, 0.2))
+ax2.axes.set_yticklabels(['{0:.2f}'.format(x) for x in np.arange(-1, 0.2, 0.2)],{'fontsize':16,'fontweight':'bold'})
+ax2.axes.set_ylabel(r'P(θ$_{HH}$)',{'fontsize':25,'fontweight':'normal'})
+ax2.text(0.02, 0.02, "(revPBE-D3-L1)", transform=ax2.transAxes, fontsize=14, fontweight='bold')
+
+
+ax3 = plt.subplot(223)
+plt.hist2d(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[2]) &(WA_revPBED3[:,1]<=list_Lu[2])][:,2]),
+    np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[2]) &(WA_revPBED3[:,1]<=list_Lu[2])][:,3]),
+    range=((-1,1),(-1,0)),bins=[bin_0_180,bin_90_180],cmap="Blues")
+cb3 = plt.colorbar()
+cb3.set_label("Occurences",size=20)
+cb3.outline.set_linewidth(4)
+cb3.ax.tick_params(which='major',size=6,width=4,labelsize=16)
+
+plt.setp(ax3.spines.values(), linewidth=4)
+#ax3.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax3.xaxis.set_minor_locator(AutoMinorLocator(2))
+ax3.yaxis.set_minor_locator(AutoMinorLocator(2))
+ax3.axes.tick_params(which='minor',size=6,width=2)
+ax3.axes.tick_params(which='major',size=8,width=4)
+ax3.grid(axis='both',which='minor', alpha=0.2)
+ax3.grid(axis='both',which='major', alpha=0.6)
+ax3.xaxis.labelpad = 15
+ax3.yaxis.labelpad = 15
+
+ax3.set_xlim(-1,1)
+ax3.set_ylim(-1,0)
+ax3.axes.set_xticks(np.arange(-1, 1.2, 0.2))
+ax3.axes.set_xticklabels(['{0:.2f}'.format(x) for x in np.arange(-1, 1.2, 0.2)],{'fontsize':16,'fontweight':'bold'})
+ax3.axes.set_xlabel(r'θ$_{DW}$',{'fontsize':24,'fontweight':'normal'})
+
+ax3.axes.set_yticks(np.arange(-1, 0.2, 0.2))
+ax3.axes.set_yticklabels(['{0:.2f}'.format(x) for x in np.arange(-1, 0.2, 0.2)],{'fontsize':16,'fontweight':'bold'})
+ax3.axes.set_ylabel(r'P(θ$_{HH}$)',{'fontsize':25,'fontweight':'normal'})
+ax3.text(0.02, 0.02, "(revPBE-D3-L2)", transform=ax3.transAxes, fontsize=14, fontweight='bold')
+
+ax4 = plt.subplot(224)
+plt.hist2d(np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[3]) &(WA_revPBED3[:,1]<=list_Lu[3])][:,2]),
+    np.cos(WA_revPBED3[(WA_revPBED3[:,0]==1) & (WA_revPBED3[:,1]>list_Ld[3]) &(WA_revPBED3[:,1]<=list_Lu[3])][:,3]),
+    range=((-1,1),(-1,0)),bins=[bin_0_180,bin_90_180],cmap="Blues")
+cb4 = plt.colorbar()
+cb4.set_label("Occurences",size=20)
+cb4.outline.set_linewidth(4)
+cb4.ax.tick_params(which='major',size=6,width=4,labelsize=16)
+
+plt.setp(ax4.spines.values(), linewidth=4)
+#ax4.legend(fontsize=20,framealpha=0.3,fancybox=True)
+ax4.xaxis.set_minor_locator(AutoMinorLocator(2))
+ax4.yaxis.set_minor_locator(AutoMinorLocator(2))
+ax4.axes.tick_params(which='minor',size=6,width=2)
+ax4.axes.tick_params(which='major',size=8,width=4)
+ax4.grid(axis='both',which='minor', alpha=0.2)
+ax4.grid(axis='both',which='major', alpha=0.6)
+ax4.xaxis.labelpad = 15
+ax4.yaxis.labelpad = 15
+
+ax4.set_xlim(-1,1)
+ax4.set_ylim(-1,0)
+ax4.axes.set_xticks(np.arange(-1, 1.2, 0.2))
+ax4.axes.set_xticklabels(['{0:.2f}'.format(x) for x in np.arange(-1, 1.2, 0.2)],{'fontsize':16,'fontweight':'bold'})
+ax4.axes.set_xlabel(r'θ$_{DW}$',{'fontsize':24,'fontweight':'normal'})
+
+ax4.axes.set_yticks(np.arange(-1, 0.2, 0.2))
+ax4.axes.set_yticklabels(['{0:.2f}'.format(x) for x in np.arange(-1, 0.2, 0.2)],{'fontsize':16,'fontweight':'bold'})
+ax4.axes.set_ylabel(r'P(θ$_{HH}$)',{'fontsize':25,'fontweight':'normal'})
+ax4.text(0.02, 0.02, "(revPBE-D3-L3)", transform=ax4.transAxes, fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.savefig('figure_cos_DW-HH_revPBED3', bbox_inches='tight', transparent = True, dpi = 300)
+plt.clf()
+plt.cla()
+plt.close()
+
+# ---------------------------------------------------------------------------------------------------------------------------------------
 quit()
