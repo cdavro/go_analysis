@@ -8,18 +8,20 @@ USE INPUT_MOD
 
 IMPLICIT NONE
 
+! ----------------------------------------------- Set Double precision
+INTEGER, PARAMETER              :: dp=KIND(0.0d0)
+
 ! ----------------------------------------------- Timings
 REAL(dp)                        :: start,finish
 
-! Input files
-CHARACTER(LEN=100) :: input_file
+! ----------------------------------------------- Input files
+CHARACTER(LEN=100)              :: input_file
 
 ! ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:)
 CHARACTER(LEN=2), ALLOCATABLE   :: atm_el(:)
 REAL(dp), ALLOCATABLE           :: Cgo_avgpos(:,:)
 INTEGER, ALLOCATABLE            :: nb_max_OHvec(:)
-REAL(dp)                        :: box(3)
 
 ! ----------------------------------------------- Temporary variables
 REAL(dp)                        :: tOH_disp_vec(3), tOH_norm, tOC_disp_vec(3), tOC_norm, z_shift
@@ -151,7 +153,7 @@ atm_mat(10,:,:) = -1
 atm_mat(11,:,:) = -1
 atm_mat(12,:,:) = -1
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,nb_step, nb_atm, rOH_cut, rOC_cut)&
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,nb_step, nb_atm, rOH_cut_a, rOC_cut_a)&
 !$OMP SHARED(nb_epoxide,nb_hydroxide,nb_alcohol,nb_water,nb_hydronium,nb_alkoxide,nb_oxygen_group)&
 !$OMP PRIVATE(s,i,j,k,tOC_disp_vec,tOC_norm,tOH_disp_vec,tOH_norm)
 DO s=1,nb_step
@@ -168,7 +170,7 @@ DO s=1,nb_step
                         tOH_disp_vec(k) = tOH_disp_vec(k) - box(k) * ANINT(tOH_disp_vec(k)/box(k))
                     END DO
                     tOH_norm = NORM2(tOH_disp_vec)
-                    IF(tOH_norm .LE. rOH_cut) THEN
+                    IF(tOH_norm .LE. rOH_cut_a) THEN
                         atm_mat(9,i,s) = atm_mat(9,i,s) + 1
                         atm_mat(11,j,s) = atm_mat(1,i,s)
                     END IF
@@ -179,7 +181,7 @@ DO s=1,nb_step
                         tOC_disp_vec(k) = tOC_disp_vec(k) - box(k) * ANINT(tOC_disp_vec(k)/box(k))
                     END DO
                     tOC_norm = NORM2(tOC_disp_vec)
-                    IF(tOC_norm .LE. rOC_cut) THEN
+                    IF(tOC_norm .LE. rOC_cut_a) THEN
                         atm_mat(10,i,s) = atm_mat(10,i,s) + 1
                     END IF
 

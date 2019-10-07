@@ -4,18 +4,18 @@
 
 PROGRAM surface_wrap
 USE OMP_LIB
+USE INPUT_MOD
 
 IMPLICIT NONE
 
-! ----------------------------------------------- Set Double precision ----------------------------------------------- !
+! ----------------------------------------------- Set Double precision
 INTEGER, PARAMETER              :: dp=KIND(0.0d0)
-INTEGER                         :: iostatus
 
 ! ----------------------------------------------- Timings
 REAL(dp)                        :: start,finish
 
-! ----------------------------------------------- Filenames
-CHARACTER(LEN=64)               :: file_surf
+! ----------------------------------------------- Input files
+CHARACTER(LEN=100)              :: input_file
 
 ! ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: pt_mat(:,:,:)
@@ -27,23 +27,24 @@ INTEGER                         :: i, s
 CHARACTER(LEN=64)               :: dummy
 INTEGER                         :: CAC
 
-! ----------------------------------------------- SYSTEM DEPENDANT
-INTEGER,PARAMETER               :: nb_step=1000
-CHARACTER(LEN=2)                :: suffix="00"
-REAL(dp), PARAMETER             :: xlo=0.0_dp,xhi=21.8489966560_dp
-REAL(dp), PARAMETER             :: ylo=0.0_dp,yhi=21.2373561788_dp
-REAL(dp), PARAMETER             :: zlo=0.0_dp,zhi=70.0_dp
-REAL(dp)                        :: box(3)
-
 ! ----------------------------------------------- Get arguments (filenames, choices)
 CAC = COMMAND_ARGUMENT_COUNT()
 
-IF (CAC .NE. 1) THEN
+IF (CAC .EQ. 0) THEN
+    PRINT*,"No input files"
     STOP
 END IF
 
-CALL GET_COMMAND_ARGUMENT(1,file_surf)
+CALL GET_COMMAND_ARGUMENT(1, input_file)
+input_file=TRIM(input_file)
+CALL READINPUTSUB(input_file)
+
 file_surf=TRIM(file_surf)
+
+IF (file_surf .EQ. '0') THEN
+    PRINT*, "No surface file provided"
+    STOP
+END IF
 
 ! ----------------------------------------------- Since the number of points for the IS isn't constant, count it.
 start = OMP_get_wtime()
@@ -70,11 +71,6 @@ ALLOCATE(pt_mat(3,nb_max_pt,nb_step))
 ALLOCATE(nb_pt(nb_step))
 pt_mat(:,:,:) = 0.0_dp
 nb_pt(:) = 0
-
-! ----------------------------------------------- Calculate the box size
-box(1) = xhi - xlo
-box(2) = yhi - ylo
-box(3) = zhi - zlo
 
 ! ----------------------------------------------- Read positions
 start = OMP_get_wtime()

@@ -7,7 +7,7 @@ MODULE INPUT_MOD
 IMPLICIT NONE
 
 ! ----------------------------------------------- Set Double precision
-INTEGER, PARAMETER   :: dp=KIND(0.0d0)
+INTEGER, PARAMETER, PRIVATE   :: dp=KIND(0.0d0)
 
 ! ----------------------------------------------- Reading related variables
 CHARACTER(LEN=100)   :: label, value
@@ -17,13 +17,13 @@ INTEGER              :: delim
 INTEGER, PARAMETER   :: file_unit = 99
 
 ! ----------------------------------------------- Variables
-CHARACTER(LEN=64)    :: file_pos='0', file_vel='0'
+CHARACTER(LEN=64)    :: file_pos='0', file_vel='0', file_surf='0'
 INTEGER              :: nb_atm, nb_step
 CHARACTER(LEN=2)     :: suffix
 REAL(dp)             :: xlo=0.0_dp,xhi=0.0_dp
 REAL(dp)             :: ylo=0.0_dp,yhi=0.0_dp
 REAL(dp)             :: zlo=0.0_dp,zhi=0.0_dp
-REAL(dp)             :: rOH_cut, rOC_cut
+REAL(dp)             :: rOH_cut_a, rOC_cut_a
 REAL(dp)             :: box(3)
 INTEGER              :: nb_Cgo
 INTEGER              :: waterlist
@@ -50,19 +50,22 @@ SUBROUTINE READINPUTSUB(input_file)
             SELECT CASE (label)
                 CASE ('file_pos')
                     READ(value, *, IOSTAT=iostatus) file_pos
-                    PRINT *, 'XYZ positions file:', file_pos
+                    PRINT'(A50,A65)', 'XYZ positions file:', file_pos
                 CASE ('file_vel')
                     READ(value, *, IOSTAT=iostatus) file_vel
-                    PRINT *, 'XYZ velocities file:', file_vel
+                    PRINT'(A50,A65)', 'XYZ velocities file:', file_vel
+                CASE ('file_surf')
+                    READ(value, *, IOSTAT=iostatus) file_surf
+                    PRINT'(A50,A65)', 'XYZ velocities file:', file_surf
                 CASE ('nb_atm')
                     READ(value, *, IOSTAT=iostatus) nb_atm
-                    PRINT *, 'Number of Atoms: ', nb_atm
+                    PRINT'(A50,I10)', 'Number of Atoms: ', nb_atm
                 CASE ('nb_step')
                     READ(value, *, IOSTAT=iostatus) nb_step
-                    PRINT *, 'nb_step: ', nb_step
+                    PRINT'(A50,I10)', 'nb_step: ', nb_step
                 CASE ('suffix')
                     READ(value, *, IOSTAT=iostatus) suffix
-                    PRINT *, 'suffix: ', suffix
+                    PRINT'(A50,A10)', 'suffix: ', suffix
                 CASE ('nb_Cgo')
                     READ(value, *, IOSTAT=iostatus) nb_cgo
                     PRINT *, 'nb_Cgo: ', nb_cgo
@@ -84,12 +87,12 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('zhi')
                     READ(value, *, IOSTAT=iostatus) zhi
                     PRINT *, 'zhi: ', zhi
-                CASE ('rOH_cut')
-                    READ(value, *, IOSTAT=iostatus) rOH_cut
-                    PRINT *, 'rOH_cut: ', rOH_cut
-                CASE ('rOC_cut')
-                    READ(value, *, IOSTAT=iostatus) rOC_cut
-                    PRINT *, 'rOC_cut: ', rOC_cut
+                CASE ('rOH_cut_a')
+                    READ(value, *, IOSTAT=iostatus) rOH_cut_a
+                    PRINT *, 'rOH_cut_a: ', rOH_cut_a
+                CASE ('rOC_cut_a')
+                    READ(value, *, IOSTAT=iostatus) rOC_cut_a
+                    PRINT *, 'rOC_cut_a: ', rOC_cut_a
                 CASE ('waterlist')
                     READ(value, *, IOSTAT=iostatus) waterlist
                     PRINT *, 'waterlist: ', waterlist
