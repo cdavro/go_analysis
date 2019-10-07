@@ -1,4 +1,4 @@
-PROGRAM vvcf
+PROGRAM water_angle
 USE OMP_LIB
 
 IMPLICIT NONE
@@ -572,4 +572,4 @@ PRINT'(A40,F14.2,A20)', "WAT angles output:"&
 
 ! ----------------------------------------------- Deallocate and exit
 DEALLOCATE(WAT_mat,atm_mat,surf_mat)
-END PROGRAM vvcf
+END PROGRAM water_angle
