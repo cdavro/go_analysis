@@ -4,16 +4,15 @@
 
 PROGRAM assign
 USE OMP_LIB
+USE INPUT_MOD
 
 IMPLICIT NONE
-! ----------------------------------------------- Set Double precision
-INTEGER, PARAMETER              :: dp=KIND(0.0d0)
 
 ! ----------------------------------------------- Timings
 REAL(dp)                        :: start,finish
 
-! ----------------------------------------------- Filenames
-CHARACTER(LEN=64)               :: file_pos, file_vel
+! Input files
+CHARACTER(LEN=100) :: input_file
 
 ! ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:)
@@ -36,49 +35,24 @@ INTEGER, ALLOCATABLE            :: nb_oxygen_group(:)
 INTEGER                         :: i, s, k, j
 INTEGER                         :: CAC
 
-! ----------------------------------------------- SYSTEM DEPENDANT
-INTEGER,PARAMETER               :: nb_atm=1039, nb_step=1000
-CHARACTER(LEN=2)                :: suffix="00"
-REAL(dp), PARAMETER             :: xlo=0.0_dp,xhi=21.8489966560_dp
-REAL(dp), PARAMETER             :: ylo=0.0_dp,yhi=21.2373561788_dp
-REAL(dp), PARAMETER             :: zlo=0.0_dp,zhi=70.0_dp
-REAL(dp), PARAMETER             :: rOH_cut=1.30, rOC_cut=1.75
-INTEGER, PARAMETER              :: nb_Cgo=180
-INTEGER                         :: waterlist=1
-INTEGER                         :: vel_c=0
+! ----------------------------------------------- Get arguments (filenames, choices)
+CAC = COMMAND_ARGUMENT_COUNT()
+
+IF (CAC .EQ. 0) THEN
+    PRINT*,"No input files"
+    STOP
+END IF
+
+CALL GET_COMMAND_ARGUMENT(1, input_file)
+input_file=TRIM(input_file)
+CALL READINPUTSUB(input_file)
+file_pos=TRIM(file_pos)
+file_vel=TRIM(file_vel)
 
 ! ----------------------------------------------- Allocate function for reading files
 ! DEFINE AS: atm_id, atm_nb, atm_x, atm_y, atm_z, vel_x, vel_y, vel_z, nb_H, nb_C
 ALLOCATE(atm_mat(12,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
-
-! ----------------------------------------------- Get arguments (filenames, choices)
-CAC = COMMAND_ARGUMENT_COUNT()
-
-IF (CAC .EQ. 0) THEN
-    PRINT*,"No arguments"
-    STOP
-ELSE IF (CAC .EQ. 1) THEN
-    PRINT*, "Assuming only positions file"
-    vel_c = 0
-ELSE IF (CAC .EQ. 2) THEN
-    PRINT*, "Assuming positions/velocities file"
-    vel_c = 1
-ELSE
-    PRINT*, "Error with arguments"
-END IF
-
-CALL GET_COMMAND_ARGUMENT(1,file_pos)
-file_pos=TRIM(file_pos)
-IF (vel_c .EQ. 1) THEN
-    CALL GET_COMMAND_ARGUMENT(2,file_vel)
-    file_vel=TRIM(file_vel)
-END IF
-
-! ----------------------------------------------- Calculate the box size
-box(1) = xhi - xlo
-box(2) = yhi - ylo
-box(3) = zhi - zlo
 
 ! ----------------------------------------------- Read positions
 start = OMP_get_wtime()
@@ -109,7 +83,7 @@ finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Positions:",finish-start,"seconds elapsed"
 
 ! ----------------------------------------------- Read velocities
-IF (vel_c .EQ. 1) THEN
+IF (file_vel .NE. '0') THEN
     start = OMP_get_wtime()
 
     OPEN(UNIT=21,FILE=file_vel,STATUS='old',FORM='formatted',ACTION='READ')
@@ -177,8 +151,7 @@ atm_mat(10,:,:) = -1
 atm_mat(11,:,:) = -1
 atm_mat(12,:,:) = -1
 
-!nb_step, nb_atm, rOH_cut, rOC_cut are parameters, always shared.
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box)&
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,nb_step, nb_atm, rOH_cut, rOC_cut)&
 !$OMP SHARED(nb_epoxide,nb_hydroxide,nb_alcohol,nb_water,nb_hydronium,nb_alkoxide,nb_oxygen_group)&
 !$OMP PRIVATE(s,i,j,k,tOC_disp_vec,tOC_norm,tOH_disp_vec,tOH_norm)
 DO s=1,nb_step
@@ -254,13 +227,13 @@ PRINT'(A40,F14.2,A20)', "Oxygen groups topologies output:",finish-start,"seconds
 ! ----------------------------------------------- Print the xyz and velocities files
 start = OMP_get_wtime()
 
-IF (vel_c .EQ. 1) OPEN(UNIT=40, FILE = suffix//"_wrapped_"//file_pos)
+IF (file_vel .NE. '0') OPEN(UNIT=40, FILE = suffix//"_wrapped_"//file_pos)
 OPEN(UNIT=41, FILE = suffix//"_wrapped_"//file_vel)
 DO s = 1, nb_step
     WRITE(40,'(I10)') nb_atm
-    IF (vel_c .EQ. 1) WRITE(41,'(I10)') nb_atm
+    IF (file_vel .NE. '0') WRITE(41,'(I10)') nb_atm
     WRITE(40,'(A10,I10)') "Step nb:", s
-    IF (vel_c .EQ. 1) WRITE(41,'(A10,I10)') "Step nb:", s
+    IF (file_vel .NE. '0') WRITE(41,'(A10,I10)') "Step nb:", s
     DO i = 1, nb_atm
         IF ((atm_mat(10,i,s) .EQ. 2) .AND. (atm_mat(9,i,s) .EQ. 0)) THEN
             type = "OE"
@@ -284,11 +257,11 @@ DO s = 1, nb_step
             type = "O"
         END IF
         WRITE(40,'(A10,E24.14,E24.14,E24.14)') type, atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
-        IF (vel_c .EQ. 1) WRITE(41,'(A10,E24.14,E24.14,E24.14)') type, atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
+        IF (file_vel .NE. '0') WRITE(41,'(A10,E24.14,E24.14,E24.14)') type, atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
     END DO
 END DO
 CLOSE(UNIT=40)
-IF (vel_c .EQ. 1) CLOSE(UNIT=41)
+IF (file_vel .NE. '0') CLOSE(UNIT=41)
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)',"Positions/Velocities output:",finish-start,"seconds elapsed"
