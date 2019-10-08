@@ -1,17 +1,17 @@
 PROGRAM water_angle
 USE OMP_LIB
+USE INPUT_MOD
 
 IMPLICIT NONE
 
 ! ----------------------------------------------- Set Double precision ----------------------------------------------- !
 INTEGER, PARAMETER              :: dp=KIND(0.0d0)
-INTEGER                         :: iostatus
 
 ! ----------------------------------------------- Timings
 REAL(dp)                        :: start,finish
 
-! ----------------------------------------------- Filenames
-CHARACTER(LEN=64)               :: file_xyz, file_surf
+! ----------------------------------------------- Input files
+CHARACTER(LEN=100)              :: input_file
 
 ! ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:), WAT_mat(:,:,:), surf_mat(:,:,:)
@@ -39,51 +39,35 @@ INTEGER                         :: i, s, k, j, o
 INTEGER                         :: CAC
 
 ! ----------------------------------------------- Parameters
-REAL(dp), PARAMETER             :: bohr_to_angstrom=0.529177249_dp
-REAL(dp), PARAMETER             :: aut_to_fs=0.0241888432658569977_dp
 REAL(dp), PARAMETER             :: pi=4.0_dp*DATAN(1.0_dp)
-REAL(dp)                        :: box(3)
 
-! ----------------------------------------------- SYSTEM DEPENDANT
-INTEGER, PARAMETER              :: nb_atm=1039, nb_step=1000
-CHARACTER(LEN=2)                :: suffix="00"
-REAL(dp), PARAMETER             :: xlo=0.0_dp,xhi=21.8489966560_dp
-REAL(dp), PARAMETER             :: ylo=0.0_dp,yhi=21.2373561788_dp
-REAL(dp), PARAMETER             :: zlo=0.0_dp,zhi=70.0_dp
-REAL(dp), PARAMETER             :: rOH_cut=1.3, rOHbond_cut=2.5, rXWAT_cut=3.5
-REAL(dp), PARAMETER             :: rCWAT_cut=9.0 ! Close to Carbon (interface)
+! ----------------------------------------------- Get arguments (filenames, choices)
+CAC = COMMAND_ARGUMENT_COUNT()
+
+IF (CAC .EQ. 0) THEN
+    PRINT*,"No input files"
+    STOP
+END IF
+
+CALL GET_COMMAND_ARGUMENT(1, input_file)
+input_file=TRIM(input_file)
+CALL READINPUTSUB(input_file)
+file_pos=TRIM(file_pos)
+file_surf=TRIM(file_surf)
+
+! ----------------------------------------------- Controls
+! To Do
 
 ! ----------------------------------------------- Allocate function for reading files
 ! DEFINE AS: atm_id, atm_nb, atm_x, atm_y, atm_z, vel_x, vel_y, vel_z, nb_OH
 ALLOCATE(atm_mat(6,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
-! ----------------------------------------------- Get arguments (filenames, choices)
-CAC = COMMAND_ARGUMENT_COUNT()
-
-IF (CAC .EQ. 0) THEN
-    PRINT*,"NO ARGUMENT"
-    STOP
-ELSE IF (CAC .EQ. 1) THEN
-    PRINT*, "Need positions and IS files"
-    STOP
-END if
-
-CALL GET_COMMAND_ARGUMENT(1,file_xyz)
-file_xyz=TRIM(file_xyz)
-CALL GET_COMMAND_ARGUMENT(2,file_surf)
-file_surf=TRIM(file_surf)
-
-! ----------------------------------------------- Calculate the box size
-box(1) = xhi - xlo
-box(2) = yhi - ylo
-box(3) = zhi - zlo
-
 ! A ----------------------------------------------- Read positions
 start = OMP_get_wtime()
 ALLOCATE(atm_el(nb_atm))
 
-OPEN(UNIT=20,FILE=file_xyz,STATUS='old',FORM='formatted',ACTION='READ')
+OPEN(UNIT=20,FILE=file_pos,STATUS='old',FORM='formatted',ACTION='READ')
 DO s = 1, nb_step
     READ(20, *)
     READ(20, *)
@@ -194,8 +178,7 @@ ALLOCATE(nb_max_WAT(nb_step))
 nb_max_WAT(:) = 0.0
 WAT_mat(:,:,:) = 0.0_dp
 
-!nb_step, nb_atm, rWAT_cut, always shared.
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,WAT_mat,nb_max_WAT,nb_o)&
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,WAT_mat,nb_max_WAT,nb_o,nb_step,nb_atm)&
 !$OMP PRIVATE(s,i,j,k,o,tOH_disp_vec,tOH_norm)
 DO s = 1, nb_step
     o = 0
@@ -261,8 +244,7 @@ PRINT'(A40,F14.2,A20)', "WAT groups:"&
 ! C ----------------------------------------------- Proximity between functionnal groups and any WAT groups
 start = OMP_get_wtime()
 
-!nb_step, nb_atm, rXOH_cut, always shared.
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,WAT_mat,nb_o)&
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,WAT_mat,nb_o,nb_step,nb_atm,rXWAT_cut_wa,rCWAT_cut_wa)&
 !$OMP PRIVATE(s,i,j,k,tXWAT_disp_vec,tXWAT_disp_norm)
 DO s = 1, nb_step
     C1:DO i = 1, nb_o*3
@@ -278,7 +260,7 @@ DO s = 1, nb_step
                 tXWAT_disp_vec(k) = tXWAT_disp_vec(k) - box(k) * ANINT(tXWAT_disp_vec(k)/box(k))
             END DO
             tXWAT_disp_norm = NORM2(tXWAT_disp_vec)
-            IF( (tXWAT_disp_norm .LE. rXWAT_cut) .AND. (atm_mat(1,j,s) .NE. WAT_mat(1,i,s))) THEN
+            IF( (tXWAT_disp_norm .LE. rXWAT_cut_wa) .AND. (atm_mat(1,j,s) .NE. WAT_mat(1,i,s))) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     WAT_mat(27,i,s) = 1
                     WAT_mat(28,i,s) = 1
@@ -289,7 +271,7 @@ DO s = 1, nb_step
                 ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
                     WAT_mat(26,i,s) = 1
                 END IF
-            ELSE IF( (tXWAT_disp_norm .LE. rCWAT_cut) .AND. (atm_mat(1,j,s) .NE. WAT_mat(1,i,s))) THEN
+            ELSE IF( (tXWAT_disp_norm .LE. rCWAT_cut_wa) .AND. (atm_mat(1,j,s) .NE. WAT_mat(1,i,s))) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     WAT_mat(28,i,s) = 1
                 END IF
@@ -507,7 +489,7 @@ DO s = 1, nb_step
             tS_pos_PS_go(k) = tS_pos_PS_go(k) - box(k) * ANINT(tS_pos_PS_go(k)/box(k))
             tOS_disp_oPS_go(k) = tS_pos_PS_go(k) - tO_pos_iPS_go(k)
             tOS_disp_oPS_go(k) = tOS_disp_oPS_go(k) - box(k) * ANINT(tOS_disp_oPS_go(k)/box(k))
-            tO_pos_iPS_air(k) = WAT_mat(k+1,i,s) - 0.01*tPSuvec_air(k) 
+            tO_pos_iPS_air(k) = WAT_mat(k+1,i,s) - 0.01*tPSuvec_air(k)
             tO_pos_iPS_air(k) = tO_pos_iPS_air(k) - box(k) * ANINT(tO_pos_iPS_air(k)/box(k))
             tS_pos_PS_air(k) = surf_mat(k,INT(WAT_mat(34,i,s)),s) + 0.01*tPSuvec_air(k) 
             tS_pos_PS_air(k) = tS_pos_PS_air(k) - box(k) * ANINT(tS_pos_PS_air(k)/box(k))
