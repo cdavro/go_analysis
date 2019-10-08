@@ -188,7 +188,7 @@ PRINT'(A40,F14.2,A20)', "IS:",finish-start,"seconds elapsed"
 
 ! B -------------WAT---------------------------------- Water
 start = OMP_get_wtime()
-ALLOCATE(WAT_mat(45,nb_o*3,nb_step))
+ALLOCATE(WAT_mat(38,nb_o*3,nb_step))
 ALLOCATE(nb_max_WAT(nb_step))
 
 nb_max_WAT(:) = 0.0
@@ -242,9 +242,9 @@ DO s = 1, nb_step
     END DO
     DO i=1,nb_o*3
         DO k=1,3
-            WAT_mat(k+39,i,s) = WAT_mat(k+11,i,s) - WAT_mat(k+6,i,s)
-            WAT_mat(k+39,i,s) = WAT_mat(k+39,i,s) - box(k) * ANINT(WAT_mat(k+39,i,s)/box(k)) ! HH Vector
-            WAT_mat(k+14,i,s) = WAT_mat(k+6,i,s) + WAT_mat(k+39,i,s)/2.0 ! Center of HH
+            WAT_mat(k+20,i,s) = WAT_mat(k+11,i,s) - WAT_mat(k+6,i,s)
+            WAT_mat(k+20,i,s) = WAT_mat(k+20,i,s) - box(k) * ANINT(WAT_mat(k+20,i,s)/box(k)) ! HH Vector
+            WAT_mat(k+14,i,s) = WAT_mat(k+6,i,s) + WAT_mat(k+20,i,s)/2.0 ! Center of HH
             WAT_mat(k+17,i,s) = WAT_mat(k+14,i,s) - WAT_mat(k+1,i,s)
             WAT_mat(k+17,i,s) = WAT_mat(k+17,i,s) - box(k) * ANINT(WAT_mat(k+17,i,s)/box(k)) ! (O to center HH) vector (Inverse of of the Dipole Moment)
         END DO
@@ -280,18 +280,18 @@ DO s = 1, nb_step
             tXWAT_disp_norm = NORM2(tXWAT_disp_vec)
             IF( (tXWAT_disp_norm .LE. rXWAT_cut) .AND. (atm_mat(1,j,s) .NE. WAT_mat(1,i,s))) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
-                    WAT_mat(38,i,s) = 1
-                    WAT_mat(39,i,s) = 1
+                    WAT_mat(27,i,s) = 1
+                    WAT_mat(28,i,s) = 1
                 ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
-                    WAT_mat(21,i,s) = 1
+                    WAT_mat(24,i,s) = 1
                 ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OH
-                    WAT_mat(22,i,s) = 1
+                    WAT_mat(25,i,s) = 1
                 ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
-                    WAT_mat(23,i,s) = 1
+                    WAT_mat(26,i,s) = 1
                 END IF
             ELSE IF( (tXWAT_disp_norm .LE. rCWAT_cut) .AND. (atm_mat(1,j,s) .NE. WAT_mat(1,i,s))) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
-                    WAT_mat(39,i,s) = 1
+                    WAT_mat(28,i,s) = 1
                 END IF
             END IF
         END DO D2
@@ -324,15 +324,14 @@ DO s = 1, nb_step
                     tSWAT_disp_vec(k) = tSWAT_disp_vec(k) - box(k) * ANINT(tSWAT_disp_vec(k)/box(k))
                 END DO
                 tSWAT_norm = NORM2(tSWAT_disp_vec)
-                IF ( (tSWAT_norm .LT. WAT_mat(24,i,s)) .OR. (WAT_mat(24,i,s) .EQ. 0.0) ) THEN
-                    WAT_mat(24,i,s) = tSWAT_norm
+                IF ( (tSWAT_norm .LT. WAT_mat(29,i,s)) .OR. (WAT_mat(29,i,s) .EQ. 0.0) ) THEN
+                    WAT_mat(29,i,s) = tSWAT_norm
                     IF (WAT_mat(4,i,s) .LT. surf_mat(3,j,s)) THEN
-                        WAT_mat(25,i,s) = -1
+                        WAT_mat(30,i,s) = -1
                     ELSE
-                        WAT_mat(25,i,s) = 1
+                        WAT_mat(30,i,s) = 1
                     END IF
-                    WAT_mat(26,i,s) = surf_mat(3,j,s)
-                    WAT_mat(34,i,s) = surf_mat(5,j,s)
+                    WAT_mat(31,i,s) = surf_mat(5,j,s)
                 END IF
             ELSE IF (surf_mat(4,j,s) .EQ. 2) THEN
                 DO k = 1, 3
@@ -340,28 +339,45 @@ DO s = 1, nb_step
                     tSWAT_disp_vec(k) = tSWAT_disp_vec(k) - box(k) * ANINT(tSWAT_disp_vec(k)/box(k))
                 END DO
                 tSWAT_norm = NORM2(tSWAT_disp_vec)
-                IF ( (tSWAT_norm .LT. WAT_mat(27,i,s)) .OR. (WAT_mat(27,i,s) .EQ. 0.0) ) THEN
-                    WAT_mat(27,i,s) = tSWAT_norm
+                IF ( (tSWAT_norm .LT. WAT_mat(32,i,s)) .OR. (WAT_mat(32,i,s) .EQ. 0.0) ) THEN
+                    WAT_mat(32,i,s) = tSWAT_norm
                     IF (WAT_mat(4,i,s) .GT. surf_mat(3,j,s)) THEN
-                        WAT_mat(28,i,s) = -1
+                        WAT_mat(33,i,s) = -1
                     ELSE
-                        WAT_mat(28,i,s) = 1
+                        WAT_mat(33,i,s) = 1
                     END IF
-                    WAT_mat(29,i,s) = surf_mat(3,j,s)
-                    WAT_mat(35,i,s) = surf_mat(5,j,s)
+                    WAT_mat(34,i,s) = surf_mat(5,j,s)
                 END IF
             END IF
         END DO
 
-        IF ((surf_mat(19,INT(WAT_mat(34,i,s)),s) .NE. 1) .OR.&
-            (surf_mat(19,INT(WAT_mat(35,i,s)),s) .NE. 1)) THEN
+        IF ((surf_mat(19,INT(WAT_mat(31,i,s)),s) .NE. 1) .OR.&
+            (surf_mat(19,INT(WAT_mat(34,i,s)),s) .NE. 1)) THEN
 
             F3:DO j = 1, nb_surf(s) ! First one
-                IF ( (surf_mat(5,j,s) .EQ. surf_mat(5,INT(WAT_mat(34,i,s)),s)) .OR.&
-                (surf_mat(5,j,s) .EQ. surf_mat(5,INT(WAT_mat(35,i,s)),s)) ) THEN
+                IF ( (surf_mat(5,j,s) .EQ. surf_mat(5,INT(WAT_mat(31,i,s)),s)) .OR.&
+                (surf_mat(5,j,s) .EQ. surf_mat(5,INT(WAT_mat(34,i,s)),s)) ) THEN
                     CYCLE F3
                 END IF
                 IF (surf_mat(4,j,s) .EQ. 1) THEN
+
+                    DO k = 1, 3
+                        tSS_disp_vec(k) = surf_mat(k,j,s) - surf_mat(k,INT(WAT_mat(31,i,s)),s)
+                        tSS_disp_vec(k) = tSS_disp_vec(k) - box(k) * ANINT(tSS_disp_vec(k)/box(k))
+                    END DO
+                    tSS_norm = NORM2(tSS_disp_vec)
+
+                    IF ( ( (tSS_norm .LT. surf_mat(7,INT(WAT_mat(31,i,s)),s)) .OR.&
+                    (surf_mat(7,INT(WAT_mat(31,i,s)),s) .EQ. 0.0 ) ) .AND.&
+                    (surf_mat(5,j,s) .NE. surf_mat(6,INT(WAT_mat(31,i,s)),s)) ) THEN
+                        surf_mat(6,INT(WAT_mat(31,i,s)),s) = surf_mat(5,j,s)
+                        surf_mat(7,INT(WAT_mat(31,i,s)),s) = tSS_norm
+                        DO k=1,3
+                            surf_mat(k+7,INT(WAT_mat(31,i,s)),s) = tSS_disp_vec(k) / tSS_norm !8,9,10
+                        END DO
+                    END IF
+
+                ELSE IF (surf_mat(4,j,s) .EQ. 2) THEN
 
                     DO k = 1, 3
                         tSS_disp_vec(k) = surf_mat(k,j,s) - surf_mat(k,INT(WAT_mat(34,i,s)),s)
@@ -375,25 +391,7 @@ DO s = 1, nb_step
                         surf_mat(6,INT(WAT_mat(34,i,s)),s) = surf_mat(5,j,s)
                         surf_mat(7,INT(WAT_mat(34,i,s)),s) = tSS_norm
                         DO k=1,3
-                            surf_mat(k+7,INT(WAT_mat(34,i,s)),s) = tSS_disp_vec(k) / tSS_norm !8,9,10
-                        END DO
-                    END IF
-
-                ELSE IF (surf_mat(4,j,s) .EQ. 2) THEN
-
-                    DO k = 1, 3
-                        tSS_disp_vec(k) = surf_mat(k,j,s) - surf_mat(k,INT(WAT_mat(35,i,s)),s)
-                        tSS_disp_vec(k) = tSS_disp_vec(k) - box(k) * ANINT(tSS_disp_vec(k)/box(k))
-                    END DO
-                    tSS_norm = NORM2(tSS_disp_vec)
-
-                    IF ( ( (tSS_norm .LT. surf_mat(7,INT(WAT_mat(35,i,s)),s)) .OR.&
-                    (surf_mat(7,INT(WAT_mat(35,i,s)),s) .EQ. 0.0 ) ) .AND.&
-                    (surf_mat(5,j,s) .NE. surf_mat(6,INT(WAT_mat(35,i,s)),s)) ) THEN
-                        surf_mat(6,INT(WAT_mat(35,i,s)),s) = surf_mat(5,j,s)
-                        surf_mat(7,INT(WAT_mat(35,i,s)),s) = tSS_norm
-                        DO k=1,3
-                            surf_mat(k+7,INT(WAT_mat(35,i,s)),s) = tSS_disp_vec(k) / tSS_norm !18,19,20
+                            surf_mat(k+7,INT(WAT_mat(34,i,s)),s) = tSS_disp_vec(k) / tSS_norm !18,19,20
                         END DO
                     END IF
 
@@ -402,14 +400,42 @@ DO s = 1, nb_step
 
          F4:DO j = 1, nb_surf(s)
 
-                IF ( (surf_mat(5,j,s) .EQ. surf_mat(5,INT(WAT_mat(34,i,s)),s)) .OR.&
-                (surf_mat(5,j,s) .EQ. surf_mat(5,INT(WAT_mat(35,i,s)),s)) .OR. &
-                (surf_mat(5,j,s) .EQ. surf_mat(6,INT(WAT_mat(34,i,s)),s)) .OR. &
-                (surf_mat(5,j,s) .EQ. surf_mat(6,INT(WAT_mat(35,i,s)),s)) ) THEN
+                IF ( (surf_mat(5,j,s) .EQ. surf_mat(5,INT(WAT_mat(31,i,s)),s)) .OR.&
+                (surf_mat(5,j,s) .EQ. surf_mat(5,INT(WAT_mat(34,i,s)),s)) .OR. &
+                (surf_mat(5,j,s) .EQ. surf_mat(6,INT(WAT_mat(31,i,s)),s)) .OR. &
+                (surf_mat(5,j,s) .EQ. surf_mat(6,INT(WAT_mat(34,i,s)),s)) ) THEN
                     CYCLE F4
                 END IF
 
                 IF (surf_mat(4,j,s) .EQ. 1) THEN
+                    DO k = 1, 3
+                        tSS_disp_vec(k) = surf_mat(k,j,s) - surf_mat(k,INT(WAT_mat(31,i,s)),s)
+                        tSS_disp_vec(k) = tSS_disp_vec(k) - box(k) * ANINT(tSS_disp_vec(k)/box(k))
+                        tSS1_disp_vec(k) = surf_mat(k+7,INT(WAT_mat(31,i,s)),s)
+                        tSS1_disp_vec(k) = tSS1_disp_vec(k) - box(k) * ANINT(tSS1_disp_vec(k)/box(k))
+                    END DO
+
+                    tSS_norm = NORM2(tSS_disp_vec)
+                    tSS1_norm = NORM2(tSS1_disp_vec)
+
+                    IF ( (ACOS(DOT_PRODUCT(tSS_disp_vec(:)/tSS_norm,tSS1_disp_vec(:)/tSS1_norm)) .LT. 0.50).OR.&
+                    (ACOS(DOT_PRODUCT(tSS_disp_vec(:)/tSS_norm,tSS1_disp_vec(:)/tSS1_norm)) .GT. pi-0.50) ) THEN
+                        CYCLE F4
+                    END IF
+
+                    IF ( ( (tSS_norm .LT. surf_mat(12,INT(WAT_mat(31,i,s)),s)) .OR.&
+                    (surf_mat(12,INT(WAT_mat(31,i,s)),s) .EQ. 0.0 ) ) .AND.&
+                    (surf_mat(5,j,s) .NE. surf_mat(11,INT(WAT_mat(31,i,s)),s)) ) THEN
+
+                        surf_mat(11,INT(WAT_mat(31,i,s)),s) = surf_mat(5,j,s)
+                        surf_mat(12,INT(WAT_mat(31,i,s)),s) = tSS_norm
+                        DO k=1,3
+                            surf_mat(k+12,INT(WAT_mat(31,i,s)),s) = tSS_disp_vec(k) / tSS_norm !8,9,10
+                        END DO
+
+                    END IF
+
+                ELSE IF (surf_mat(4,j,s) .EQ. 2) THEN
                     DO k = 1, 3
                         tSS_disp_vec(k) = surf_mat(k,j,s) - surf_mat(k,INT(WAT_mat(34,i,s)),s)
                         tSS_disp_vec(k) = tSS_disp_vec(k) - box(k) * ANINT(tSS_disp_vec(k)/box(k))
@@ -432,41 +458,23 @@ DO s = 1, nb_step
                         surf_mat(11,INT(WAT_mat(34,i,s)),s) = surf_mat(5,j,s)
                         surf_mat(12,INT(WAT_mat(34,i,s)),s) = tSS_norm
                         DO k=1,3
-                            surf_mat(k+12,INT(WAT_mat(34,i,s)),s) = tSS_disp_vec(k) / tSS_norm !8,9,10
-                        END DO
-
-                    END IF
-
-                ELSE IF (surf_mat(4,j,s) .EQ. 2) THEN
-                    DO k = 1, 3
-                        tSS_disp_vec(k) = surf_mat(k,j,s) - surf_mat(k,INT(WAT_mat(35,i,s)),s)
-                        tSS_disp_vec(k) = tSS_disp_vec(k) - box(k) * ANINT(tSS_disp_vec(k)/box(k))
-                        tSS1_disp_vec(k) = surf_mat(k+7,INT(WAT_mat(35,i,s)),s)
-                        tSS1_disp_vec(k) = tSS1_disp_vec(k) - box(k) * ANINT(tSS1_disp_vec(k)/box(k))
-                    END DO
-
-                    tSS_norm = NORM2(tSS_disp_vec)
-                    tSS1_norm = NORM2(tSS1_disp_vec)
-
-                    IF ( (ACOS(DOT_PRODUCT(tSS_disp_vec(:)/tSS_norm,tSS1_disp_vec(:)/tSS1_norm)) .LT. 0.50).OR.&
-                    (ACOS(DOT_PRODUCT(tSS_disp_vec(:)/tSS_norm,tSS1_disp_vec(:)/tSS1_norm)) .GT. pi-0.50) ) THEN
-                        CYCLE F4
-                    END IF
-
-                    IF ( ( (tSS_norm .LT. surf_mat(12,INT(WAT_mat(35,i,s)),s)) .OR.&
-                    (surf_mat(12,INT(WAT_mat(35,i,s)),s) .EQ. 0.0 ) ) .AND.&
-                    (surf_mat(5,j,s) .NE. surf_mat(11,INT(WAT_mat(35,i,s)),s)) ) THEN
-
-                        surf_mat(11,INT(WAT_mat(35,i,s)),s) = surf_mat(5,j,s)
-                        surf_mat(12,INT(WAT_mat(35,i,s)),s) = tSS_norm
-                        DO k=1,3
-                            surf_mat(k+12,INT(WAT_mat(35,i,s)),s) = tSS_disp_vec(k) / tSS_norm !18,19,20
+                            surf_mat(k+12,INT(WAT_mat(34,i,s)),s) = tSS_disp_vec(k) / tSS_norm !18,19,20
                         END DO
 
                     END IF
             END IF
 
             END DO F4
+
+            surf_mat(16,INT(WAT_mat(31,i,s)),s) =&
+                surf_mat(9,INT(WAT_mat(31,i,s)),s) * surf_mat(15,INT(WAT_mat(31,i,s)),s) -&
+                surf_mat(10,INT(WAT_mat(31,i,s)),s) * surf_mat(14,INT(WAT_mat(31,i,s)),s)
+            surf_mat(17,INT(WAT_mat(31,i,s)),s) =&
+                surf_mat(10,INT(WAT_mat(31,i,s)),s) * surf_mat(13,INT(WAT_mat(31,i,s)),s) -&
+                surf_mat(8,INT(WAT_mat(31,i,s)),s) * surf_mat(15,INT(WAT_mat(31,i,s)),s)
+            surf_mat(18,INT(WAT_mat(31,i,s)),s) =&
+                surf_mat(8,INT(WAT_mat(31,i,s)),s) * surf_mat(14,INT(WAT_mat(31,i,s)),s) -&
+                surf_mat(9,INT(WAT_mat(31,i,s)),s) * surf_mat(13,INT(WAT_mat(31,i,s)),s)
 
             surf_mat(16,INT(WAT_mat(34,i,s)),s) =&
                 surf_mat(9,INT(WAT_mat(34,i,s)),s) * surf_mat(15,INT(WAT_mat(34,i,s)),s) -&
@@ -478,26 +486,16 @@ DO s = 1, nb_step
                 surf_mat(8,INT(WAT_mat(34,i,s)),s) * surf_mat(14,INT(WAT_mat(34,i,s)),s) -&
                 surf_mat(9,INT(WAT_mat(34,i,s)),s) * surf_mat(13,INT(WAT_mat(34,i,s)),s)
 
-            surf_mat(16,INT(WAT_mat(35,i,s)),s) =&
-                surf_mat(9,INT(WAT_mat(35,i,s)),s) * surf_mat(15,INT(WAT_mat(35,i,s)),s) -&
-                surf_mat(10,INT(WAT_mat(35,i,s)),s) * surf_mat(14,INT(WAT_mat(35,i,s)),s)
-            surf_mat(17,INT(WAT_mat(35,i,s)),s) =&
-                surf_mat(10,INT(WAT_mat(35,i,s)),s) * surf_mat(13,INT(WAT_mat(35,i,s)),s) -&
-                surf_mat(8,INT(WAT_mat(35,i,s)),s) * surf_mat(15,INT(WAT_mat(35,i,s)),s)
-            surf_mat(18,INT(WAT_mat(35,i,s)),s) =&
-                surf_mat(8,INT(WAT_mat(35,i,s)),s) * surf_mat(14,INT(WAT_mat(35,i,s)),s) -&
-                surf_mat(9,INT(WAT_mat(35,i,s)),s) * surf_mat(13,INT(WAT_mat(35,i,s)),s)
-
+            surf_mat(19,INT(WAT_mat(31,i,s)),s) = 1
             surf_mat(19,INT(WAT_mat(34,i,s)),s) = 1
-            surf_mat(19,INT(WAT_mat(35,i,s)),s) = 1
 
         END IF
 
         DO k=1,3
-            tPSuvec_go(k) = surf_mat(k+15,INT(WAT_mat(34,i,s)),s)
-            tPSuvec_air(k) = surf_mat(k+15,INT(WAT_mat(35,i,s)),s)
+            tPSuvec_go(k) = surf_mat(k+15,INT(WAT_mat(31,i,s)),s)
+            tPSuvec_air(k) = surf_mat(k+15,INT(WAT_mat(34,i,s)),s)
             tWDvec(k) = WAT_mat(k+17,i,s)
-            tHHvec(k) = WAT_mat(k+39,i,s)
+            tHHvec(k) = WAT_mat(k+20,i,s)
         END DO
         tWDuvec(:) = tWDvec(:) / NORM2(tWDvec(:))
         tHHuvec(:) = tHHvec(:) / NORM2(tHHvec(:))
@@ -505,13 +503,13 @@ DO s = 1, nb_step
             ! To check orientation of the normal surface vector
             tO_pos_iPS_go(k) = WAT_mat(k+1,i,s) - 0.01*tPSuvec_go(k)
             tO_pos_iPS_go(k) = tO_pos_iPS_go(k) - box(k) * ANINT(tO_pos_iPS_go(k)/box(k))
-            tS_pos_PS_go(k) = surf_mat(k,INT(WAT_mat(34,i,s)),s) + 0.01*tPSuvec_go(k)
+            tS_pos_PS_go(k) = surf_mat(k,INT(WAT_mat(31,i,s)),s) + 0.01*tPSuvec_go(k)
             tS_pos_PS_go(k) = tS_pos_PS_go(k) - box(k) * ANINT(tS_pos_PS_go(k)/box(k))
             tOS_disp_oPS_go(k) = tS_pos_PS_go(k) - tO_pos_iPS_go(k)
             tOS_disp_oPS_go(k) = tOS_disp_oPS_go(k) - box(k) * ANINT(tOS_disp_oPS_go(k)/box(k))
             tO_pos_iPS_air(k) = WAT_mat(k+1,i,s) - 0.01*tPSuvec_air(k) 
             tO_pos_iPS_air(k) = tO_pos_iPS_air(k) - box(k) * ANINT(tO_pos_iPS_air(k)/box(k))
-            tS_pos_PS_air(k) = surf_mat(k,INT(WAT_mat(35,i,s)),s) + 0.01*tPSuvec_air(k) 
+            tS_pos_PS_air(k) = surf_mat(k,INT(WAT_mat(34,i,s)),s) + 0.01*tPSuvec_air(k) 
             tS_pos_PS_air(k) = tS_pos_PS_air(k) - box(k) * ANINT(tS_pos_PS_air(k)/box(k))
             tOS_disp_oPS_air(k) = tS_pos_PS_air(k) - tO_pos_iPS_air(k)
             tOS_disp_oPS_air(k) = tOS_disp_oPS_air(k) - box(k) * ANINT(tOS_disp_oPS_air(k)/box(k))
@@ -519,10 +517,10 @@ DO s = 1, nb_step
 
 
 
-        IF (NORM2(tOS_disp_oPS_go(:)) .GT. WAT_mat(24,i,s)) THEN
+        IF (NORM2(tOS_disp_oPS_go(:)) .GT. WAT_mat(29,i,s)) THEN
             tPSuvec_go(:) = -1.0 * tPSuvec_go(:)
         END IF
-        IF (NORM2(tOS_disp_oPS_air(:)) .GT. WAT_mat(27,i,s)) THEN
+        IF (NORM2(tOS_disp_oPS_air(:)) .GT. WAT_mat(32,i,s)) THEN
             tPSuvec_air(:) = -1.0 * tPSuvec_air(:)
         END IF
 
@@ -530,15 +528,15 @@ DO s = 1, nb_step
             tHHuvec(:) = -1.0 * tHHuvec(:)
         END IF
 
-        WAT_mat(36,i,s) = ACOS(DOT_PRODUCT(tPSuvec_go(:), tWDuvec(:)))
-        WAT_mat(44,i,s) = ACOS(DOT_PRODUCT(tPSuvec_go(:), tHHuvec(:)))
+        WAT_mat(35,i,s) = ACOS(DOT_PRODUCT(tPSuvec_go(:), tWDuvec(:)))
+        WAT_mat(36,i,s) = ACOS(DOT_PRODUCT(tPSuvec_go(:), tHHuvec(:)))
 
         IF (ACOS(DOT_PRODUCT(tPSuvec_air(:), tHHuvec(:))) .LT. pi/2.0) THEN
             tHHuvec(:) = -1.0 * tHHuvec(:)
         END IF
 
         WAT_mat(37,i,s) = ACOS(DOT_PRODUCT(tPSuvec_air(:), tWDuvec(:)))
-        WAT_mat(45,i,s) = ACOS(DOT_PRODUCT(tPSuvec_air(:), tHHuvec(:)))
+        WAT_mat(38,i,s) = ACOS(DOT_PRODUCT(tPSuvec_air(:), tHHuvec(:)))
 
     END DO F2
 END DO
@@ -559,9 +557,9 @@ WRITE(32,'(A10,A10,A20,A20,A20,A20,A20,A20)')&
 DO s = 1, nb_step
     DO i = 1, nb_max_WAT(s)
         WRITE(32,'(I10,I10,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7)')&
-            INT(WAT_mat(1,i,s)),INT(WAT_mat(39,i,s))&
-        , (WAT_mat(24,i,s)*WAT_mat(25,i,s)), (WAT_mat(27,i,s)*WAT_mat(28,i,s)), WAT_mat(36,i,s), WAT_mat(37,i,s)&
-        , WAT_mat(44,i,s), WAT_mat(45,i,s)
+            INT(WAT_mat(1,i,s)),INT(WAT_mat(28,i,s))&
+        , (WAT_mat(29,i,s)*WAT_mat(30,i,s)), (WAT_mat(32,i,s)*WAT_mat(33,i,s)), WAT_mat(35,i,s), WAT_mat(37,i,s)&
+        , WAT_mat(36,i,s), WAT_mat(38,i,s)
     END DO
 END DO
 CLOSE(UNIT=32)
