@@ -135,7 +135,7 @@ nb_h = COUNT(atm_mat(2,:,1) .EQ. 1, DIM=1)
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Positions:",finish-start,"seconds elapsed"
 
-! ----------------------------------------------- Since the number of points for the IS isn't constant, count it.
+! A ----------------------------------------------- Since the number of points for the IS isn't constant, count it.
 start = OMP_get_wtime()
 
 OPEN(UNIT=21,FILE=file_surf,STATUS='old',FORM='formatted',ACTION='READ')
@@ -186,7 +186,7 @@ CLOSE(UNIT=21)
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "IS:",finish-start,"seconds elapsed"
 
-! B -------------WAT---------------------------------- Water
+! B ----------------------------------------------- Water
 start = OMP_get_wtime()
 ALLOCATE(WAT_mat(38,nb_o*3,nb_step))
 ALLOCATE(nb_max_WAT(nb_step))
@@ -258,20 +258,20 @@ PRINT'(A40,F14.2,A20)', "WAT groups:"&
     ,finish-start,"seconds elapsed"
 
 
-! D ----------------------------------------------- Proximity between functionnal groups and any WAT groups
+! C ----------------------------------------------- Proximity between functionnal groups and any WAT groups
 start = OMP_get_wtime()
 
 !nb_step, nb_atm, rXOH_cut, always shared.
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,WAT_mat,nb_o)&
 !$OMP PRIVATE(s,i,j,k,tXWAT_disp_vec,tXWAT_disp_norm)
 DO s = 1, nb_step
-    D1:DO i = 1, nb_o*3
+    C1:DO i = 1, nb_o*3
         IF (WAT_mat(1,i,s) .EQ. 0) THEN
-            CYCLE D1
+            CYCLE C1
         END IF
-        D2:DO j = 1, nb_atm
+        C2:DO j = 1, nb_atm
             IF (atm_mat(3,j,s) .EQ. -1) THEN
-                CYCLE D2
+                CYCLE C2
             END IF
             DO k = 1, 3
                 tXWAT_disp_vec(k) = atm_mat(k+3,j,s) - WAT_mat(k+1,i,s)
@@ -294,8 +294,8 @@ DO s = 1, nb_step
                     WAT_mat(28,i,s) = 1
                 END IF
             END IF
-        END DO D2
-    END DO D1
+        END DO C2
+    END DO C1
 END DO
 !$OMP END PARALLEL DO
 
@@ -303,7 +303,7 @@ finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Proximity WAT groups and FG groups:"&
     ,finish-start,"seconds elapsed"
 
-! F ----------------------------------------------- Calculate closest distance between IS and any OH groups
+! D ----------------------------------------------- Calculate closest distance between IS and any OH groups
 start = OMP_get_wtime()
 
 !nb_step, nb_atm, always shared.
@@ -313,9 +313,9 @@ start = OMP_get_wtime()
 !$OMP PRIVATE(tO_pos_iPS_go,tO_pos_iPS_air,tS_pos_PS_go,tS_pos_PS_air)&
 !$OMP PRIVATE(tOS_disp_oPS_go,tOS_disp_oPS_air)
 DO s = 1, nb_step
-    F2:DO i = 1, nb_o*3
+    D2:DO i = 1, nb_o*3
         IF (WAT_mat(1,i,s) .EQ. 0) THEN
-            CYCLE F2
+            CYCLE D2
         END IF
         DO j = 1, nb_surf(s)
             IF (surf_mat(4,j,s) .EQ. 1) THEN
@@ -354,10 +354,10 @@ DO s = 1, nb_step
         IF ((surf_mat(19,INT(WAT_mat(31,i,s)),s) .NE. 1) .OR.&
             (surf_mat(19,INT(WAT_mat(34,i,s)),s) .NE. 1)) THEN
 
-            F3:DO j = 1, nb_surf(s) ! First one
+            D3:DO j = 1, nb_surf(s) ! First one
                 IF ( (surf_mat(5,j,s) .EQ. surf_mat(5,INT(WAT_mat(31,i,s)),s)) .OR.&
                 (surf_mat(5,j,s) .EQ. surf_mat(5,INT(WAT_mat(34,i,s)),s)) ) THEN
-                    CYCLE F3
+                    CYCLE D3
                 END IF
                 IF (surf_mat(4,j,s) .EQ. 1) THEN
 
@@ -396,15 +396,15 @@ DO s = 1, nb_step
                     END IF
 
                 END IF
-            END DO F3
+            END DO D3
 
-         F4:DO j = 1, nb_surf(s)
+         D4:DO j = 1, nb_surf(s)
 
                 IF ( (surf_mat(5,j,s) .EQ. surf_mat(5,INT(WAT_mat(31,i,s)),s)) .OR.&
                 (surf_mat(5,j,s) .EQ. surf_mat(5,INT(WAT_mat(34,i,s)),s)) .OR. &
                 (surf_mat(5,j,s) .EQ. surf_mat(6,INT(WAT_mat(31,i,s)),s)) .OR. &
                 (surf_mat(5,j,s) .EQ. surf_mat(6,INT(WAT_mat(34,i,s)),s)) ) THEN
-                    CYCLE F4
+                    CYCLE D4
                 END IF
 
                 IF (surf_mat(4,j,s) .EQ. 1) THEN
@@ -420,7 +420,7 @@ DO s = 1, nb_step
 
                     IF ( (ACOS(DOT_PRODUCT(tSS_disp_vec(:)/tSS_norm,tSS1_disp_vec(:)/tSS1_norm)) .LT. 0.50).OR.&
                     (ACOS(DOT_PRODUCT(tSS_disp_vec(:)/tSS_norm,tSS1_disp_vec(:)/tSS1_norm)) .GT. pi-0.50) ) THEN
-                        CYCLE F4
+                        CYCLE D4
                     END IF
 
                     IF ( ( (tSS_norm .LT. surf_mat(12,INT(WAT_mat(31,i,s)),s)) .OR.&
@@ -448,7 +448,7 @@ DO s = 1, nb_step
 
                     IF ( (ACOS(DOT_PRODUCT(tSS_disp_vec(:)/tSS_norm,tSS1_disp_vec(:)/tSS1_norm)) .LT. 0.50).OR.&
                     (ACOS(DOT_PRODUCT(tSS_disp_vec(:)/tSS_norm,tSS1_disp_vec(:)/tSS1_norm)) .GT. pi-0.50) ) THEN
-                        CYCLE F4
+                        CYCLE D4
                     END IF
 
                     IF ( ( (tSS_norm .LT. surf_mat(12,INT(WAT_mat(34,i,s)),s)) .OR.&
@@ -464,7 +464,7 @@ DO s = 1, nb_step
                     END IF
             END IF
 
-            END DO F4
+            END DO D4
 
             surf_mat(16,INT(WAT_mat(31,i,s)),s) =&
                 surf_mat(9,INT(WAT_mat(31,i,s)),s) * surf_mat(15,INT(WAT_mat(31,i,s)),s) -&
@@ -515,8 +515,6 @@ DO s = 1, nb_step
             tOS_disp_oPS_air(k) = tOS_disp_oPS_air(k) - box(k) * ANINT(tOS_disp_oPS_air(k)/box(k))
         END DO
 
-
-
         IF (NORM2(tOS_disp_oPS_go(:)) .GT. WAT_mat(29,i,s)) THEN
             tPSuvec_go(:) = -1.0 * tPSuvec_go(:)
         END IF
@@ -538,7 +536,7 @@ DO s = 1, nb_step
         WAT_mat(37,i,s) = ACOS(DOT_PRODUCT(tPSuvec_air(:), tWDuvec(:)))
         WAT_mat(38,i,s) = ACOS(DOT_PRODUCT(tPSuvec_air(:), tHHuvec(:)))
 
-    END DO F2
+    END DO D2
 END DO
 !$OMP END PARALLEL DO
 
@@ -546,7 +544,7 @@ finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Proximity WAT groups and IS:"&
     ,finish-start,"seconds elapsed"
 
-! X ----------------------------------------------- Write OH BOND
+! E ----------------------------------------------- Write OH BOND
 start = OMP_get_wtime()
 
 OPEN(UNIT=32, FILE = suffix//"_water-angle.txt")
