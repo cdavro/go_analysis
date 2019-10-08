@@ -41,6 +41,7 @@ CALL READINPUTSUB(input_file)
 
 file_surf=TRIM(file_surf)
 
+! ----------------------------------------------- Controls
 IF (file_surf .EQ. '0') THEN
     PRINT*, "No surface file provided"
     STOP

@@ -51,6 +51,9 @@ CALL READINPUTSUB(input_file)
 file_pos=TRIM(file_pos)
 file_vel=TRIM(file_vel)
 
+! ----------------------------------------------- Controls
+! To Do
+
 ! ----------------------------------------------- Allocate function for reading files
 ! DEFINE AS: atm_id, atm_nb, atm_x, atm_y, atm_z, vel_x, vel_y, vel_z, nb_H, nb_C
 ALLOCATE(atm_mat(12,nb_atm,nb_step))
