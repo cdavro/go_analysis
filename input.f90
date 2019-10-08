@@ -24,6 +24,8 @@ REAL(dp)             :: xlo=0.0_dp,xhi=0.0_dp
 REAL(dp)             :: ylo=0.0_dp,yhi=0.0_dp
 REAL(dp)             :: zlo=0.0_dp,zhi=0.0_dp
 REAL(dp)             :: rOH_cut_a, rOC_cut_a
+REAL(dp)             :: dens_dr = 0.0_dp, dens_rstart = 0.0_dp
+INTEGER              :: dens_step = 75
 REAL(dp)             :: box(3)
 INTEGER              :: nb_Cgo
 INTEGER              :: waterlist
@@ -93,6 +95,15 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('rOC_cut_a')
                     READ(value, *, IOSTAT=iostatus) rOC_cut_a
                     PRINT *, 'rOC_cut_a: ', rOC_cut_a
+                CASE ('dens_dr')
+                    READ(value, *, IOSTAT=iostatus) dens_dr
+                    PRINT *, 'dens_dr: ', dens_dr
+                CASE ('dens_step')
+                    READ(value, *, IOSTAT=iostatus) dens_step
+                    PRINT *, 'dens_step: ', dens_step
+                CASE ('dens_rstart')
+                    READ(value, *, IOSTAT=iostatus) dens_rstart
+                    PRINT *, 'dens_rstart: ', dens_rstart
                 CASE ('waterlist')
                     READ(value, *, IOSTAT=iostatus) waterlist
                     PRINT *, 'waterlist: ', waterlist
