@@ -237,8 +237,7 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "WAT groups:"&
-    ,finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "WAT groups:",finish-start,"seconds elapsed"
 
 
 ! C ----------------------------------------------- Proximity between functionnal groups and any WAT groups
@@ -282,8 +281,7 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Proximity WAT groups and FG groups:"&
-    ,finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Proximity WAT groups and FG groups:",finish-start,"seconds elapsed"
 
 ! D ----------------------------------------------- Calculate closest distance between IS and any OH groups
 start = OMP_get_wtime()
@@ -523,8 +521,7 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Proximity WAT groups and IS:"&
-    ,finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Proximity WAT groups and IS:",finish-start,"seconds elapsed"
 
 ! E ----------------------------------------------- Write OH BOND
 start = OMP_get_wtime()
@@ -545,8 +542,7 @@ END DO
 CLOSE(UNIT=32)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "WAT angles output:"&
-    ,finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "WAT angles output:",finish-start,"seconds elapsed"
 
 ! ----------------------------------------------- Deallocate and exit
 DEALLOCATE(WAT_mat,atm_mat,surf_mat)

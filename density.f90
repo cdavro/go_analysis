@@ -207,8 +207,7 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Proximity IS and O atoms:"&
-    ,finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Proximity IS and O atoms:",finish-start,"seconds elapsed"
 
 ! C ----------------------------------------------- Density profiles
 start = OMP_get_wtime()
@@ -285,8 +284,7 @@ CLOSE(UNIT=44)
 DEALLOCATE(avg_dens_go,avg_dens_air)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Density profiles:"&
-    ,finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Density profiles:",finish-start,"seconds elapsed"
 
 ! D ----------------------------------------------- 
 start = OMP_get_wtime()
@@ -336,10 +334,10 @@ DO j = 1, dens_step
 END DO
 
 OPEN(UNIT=41, FILE = suffix//"_density_profile_go_c.txt")
-WRITE(41, '(A24,A24,A24,A24)') "step","[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
+WRITE(41, '(A10,A24,A24,A24)') "step","[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
 DO s = 1, nb_step
     DO j = 1, dens_step
-        WRITE(41, '(I24,E24.14,E24.14,E24.14)') s, (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), dens_go_c(j,s)
+        WRITE(41, '(I10,E24.14,E24.14,E24.14)') s, (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), dens_go_c(j,s)
     END DO
 END DO
 CLOSE(UNIT=41)
@@ -356,8 +354,7 @@ CLOSE(UNIT=43)
 DEALLOCATE(avg_dens_go_c)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Density profiles:"&
-    ,finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Density profiles:",finish-start,"seconds elapsed"
 
 ! ----------------------------------------------- Deallocate and exit
 DEALLOCATE(atm_mat,surf_mat)
