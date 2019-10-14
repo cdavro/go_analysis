@@ -4,22 +4,22 @@ USE INPUT_MOD
 
 IMPLICIT NONE
 
-! ----------------------------------------------- Set Double precision ----------------------------------------------- !
+!   ----------------------------------------------- Set Double precision ----------------------------------------------- !
 INTEGER, PARAMETER              :: dp=KIND(0.0d0)
 
-! ----------------------------------------------- Timings
+!   ----------------------------------------------- Timings
 REAL(dp)                        :: start,finish
 
-! ----------------------------------------------- Input files
+!   ----------------------------------------------- Input files
 CHARACTER(LEN=100)              :: input_file
 
-! ----------------------------------------------- Infos/properties
+!   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:), WAT_mat(:,:,:), surf_mat(:,:,:)
 CHARACTER(LEN=2), ALLOCATABLE   :: atm_el(:)
 INTEGER                         :: nb_line, nb_max_pt
 INTEGER, ALLOCATABLE            :: nb_surf(:)
 
-! ----------------------------------------------- Temp variables
+!   ----------------------------------------------- Temp variables
 REAL(dp)                        :: tOH_disp_vec(3), tOH_norm
 REAL(dp)                        :: tXWAT_disp_vec(3), tXWAT_disp_norm
 REAL(dp)                        :: tSWAT_disp_vec(3), tSWAT_norm
@@ -30,18 +30,25 @@ REAL(dp)                        :: tO_pos_iPS_go(3), tO_pos_iPS_air(3), tS_pos_P
 REAL(dp)                        :: tOS_disp_oPS_go(3), tOS_disp_oPS_air(3)
 CHARACTER(LEN=2)                :: dummy_char
 
-! ----------------------------------------------- Count variables
+!   ----------------------------------------------- Count variables
 INTEGER                         :: nb_o, nb_h
 INTEGER,ALLOCATABLE             :: nb_max_WAT(:)
 
-! ----------------------------------------------- Counters
+!   ----------------------------------------------- Counters
 INTEGER                         :: i, s, k, j, o
 INTEGER                         :: CAC
 
-! ----------------------------------------------- Parameters
+!   ----------------------------------------------- Parameters
 REAL(dp), PARAMETER             :: pi=4.0_dp*DATAN(1.0_dp)
 
-! ----------------------------------------------- Get arguments (filenames, choices)
+!   ----------------------------------------------- 
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+PRINT'(A100)', 'Launching Water Angle'
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+
+!   ----------------------------------------------- Get arguments (filenames, choices)
 CAC = COMMAND_ARGUMENT_COUNT()
 
 IF (CAC .EQ. 0) THEN
@@ -55,10 +62,15 @@ CALL READINPUTSUB(input_file)
 file_pos=TRIM(file_pos)
 file_surf=TRIM(file_surf)
 
-! ----------------------------------------------- Controls
+!   ----------------------------------------------- Controls
 ! To Do
 
-! ----------------------------------------------- Allocate function for reading files
+!   ----------------------------------------------- 
+PRINT'(A100)', 'Run, Water Angle, Run!'
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+
+!   ----------------------------------------------- Allocate function for reading files
 ! DEFINE AS: atm_id, atm_nb, atm_x, atm_y, atm_z, vel_x, vel_y, vel_z, nb_OH
 ALLOCATE(atm_mat(6,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
@@ -544,6 +556,11 @@ CLOSE(UNIT=32)
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "WAT angles output:",finish-start,"seconds elapsed"
 
-! ----------------------------------------------- Deallocate and exit
+!   ----------------------------------------------- End
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+PRINT'(A100)', 'The END'
+
+!   ----------------------------------------------- Deallocate and exit
 DEALLOCATE(WAT_mat,atm_mat,surf_mat)
 END PROGRAM water_angle

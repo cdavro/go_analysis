@@ -8,26 +8,33 @@ USE INPUT_MOD
 
 IMPLICIT NONE
 
-! ----------------------------------------------- Set Double precision
+!   ----------------------------------------------- Set Double precision
 INTEGER, PARAMETER              :: dp=KIND(0.0d0)
 
-! ----------------------------------------------- Timings
+!   ----------------------------------------------- Timings
 REAL(dp)                        :: start,finish
 
-! ----------------------------------------------- Input files
+!   ----------------------------------------------- Input files
 CHARACTER(LEN=100)              :: input_file
 
-! ----------------------------------------------- Infos/properties
+!   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: pt_mat(:,:,:)
 INTEGER, ALLOCATABLE            :: nb_pt(:)
 INTEGER                         :: nb_line, nb_max_pt
 
-! ----------------------------------------------- Counters
+!   ----------------------------------------------- Counters
 INTEGER                         :: i, s
 CHARACTER(LEN=64)               :: dummy
 INTEGER                         :: CAC
 
-! ----------------------------------------------- Get arguments (filenames, choices)
+!   ----------------------------------------------- 
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+PRINT'(A100)', 'Launching Surface Wrap'
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+
+!   ----------------------------------------------- Get arguments (filenames, choices)
 CAC = COMMAND_ARGUMENT_COUNT()
 
 IF (CAC .EQ. 0) THEN
@@ -41,13 +48,18 @@ CALL READINPUTSUB(input_file)
 
 file_surf=TRIM(file_surf)
 
-! ----------------------------------------------- Controls
+!   ----------------------------------------------- Controls
 IF (file_surf .EQ. '0') THEN
     PRINT*, "No surface file provided"
     STOP
 END IF
 
-! ----------------------------------------------- Since the number of points for the IS isn't constant, count it.
+!   ----------------------------------------------- 
+PRINT'(A100)', 'Run, Surface Wrap, Run!'
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+
+!   ----------------------------------------------- Since the number of points for the IS isn't constant, count it.
 start = OMP_get_wtime()
 
 OPEN(UNIT=20,FILE=file_surf,STATUS='old',FORM='formatted',ACTION='READ')
@@ -66,14 +78,14 @@ nb_max_pt=CEILING(1.0*nb_line/nb_step)*2
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "IS grid:",finish-start,"seconds elapsed"
 
-! ----------------------------------------------- Allocate function for reading files
+!   ----------------------------------------------- Allocate function for reading files
 ! DEFINED AS: pt_x, pt_y, pt_z
 ALLOCATE(pt_mat(3,nb_max_pt,nb_step))
 ALLOCATE(nb_pt(nb_step))
 pt_mat(:,:,:) = 0.0_dp
 nb_pt(:) = 0
 
-! ----------------------------------------------- Read positions
+!   ----------------------------------------------- Read positions
 start = OMP_get_wtime()
 
 OPEN(UNIT=20,FILE=file_surf,STATUS='old',FORM='formatted',ACTION='READ')
@@ -89,7 +101,7 @@ CLOSE(UNIT=20)
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "IS:",finish-start,"seconds elapsed"
 
-! ----------------------------------------------- Wrap and write
+!   ----------------------------------------------- Wrap and write
 start = OMP_get_wtime()
 
 DO s=1,nb_step
@@ -111,6 +123,11 @@ CLOSE(UNIT=40)
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Center/Wrap:",finish-start,"seconds elapsed"
 
-! ----------------------------------------------- Deallocate and exit
+!   ----------------------------------------------- End
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+PRINT'(A100)', 'The END'
+
+!   ----------------------------------------------- Deallocate and exit
 DEALLOCATE(pt_mat,nb_pt)
 END PROGRAM surface_wrap

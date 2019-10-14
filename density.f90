@@ -8,18 +8,18 @@ USE INPUT_MOD
 
 IMPLICIT NONE
 
-! ----------------------------------------------- Set Double precision
+!   ----------------------------------------------- Set Double precision
 INTEGER, PARAMETER              :: dp=KIND(0.0d0)
 
-! ----------------------------------------------- Timings
+!   ----------------------------------------------- Timings
 REAL(dp)                        :: start,finish
 
-! ----------------------------------------------- Input files
+!   ----------------------------------------------- Input files
 CHARACTER(LEN=100)              :: input_file
 INTEGER                         :: CAC
 CHARACTER(LEN=2)                :: dummy_char
 
-! ----------------------------------------------- Infos/properties
+!   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:), surf_mat(:,:,:)
 CHARACTER(LEN=2), ALLOCATABLE   :: atm_el(:)
 INTEGER                         :: nb_line, nb_max_pt
@@ -32,10 +32,17 @@ REAL(dp)                        :: tSOvec_disp_vec(3), tSOvec_norm
 REAL(dp)                        :: r
 INTEGER                         :: count_dens_go, count_dens_air, count_dens_go_c
 
-! ----------------------------------------------- Counters
+!   ----------------------------------------------- Counters
 INTEGER                         :: i, s, k, j, o
 
-! ----------------------------------------------- Get arguments (filenames, choices)
+!   ----------------------------------------------- 
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+PRINT'(A100)', 'Launching Density'
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+
+!   ----------------------------------------------- Get arguments (filenames, choices)
 CAC = COMMAND_ARGUMENT_COUNT()
 
 IF (CAC .EQ. 0) THEN
@@ -49,10 +56,15 @@ CALL READINPUTSUB(input_file)
 file_pos=TRIM(file_pos)
 file_surf=TRIM(file_surf)
 
-! ----------------------------------------------- Controls
+!   ----------------------------------------------- Controls
 ! To Do
 
-! ----------------------------------------------- Allocate function for reading files
+!   ----------------------------------------------- 
+PRINT'(A100)', 'Run, Density, Run!'
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+
+!   ----------------------------------------------- Allocate function for reading files
 ALLOCATE(atm_mat(12,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
@@ -356,7 +368,12 @@ DEALLOCATE(avg_dens_go_c)
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Density profiles:",finish-start,"seconds elapsed"
 
-! ----------------------------------------------- Deallocate and exit
+!   ----------------------------------------------- End
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+PRINT'(A100)', 'The END'
+
+!   ----------------------------------------------- Deallocate and exit
 DEALLOCATE(atm_mat,surf_mat)
 
 END PROGRAM density

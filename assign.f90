@@ -8,36 +8,43 @@ USE INPUT_MOD
 
 IMPLICIT NONE
 
-! ----------------------------------------------- Set Double precision
+!   ----------------------------------------------- Set Double precision
 INTEGER, PARAMETER              :: dp=KIND(0.0d0)
 
-! ----------------------------------------------- Timings
+!   ----------------------------------------------- Timings
 REAL(dp)                        :: start,finish
 
-! ----------------------------------------------- Input files
+!   ----------------------------------------------- Input files
 CHARACTER(LEN=100)              :: input_file
 
-! ----------------------------------------------- Infos/properties
+!   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:)
 CHARACTER(LEN=2), ALLOCATABLE   :: atm_el(:)
 REAL(dp), ALLOCATABLE           :: Cgo_avgpos(:,:)
 INTEGER, ALLOCATABLE            :: nb_max_OHvec(:)
 
-! ----------------------------------------------- Temporary variables
+!   ----------------------------------------------- Temporary variables
 REAL(dp)                        :: tOH_disp_vec(3), tOH_norm, tOC_disp_vec(3), tOC_norm, z_shift
 CHARACTER(LEN=2)                :: type
 
-! ----------------------------------------------- Count variables
+!   ----------------------------------------------- Count variables
 INTEGER                         :: nb_o, nb_h
 INTEGER, ALLOCATABLE            :: nb_epoxide(:), nb_alcohol(:), nb_alkoxide(:)
 INTEGER, ALLOCATABLE             :: nb_water(:), nb_hydronium(:), nb_hydroxide(:)
 INTEGER, ALLOCATABLE            :: nb_oxygen_group(:)
 
-! ----------------------------------------------- Counters
+!   ----------------------------------------------- Counters
 INTEGER                         :: i, s, k, j
 INTEGER                         :: CAC
 
-! ----------------------------------------------- Get arguments (filenames, choices)
+!   ----------------------------------------------- 
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+PRINT'(A100)', 'Launching Assign'
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+
+!   ----------------------------------------------- Get arguments (filenames, choices)
 CAC = COMMAND_ARGUMENT_COUNT()
 
 IF (CAC .EQ. 0) THEN
@@ -51,15 +58,20 @@ CALL READINPUTSUB(input_file)
 file_pos=TRIM(file_pos)
 file_vel=TRIM(file_vel)
 
-! ----------------------------------------------- Controls
+!   ----------------------------------------------- Controls
 ! To Do
 
-! ----------------------------------------------- Allocate function for reading files
+!   ----------------------------------------------- 
+PRINT'(A100)', 'Run, Assign, Run!'
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+
+!   ----------------------------------------------- Allocate function for reading files
 ! DEFINE AS: atm_id, atm_nb, atm_x, atm_y, atm_z, vel_x, vel_y, vel_z, nb_H, nb_C
 ALLOCATE(atm_mat(12,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
-! ----------------------------------------------- Read positions
+!   ----------------------------------------------- Read positions
 start = OMP_get_wtime()
 ALLOCATE(atm_el(nb_atm))
 
@@ -87,7 +99,7 @@ nb_h = COUNT(atm_mat(2,:,1) .EQ. 1, DIM=1)
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Positions:",finish-start,"seconds elapsed"
 
-! ----------------------------------------------- Read velocities
+!   ----------------------------------------------- Read velocities
 IF (file_vel .NE. '0') THEN
     start = OMP_get_wtime()
 
@@ -105,7 +117,7 @@ IF (file_vel .NE. '0') THEN
     PRINT'(A40,F14.2,A20)', "Velocities:",finish-start,"seconds elapsed"
 END IF
 
-! ----------------------------------------------- Calculate geom center of go carbons and center so Zcarbon_avg = 0.0
+!   ----------------------------------------------- Calculate geom center of go carbons and center so Zcarbon_avg = 0.0
 start = OMP_get_wtime()
 
 ALLOCATE(Cgo_avgpos(3,nb_step))
@@ -138,7 +150,7 @@ DEALLOCATE(Cgo_avgpos)
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Center/Wrap:",finish-start,"seconds elapsed"
 
-! ----------------------------------------------- Search the topology, water and oxygen groups
+!   ----------------------------------------------- Search the topology, water and oxygen groups
 start = OMP_get_wtime()
 ALLOCATE(nb_max_OHvec(nb_step))
 
@@ -212,7 +224,7 @@ END DO
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Oxygen groups topologies:",finish-start,"seconds elapsed"
 
-! ----------------------------------------------- Print counts
+!   ----------------------------------------------- Print counts
 start = OMP_get_wtime()
 
 OPEN(UNIT=50, FILE = suffix//"_oxygen_groups_population.txt")
@@ -229,7 +241,7 @@ DEALLOCATE(nb_max_OHvec,nb_epoxide,nb_alcohol,nb_alkoxide,nb_water,nb_hydronium,
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Oxygen groups topologies output:",finish-start,"seconds elapsed"
 
-! ----------------------------------------------- Print the xyz and velocities files
+!   ----------------------------------------------- Print the xyz and velocities files
 start = OMP_get_wtime()
 
 IF (file_vel .NE. '0') OPEN(UNIT=40, FILE = suffix//"_wrapped_"//file_pos)
@@ -271,7 +283,7 @@ IF (file_vel .NE. '0') CLOSE(UNIT=41)
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)',"Positions/Velocities output:",finish-start,"seconds elapsed"
 
-! ----------------------------------------------- Print the waterlist (mask indices for surf)
+!   ----------------------------------------------- Print the waterlist (mask indices for surf)
 IF (waterlist .EQ. 1) THEN
     start = OMP_get_wtime()
 
@@ -291,6 +303,11 @@ IF (waterlist .EQ. 1) THEN
     PRINT'(A40,F14.2,A20)',"Waterlist (surf):",finish-start,"seconds elapsed"
 END IF
 
-! ----------------------------------------------- Deallocate and exit
+!   ----------------------------------------------- End
+PRINT'(A100)','--------------------------------------------------'&
+,'--------------------------------------------------'
+PRINT'(A100)', 'The END'
+
+!   ----------------------------------------------- Deallocate and exit
 DEALLOCATE(atm_el,atm_mat)
 END PROGRAM assign
