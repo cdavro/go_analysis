@@ -46,10 +46,10 @@ CALL GET_COMMAND_ARGUMENT(1, input_file)
 input_file=TRIM(input_file)
 CALL READINPUTSUB(input_file)
 
-file_surf=TRIM(file_surf)
+file_is=TRIM(file_is)
 
 !   ----------------------------------------------- Controls
-IF (file_surf .EQ. '0') THEN
+IF (file_is .EQ. '0') THEN
     PRINT*, "No surface file provided"
     STOP
 END IF
@@ -62,7 +62,7 @@ PRINT'(A100)','--------------------------------------------------'&
 !   ----------------------------------------------- Since the number of points for the IS isn't constant, count it.
 start = OMP_get_wtime()
 
-OPEN(UNIT=20,FILE=file_surf,STATUS='old',FORM='formatted',ACTION='READ')
+OPEN(UNIT=20,FILE=file_is,STATUS='old',FORM='formatted',ACTION='READ')
 nb_line=0_dp
 DO
     READ(20,*,IOSTAT=iostatus)
@@ -88,7 +88,7 @@ nb_pt(:) = 0
 !   ----------------------------------------------- Read positions
 start = OMP_get_wtime()
 
-OPEN(UNIT=20,FILE=file_surf,STATUS='old',FORM='formatted',ACTION='READ')
+OPEN(UNIT=20,FILE=file_is,STATUS='old',FORM='formatted',ACTION='READ')
 DO s=1,nb_step
     READ(20, *) nb_pt(s)
     READ(20, *) dummy, dummy

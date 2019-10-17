@@ -20,10 +20,10 @@ INTEGER                         :: CAC
 CHARACTER(LEN=2)                :: dummy_char
 
 !   ----------------------------------------------- Infos/properties
-REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:), surf_mat(:,:,:)
+REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:), is_mat(:,:,:)
 CHARACTER(LEN=2), ALLOCATABLE   :: atm_el(:)
 INTEGER                         :: nb_line, nb_max_pt
-INTEGER, ALLOCATABLE            :: nb_surf(:)
+INTEGER, ALLOCATABLE            :: nb_is(:)
 REAL(dp), ALLOCATABLE           :: avg_z(:)
 REAL(dp), ALLOCATABLE           :: dens_go(:,:), dens_air(:,:), avg_dens_go(:), avg_dens_air(:)
 REAL(dp), ALLOCATABLE           :: dens_go_c(:,:), avg_dens_go_c(:)
@@ -54,7 +54,7 @@ CALL GET_COMMAND_ARGUMENT(1, input_file)
 input_file=TRIM(input_file)
 CALL READINPUTSUB(input_file)
 file_pos=TRIM(file_pos)
-file_surf=TRIM(file_surf)
+file_is=TRIM(file_is)
 
 !   ----------------------------------------------- Controls
 ! To Do
@@ -124,7 +124,7 @@ PRINT'(A40,F14.2,A20)', "Positions:",finish-start,"seconds elapsed"
 ! A ----------------------------------------------- Since the number of points for the IS isn't constant, count it.
 start = OMP_get_wtime()
 
-OPEN(UNIT=21,FILE=file_surf,STATUS='old',FORM='formatted',ACTION='READ')
+OPEN(UNIT=21,FILE=file_is,STATUS='old',FORM='formatted',ACTION='READ')
 nb_line=0
 DO
     READ(21,*,IOSTAT=iostatus)
@@ -143,27 +143,27 @@ PRINT'(A40,F14.2,A20)', "IS grid:",finish-start,"seconds elapsed"
 ! A ----------------------------------------------- Read surface
 start = OMP_get_wtime()
 
-ALLOCATE(surf_mat(4,nb_max_pt,nb_step))
-ALLOCATE(nb_surf(nb_step))
-surf_mat(:,:,:) = 0.0_dp
-nb_surf(:) = 0
+ALLOCATE(is_mat(4,nb_max_pt,nb_step))
+ALLOCATE(nb_is(nb_step))
+is_mat(:,:,:) = 0.0_dp
+nb_is(:) = 0
 
-OPEN(UNIT=21,FILE=file_surf,STATUS='old',FORM='formatted',ACTION='READ')
+OPEN(UNIT=21,FILE=file_is,STATUS='old',FORM='formatted',ACTION='READ')
 DO s = 1, nb_step
-    READ(21, *) nb_surf(s)
+    READ(21, *) nb_is(s)
     READ(21, *)
     j = 0
-    DO i=1,nb_surf(s)
-        READ(21, *) dummy_char, surf_mat(1,i,s), surf_mat(2,i,s), surf_mat(3,i,s)
+    DO i=1,nb_is(s)
+        READ(21, *) dummy_char, is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
         j = j + 1
-        surf_mat(5,i,s) = j
-        IF (surf_mat(3,i,s) .LT. 10.0) THEN
-            surf_mat(4,i,s) = 1
+        is_mat(5,i,s) = j
+        IF (is_mat(3,i,s) .LT. 10.0) THEN
+            is_mat(4,i,s) = 1
         ELSE
-            surf_mat(4,i,s) = 2
+            is_mat(4,i,s) = 2
         END IF
         DO k = 1, 3
-            surf_mat(k,i,s) = surf_mat(k,i,s) - box(k) * ANINT(surf_mat(k,i,s)/box(k))
+            is_mat(k,i,s) = is_mat(k,i,s) - box(k) * ANINT(is_mat(k,i,s)/box(k))
         END DO
     END DO
 END DO
@@ -175,41 +175,41 @@ PRINT'(A40,F14.2,A20)', "IS:",finish-start,"seconds elapsed"
 ! B ----------------------------------------------- Calculate closest distance between IS and any O atom
 start = OMP_get_wtime()
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,surf_mat,nb_surf,nb_step,nb_atm)&
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,is_mat,nb_is,nb_step,nb_atm)&
 !$OMP PRIVATE(s,i,j,k,tSOvec_disp_vec,tSOvec_norm)
 DO s = 1, nb_step
     DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. 16) THEN
-            DO j = 1, nb_surf(s)
-                IF (surf_mat(4,j,s) .EQ. 1) THEN
+            DO j = 1, nb_is(s)
+                IF (is_mat(4,j,s) .EQ. 1) THEN
                     DO k = 1, 3
-                        tSOvec_disp_vec(k) = surf_mat(k,j,s) - atm_mat(k+3,i,s)
+                        tSOvec_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
                         tSOvec_disp_vec(k) = tSOvec_disp_vec(k) - box(k) * ANINT(tSOvec_disp_vec(k)/box(k))
                     END DO
                     tSOvec_norm = NORM2(tSOvec_disp_vec)
                     IF ( (tSOvec_norm .LT. atm_mat(7,i,s)) .OR. atm_mat(7,i,s) .EQ. 0.0 ) THEN
                         atm_mat(7,i,s) = tSOvec_norm
-                        IF (atm_mat(6,i,s) .LT. surf_mat(3,j,s)) THEN
+                        IF (atm_mat(6,i,s) .LT. is_mat(3,j,s)) THEN
                             atm_mat(8,i,s) = -1
                         ELSE
                             atm_mat(8,i,s) = 1
                         END IF
-                        atm_mat(9,i,s) = surf_mat(5,j,s)
+                        atm_mat(9,i,s) = is_mat(5,j,s)
                     END IF
-                ELSE IF (surf_mat(4,j,s) .EQ. 2) THEN
+                ELSE IF (is_mat(4,j,s) .EQ. 2) THEN
                     DO k = 1, 3
-                        tSOvec_disp_vec(k) = surf_mat(k,j,s) - atm_mat(k+3,i,s)
+                        tSOvec_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
                         tSOvec_disp_vec(k) = tSOvec_disp_vec(k) - box(k) * ANINT(tSOvec_disp_vec(k)/box(k))
                     END DO
                     tSOvec_norm = NORM2(tSOvec_disp_vec)
                     IF ( (tSOvec_norm .LT. atm_mat(10,i,s)) .OR. atm_mat(10,i,s) .EQ. 0.0 ) THEN
                         atm_mat(10,i,s) = tSOvec_norm
-                        IF (atm_mat(6,i,s) .GT. surf_mat(3,j,s)) THEN
+                        IF (atm_mat(6,i,s) .GT. is_mat(3,j,s)) THEN
                             atm_mat(11,i,s) = -1
                         ELSE
                             atm_mat(11,i,s) = 1
                         END IF
-                        atm_mat(12,i,s) = surf_mat(5,j,s)
+                        atm_mat(12,i,s) = is_mat(5,j,s)
                     END IF
                 END IF
             END DO
@@ -374,6 +374,6 @@ PRINT'(A100)','--------------------------------------------------'&
 PRINT'(A100)', 'The END'
 
 !   ----------------------------------------------- Deallocate and exit
-DEALLOCATE(atm_mat,surf_mat)
+DEALLOCATE(atm_mat,is_mat)
 
 END PROGRAM density

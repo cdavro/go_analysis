@@ -19,18 +19,20 @@ CHARACTER(LEN=100)              :: input_file
 
 !   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:)
-CHARACTER(LEN=2), ALLOCATABLE   :: atm_el(:)
-REAL(dp), ALLOCATABLE           :: Cgo_avgpos(:,:)
+CHARACTER(LEN=3), ALLOCATABLE   :: atm_el(:)
+REAL(dp), ALLOCATABLE           :: center_avgpos(:,:)
 INTEGER, ALLOCATABLE            :: nb_max_OHvec(:)
 
 !   ----------------------------------------------- Temporary variables
-REAL(dp)                        :: tOH_disp_vec(3), tOH_norm, tOC_disp_vec(3), tOC_norm, z_shift
-CHARACTER(LEN=2)                :: type
+REAL(dp)                        :: tOH_disp_vec(3), tOH_norm, z_shift
+REAL(dp)                        :: tOC_disp_vec(3), tOC_norm, tOSi_disp_vec(3), tOSi_norm
+CHARACTER(LEN=3)                :: type
 
 !   ----------------------------------------------- Count variables
-INTEGER                         :: nb_o, nb_h
+INTEGER                         :: nb_o, nb_h, nb_c
+INTEGER, ALLOCATABLE            :: nb_center(:)
 INTEGER, ALLOCATABLE            :: nb_epoxide(:), nb_alcohol(:), nb_alkoxide(:)
-INTEGER, ALLOCATABLE             :: nb_water(:), nb_hydronium(:), nb_hydroxide(:)
+INTEGER, ALLOCATABLE            :: nb_water(:), nb_hydronium(:), nb_hydroxide(:)
 INTEGER, ALLOCATABLE            :: nb_oxygen_group(:)
 
 !   ----------------------------------------------- Counters
@@ -68,7 +70,7 @@ PRINT'(A100)','--------------------------------------------------'&
 
 !   ----------------------------------------------- Allocate function for reading files
 ! DEFINE AS: atm_id, atm_nb, atm_x, atm_y, atm_z, vel_x, vel_y, vel_z, nb_H, nb_C
-ALLOCATE(atm_mat(12,nb_atm,nb_step))
+ALLOCATE(atm_mat(13,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
 !   ----------------------------------------------- Read positions
@@ -82,12 +84,17 @@ DO s=1,nb_step
     DO i=1,nb_atm
         READ(20, *) atm_el(i), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
         atm_mat(1,i,s) = i
-        IF (atm_el(i) .EQ. "C") THEN
+        IF (atm_el(i)(1:1) .EQ. "C") THEN
             atm_mat(2,i,s) = 12
-        ELSE IF (atm_el(i) .EQ. "O") THEN
+        ELSE IF (atm_el(i)(1:1) .EQ. "O") THEN
             atm_mat(2,i,s) = 16
-        ELSE IF (atm_el(i) .EQ. "H") THEN
+        ELSE IF (atm_el(i)(1:1) .EQ. "H") THEN
             atm_mat(2,i,s) = 1
+        ELSE IF (atm_el(i)(1:2) .EQ. "Si") THEN
+            atm_mat(2,i,s) = 28
+        END IF
+        IF (atm_el(i) .EQ. name_center) THEN
+            atm_mat(13,i,s) = 1
         END IF
     END DO
 END DO
@@ -95,6 +102,12 @@ CLOSE(UNIT=20)
 
 nb_o = COUNT(atm_mat(2,:,1) .EQ. 16, DIM=1)
 nb_h = COUNT(atm_mat(2,:,1) .EQ. 1, DIM=1)
+nb_c = COUNT(atm_mat(2,:,1) .EQ. 12, DIM=1)
+
+ALLOCATE(nb_center(nb_step))
+DO s=1,nb_step
+    nb_center(s) = COUNT(atm_mat(13,:,s) .EQ. 1, DIM=1)
+END DO
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Positions:",finish-start,"seconds elapsed"
@@ -120,21 +133,21 @@ END IF
 !   ----------------------------------------------- Calculate geom center of go carbons and center so Zcarbon_avg = 0.0
 start = OMP_get_wtime()
 
-ALLOCATE(Cgo_avgpos(3,nb_step))
+ALLOCATE(center_avgpos(3,nb_step))
 
 DO s=1,nb_step
-    Cgo_avgpos(:,s) = 0.0_dp
+    center_avgpos(:,s) = 0.0_dp
 
     DO i=1,nb_atm
-        IF (atm_mat(2,i,s) .EQ. 12) THEN
+        IF (atm_mat(13,i,s) .EQ. 1) THEN
             DO k=1,3
-                Cgo_avgpos(k,s) = Cgo_avgpos(k,s) + atm_mat(k+2,i,s)
+                center_avgpos(k,s) = center_avgpos(k,s) + atm_mat(k+2,i,s)
             END DO
         END IF
     END DO
 
-    Cgo_avgpos(:,s) = Cgo_avgpos(:,s) / nb_Cgo
-    z_shift = 0.0_dp - Cgo_avgpos(3,s)
+    center_avgpos(:,s) = center_avgpos(:,s) / nb_center(s)
+    z_shift = 0.0_dp - center_avgpos(3,s)
 
     DO i=1,nb_atm
         atm_mat(5,i,s) = atm_mat(5,i,s) + z_shift
@@ -145,7 +158,7 @@ DO s=1,nb_step
 
 END DO
 
-DEALLOCATE(Cgo_avgpos)
+DEALLOCATE(center_avgpos,nb_center)
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Center/Wrap:",finish-start,"seconds elapsed"
@@ -168,9 +181,9 @@ atm_mat(10,:,:) = -1
 atm_mat(11,:,:) = -1
 atm_mat(12,:,:) = -1
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,nb_step, nb_atm, rOH_cut_a, rOC_cut_a)&
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,nb_step, nb_atm, rOH_cut_a, rOC_cut_a,rOSi_cut_a)&
 !$OMP SHARED(nb_epoxide,nb_hydroxide,nb_alcohol,nb_water,nb_hydronium,nb_alkoxide,nb_oxygen_group)&
-!$OMP PRIVATE(s,i,j,k,tOC_disp_vec,tOC_norm,tOH_disp_vec,tOH_norm)
+!$OMP PRIVATE(s,i,j,k,tOC_disp_vec,tOC_norm,tOH_disp_vec,tOH_norm,tOSi_disp_vec,tOSi_norm)
 DO s=1,nb_step
     DO i=1,nb_atm
         IF (atm_mat(2,i,s) .EQ. 16) THEN ! Select only Oxygens
@@ -197,6 +210,16 @@ DO s=1,nb_step
                     END DO
                     tOC_norm = NORM2(tOC_disp_vec)
                     IF(tOC_norm .LE. rOC_cut_a) THEN
+                        atm_mat(10,i,s) = atm_mat(10,i,s) + 1
+                    END IF
+
+                ELSE IF (atm_mat(2,j,s) .EQ. 28) THEN ! Compare with Carbons
+                    DO k=1,3
+                        tOSi_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
+                        tOSi_disp_vec(k) = tOSi_disp_vec(k) - box(k) * ANINT(tOSi_disp_vec(k)/box(k))
+                    END DO
+                    tOSi_norm = NORM2(tOSi_disp_vec)
+                    IF(tOSi_norm .LE. rOSi_cut_a) THEN
                         atm_mat(10,i,s) = atm_mat(10,i,s) + 1
                     END IF
 
@@ -228,10 +251,10 @@ PRINT'(A40,F14.2,A20)', "Oxygen groups topologies:",finish-start,"seconds elapse
 start = OMP_get_wtime()
 
 OPEN(UNIT=50, FILE = suffix//"_oxygen_groups_population.txt")
-WRITE(50,'(A12,A12,A12,A12,A12,A12,A12,A12,A12)') "Step", "Expoxide", "Alcohol", "Alkoxide", "Water"&
+WRITE(50,'(A10,A10,A10,A10,A10,A10,A10,A10,A10)') "Step", "Epoxide", "Alcohol", "Alkoxide", "Water"&
 , "Hydroxide", "Hydronium", "Total", "Total_O"
 DO s = 1, nb_step
-    WRITE(50,'(I12,I12,I12,I12,I12,I12,I12,I12,I12)') s, nb_epoxide(s), nb_alcohol(s), nb_alkoxide(s)&
+    WRITE(50,'(I10,I10,I10,I10,I10,I10,I10,I10,I10)') s, nb_epoxide(s), nb_alcohol(s), nb_alkoxide(s)&
     , nb_water(s),nb_hydroxide(s), nb_hydronium(s), nb_oxygen_group(s), nb_o
 END DO
 CLOSE(UNIT=50)
@@ -273,8 +296,8 @@ DO s = 1, nb_step
         ELSE
             type = "O"
         END IF
-        WRITE(40,'(A10,E24.14,E24.14,E24.14)') type, atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
-        IF (file_vel .NE. '0') WRITE(41,'(A10,E24.14,E24.14,E24.14)') type, atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
+        WRITE(40,'(A10,E24.14,E24.14,E24.14)') ADJUSTL(type), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
+        IF (file_vel .NE. '0') WRITE(41,'(A10,E24.14,E24.14,E24.14)') ADJUSTL(type), atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
     END DO
 END DO
 CLOSE(UNIT=40)
