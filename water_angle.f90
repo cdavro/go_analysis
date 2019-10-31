@@ -198,11 +198,11 @@ IF (AS_c .EQ. 'Y') THEN
             nb_as(s) = COUNT(atm_mat(3,:,s) .EQ. 1, DIM=1)
         END DO
         nb_max_as= MAXVAL(nb_as)
-    
+
         ALLOCATE(as_mat(19,nb_max_as,nb_step))
         as_mat(:,:,:) = 0.0_dp
         j = 0
-    
+
         DO s = 1, nb_step
             j = 0
             DO i=1,nb_atm
@@ -215,7 +215,7 @@ IF (AS_c .EQ. 'Y') THEN
                 END IF
             END DO
         END DO
-    
+
         finish = OMP_get_wtime()
         PRINT'(A40,F14.2,A20)', "AS:",finish-start,"seconds elapsed"
 END IF

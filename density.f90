@@ -35,7 +35,7 @@ INTEGER                         :: count_dens_go, count_dens_air, count_dens_go_
 !   ----------------------------------------------- Counters
 INTEGER                         :: i, s, k, j, o
 
-!   ----------------------------------------------- 
+!   -----------------------------------------------
 PRINT'(A100)','--------------------------------------------------'&
 ,'--------------------------------------------------'
 PRINT'(A100)', 'Launching Density'
@@ -59,7 +59,7 @@ file_is=TRIM(file_is)
 !   ----------------------------------------------- Controls
 ! To Do
 
-!   ----------------------------------------------- 
+!   -----------------------------------------------
 PRINT'(A100)', 'Run, Density, Run!'
 PRINT'(A100)','--------------------------------------------------'&
 ,'--------------------------------------------------'
@@ -298,7 +298,7 @@ DEALLOCATE(avg_dens_go,avg_dens_air)
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Density profiles:",finish-start,"seconds elapsed"
 
-! D ----------------------------------------------- 
+! D -----------------------------------------------
 start = OMP_get_wtime()
 
 ! AVGz of sheet
@@ -315,7 +315,7 @@ DO s = 1, nb_step
     o = 0
     DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. atomicnb_center_density) THEN
-            avg_z(s) = avg_z(s) + atm_mat(6,i,s) 
+            avg_z(s) = avg_z(s) + atm_mat(6,i,s)
             o = o + 1
         END IF
     END DO
