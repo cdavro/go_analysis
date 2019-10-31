@@ -313,7 +313,7 @@ avg_z(:) = 0.0_dp
 DO s = 1, nb_step
     o = 0
     DO i = 1, nb_atm
-        IF (atm_mat(2,i,s) .EQ. 12) THEN
+        IF (atm_mat(2,i,s) .EQ. atomicnb_center_density) THEN
             avg_z(s) = avg_z(s) + atm_mat(6,i,s) 
             o = o + 1
         END IF

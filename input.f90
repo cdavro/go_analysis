@@ -32,6 +32,7 @@ INTEGER              :: waterlist
 CHARACTER(LEN=3)     :: name_center
 CHARACTER(LEN=1)     :: IS_c
 CHARACTER(LEN=1)     :: AS_c
+INTEGER              :: atomicnb_center_density
 
 ! ----------------------------------------------- Counters
 INTEGER,PRIVATE      :: i
@@ -82,6 +83,9 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('nb_step')
                     READ(value, *, IOSTAT=iostatus) nb_step
                     PRINT'(A50,I64)', 'Number of steps: ', nb_step
+                CASE ('atomicnb_center_density')
+                    READ(value, *, IOSTAT=iostatus) atomicnb_center_density
+                    PRINT'(A50,I64)', 'atomicnb_center_density: ', atomicnb_center_density
                 CASE ('suffix')
                     READ(value, *, IOSTAT=iostatus) suffix
                     PRINT'(A50,A64)', 'Suffix: ', suffix

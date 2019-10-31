@@ -338,8 +338,7 @@ IF (IS_c .EQ. 'Y' ) THEN
     ! D ----------------------------------------------- Calculate WAT angle IS
     start = OMP_get_wtime()
 
-    !nb_step, nb_atm, always shared.
-    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,WAT_mat,nb_o,is_mat,nb_is)&
+    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,WAT_mat,nb_o,is_mat,nb_is,nb_step)&
     !$OMP PRIVATE(s,i,j,k,tSWAT_disp_vec,tSWAT_norm,tSS_disp_vec,tss_norm,tSS1_disp_vec,tSS1_norm)&
     !$OMP PRIVATE(tPSuvec_go,tPSuvec_air,tWDvec,tHHvec,tWDuvec,tHHuvec)&
     !$OMP PRIVATE(tO_pos_iPS_go,tO_pos_iPS_air,tS_pos_PS_go,tS_pos_PS_air)&
@@ -603,8 +602,7 @@ IF (AS_c .EQ. 'Y' ) THEN
     ! E ----------------------------------------------- Calculate WAT angle AS
     start = OMP_get_wtime()
 
-    !nb_step, nb_atm, always shared.
-    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,WAT_mat,nb_o,as_mat,nb_as)&
+    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,WAT_mat,nb_o,as_mat,nb_as,nb_step)&
     !$OMP PRIVATE(s,i,j,k,tSWAT_disp_vec,tSWAT_norm,tSS_disp_vec,tss_norm,tSS1_disp_vec,tSS1_norm)&
     !$OMP PRIVATE(tPSuvec_go,tWDvec,tHHvec,tWDuvec,tHHuvec)&
     !$OMP PRIVATE(tO_pos_iPS_go,tS_pos_PS_go)&
