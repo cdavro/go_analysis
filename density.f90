@@ -309,6 +309,7 @@ dens_go_c(:,:) = 0.0_dp
 avg_z(:) = 0.0_dp
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,nb_atm,nb_step,box,dens_go_c,avg_z,dens_rstart,dens_dr,dens_step)&
+!$OMP SHARED(atomicnb_center_density)
 !$OMP PRIVATE(s,r,j,i,count_dens_go_c,o)
 DO s = 1, nb_step
     o = 0
