@@ -206,7 +206,7 @@ IF (AS_c .EQ. 'Y') THEN
         DO s = 1, nb_step
             j = 0
             DO i=1,nb_atm
-                IF (atm_mat(3,i,s) .EQ. 1) THEN
+                IF (atm_mat(3,i,s) .EQ. atmnb_center_surface) THEN
                     j = j + 1
                     as_mat(5,j,s) = atm_mat(1,i,s)
                     DO k=1,3
