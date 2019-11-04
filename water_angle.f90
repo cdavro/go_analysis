@@ -222,7 +222,7 @@ END IF
 
 ! B ----------------------------------------------- Water
 start = OMP_get_wtime()
-ALLOCATE(WAT_mat(38,nb_o*3,nb_step))
+ALLOCATE(WAT_mat(43,nb_o*3,nb_step))
 ALLOCATE(nb_max_WAT(nb_step))
 
 nb_max_WAT(:) = 0.0
@@ -577,16 +577,19 @@ IF (IS_c .EQ. 'Y' ) THEN
     ! E ----------------------------------------------- Write WAT angle IS
     start = OMP_get_wtime()
 
-    OPEN(UNIT=32, FILE = suffix//"_IS_water-angle.txt")
-    WRITE(32,'(A10,A10,A20,A20,A20,A20,A20,A20)')&
-        "O_id", "C9", "dist_IS_go", "dist_IS_air"&
-    , "Angle OH/NIS_go", "Angle OH/NIS_air"&
-    , "Angle HH/NIS_go", "Angle HH/NIS_air"
+    OPEN(UNIT=32, FILE = suffix//"_IS_water_angle.txt")
+    WRITE(32,'(A10,A10,A10,A10,A10,A10,A20,A20,A20,A20,A20,A20)')&
+        "O_id", "cOE", "cOH", "cOA", "cC", "cC9"&
+        , "dist_IS_go", "dist_IS_air"&
+        , "Angle OH/NIS_go", "Angle OH/NIS_air"&
+        , "Angle HH/NIS_go", "Angle HH/NIS_air"
     DO s = 1, nb_step
         DO i = 1, nb_max_WAT(s)
-            WRITE(32,'(I10,I10,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7)')&
-            INT(WAT_mat(1,i,s)),INT(WAT_mat(28,i,s))&
-            , (WAT_mat(29,i,s)*WAT_mat(30,i,s)), (WAT_mat(32,i,s)*WAT_mat(33,i,s)), WAT_mat(35,i,s), WAT_mat(37,i,s)&
+            WRITE(32,'(I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7)')&
+            INT(WAT_mat(1,i,s)), INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
+            , INT(WAT_mat(26,i,s)), INT(WAT_mat(27,i,s)), INT(WAT_mat(28,i,s))&
+            , (WAT_mat(29,i,s)*WAT_mat(30,i,s)), (WAT_mat(32,i,s)*WAT_mat(33,i,s))&
+            , WAT_mat(35,i,s), WAT_mat(37,i,s)&
             , WAT_mat(36,i,s), WAT_mat(38,i,s)
         END DO
     END DO
@@ -742,16 +745,16 @@ IF (AS_c .EQ. 'Y' ) THEN
     ! E ----------------------------------------------- Write WAT angle AS
     start = OMP_get_wtime()
 
-    OPEN(UNIT=33, FILE = suffix//"_AS_water-angle.txt")
+    OPEN(UNIT=33, FILE = suffix//"_AS_water_angle.txt")
     WRITE(33,'(A10,A10,A10,A10,A10,A10,A20,A20,A20)')&
         "O_id", "cOE", "cOH", "cOA", "cC", "cC9"&
         , "dist_AS_go", "Angle OH/NAS", "Angle HH/NAS"
     DO s = 1, nb_step
         DO i = 1, nb_max_WAT(s)
             WRITE(33,'(I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7)')&
-            INT(WAT_mat(1,i,s)),INT(WAT_mat(24,i,s)),INT(WAT_mat(25,i,s))&
-            ,INT(WAT_mat(26,i,s)),INT(WAT_mat(27,i,s)),INT(WAT_mat(28,i,s))&
-            ,(WAT_mat(39,i,s)*WAT_mat(40,i,s)) , WAT_mat(42,i,s), WAT_mat(43,i,s)
+            INT(WAT_mat(1,i,s)), INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
+            , INT(WAT_mat(26,i,s)), INT(WAT_mat(27,i,s)), INT(WAT_mat(28,i,s))&
+            , (WAT_mat(39,i,s)*WAT_mat(40,i,s)), WAT_mat(42,i,s), WAT_mat(43,i,s)
         END DO
     END DO
     CLOSE(UNIT=33)
