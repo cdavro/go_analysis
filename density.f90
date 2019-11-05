@@ -22,7 +22,7 @@ CHARACTER(LEN=2)                :: dummy_char
 !   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:), is_mat(:,:,:)
 CHARACTER(LEN=2), ALLOCATABLE   :: atm_el(:)
-INTEGER                         :: nb_line, nb_max_pt
+INTEGER                         :: nb_line_is, nb_max_is
 INTEGER, ALLOCATABLE            :: nb_is(:)
 REAL(dp), ALLOCATABLE           :: avg_z(:)
 REAL(dp), ALLOCATABLE           :: dens_go(:,:), dens_air(:,:), avg_dens_go(:), avg_dens_air(:)
@@ -125,17 +125,17 @@ PRINT'(A40,F14.2,A20)', "Positions:",finish-start,"seconds elapsed"
 start = OMP_get_wtime()
 
 OPEN(UNIT=21,FILE=file_is,STATUS='old',FORM='formatted',ACTION='READ')
-nb_line=0
+nb_line_is=0
 DO
     READ(21,*,IOSTAT=iostatus)
     IF (iostatus .NE. 0) THEN
         EXIT
     ELSE
-        nb_line=nb_line+1
+        nb_line_is=nb_line_is+1
     END IF
 END DO
 REWIND(21)
-nb_max_pt=CEILING(1.0*nb_line/nb_step)*2
+nb_max_is=CEILING(1.0*nb_line_is/nb_step)*2
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "IS grid:",finish-start,"seconds elapsed"
@@ -143,7 +143,7 @@ PRINT'(A40,F14.2,A20)', "IS grid:",finish-start,"seconds elapsed"
 ! A ----------------------------------------------- Read surface
 start = OMP_get_wtime()
 
-ALLOCATE(is_mat(4,nb_max_pt,nb_step))
+ALLOCATE(is_mat(4,nb_max_is,nb_step))
 ALLOCATE(nb_is(nb_step))
 is_mat(:,:,:) = 0.0_dp
 nb_is(:) = 0
