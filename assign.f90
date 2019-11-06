@@ -24,8 +24,10 @@ REAL(dp), ALLOCATABLE           :: center_avgpos(:,:)
 INTEGER, ALLOCATABLE            :: nb_max_OHvec(:)
 
 !   ----------------------------------------------- Temporary variables
-REAL(dp)                        :: tOH_disp_vec(3), tOH_norm, z_shift
-REAL(dp)                        :: tOC_disp_vec(3), tOC_norm, tOSi_disp_vec(3), tOSi_norm
+REAL(dp)                        :: z_shift
+REAL(dp)                        :: OaH_disp_vec(3), OaH_disp_norm
+REAL(dp)                        :: OaC_disp_vec(3), OaC_disp_norm
+REAL(dp)                        :: OaSi_disp_vec(3), OaSi_disp_norm
 CHARACTER(LEN=3)                :: type
 
 !   ----------------------------------------------- Count variables
@@ -50,7 +52,7 @@ PRINT'(A100)','--------------------------------------------------'&
 CAC = COMMAND_ARGUMENT_COUNT()
 
 IF (CAC .EQ. 0) THEN
-    PRINT*,"No input files"
+    PRINT*, "No input files"
     STOP
 END IF
 
@@ -65,8 +67,8 @@ file_vel=TRIM(file_vel)
 
 !   -----------------------------------------------
 PRINT'(A100)', 'Run, Assign, Run!'
-PRINT'(A100)','--------------------------------------------------'&
-,'--------------------------------------------------'
+PRINT'(A100)', '--------------------------------------------------'&
+, '--------------------------------------------------'
 
 !   ----------------------------------------------- Allocate function for reading files
 ! DEFINE AS: atm_id, atm_nb, atm_x, atm_y, atm_z, vel_x, vel_y, vel_z, nb_H, nb_C
@@ -77,11 +79,11 @@ atm_mat(:,:,:) = 0.0_dp
 start = OMP_get_wtime()
 ALLOCATE(atm_el(nb_atm))
 
-OPEN(UNIT=20,FILE=file_pos,STATUS='old',FORM='formatted',ACTION='READ')
-DO s=1,nb_step
+OPEN(UNIT=20, FILE=file_pos, STATUS='old', FORM='formatted', ACTION='READ')
+DO s = 1, nb_step
     READ(20, *)
     READ(20, *)
-    DO i=1,nb_atm
+    DO i = 1, nb_atm
         READ(20, *) atm_el(i), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
         atm_mat(1,i,s) = i
         IF (atm_el(i)(1:1) .EQ. "C") THEN
@@ -93,7 +95,7 @@ DO s=1,nb_step
         ELSE IF (atm_el(i)(1:2) .EQ. "Si") THEN
             atm_mat(2,i,s) = 28
         END IF
-        IF (atm_el(i) .EQ. name_center) THEN
+        IF (atm_el(i) .EQ. assign_center_el) THEN
             atm_mat(13,i,s) = 1
         END IF
     END DO
@@ -105,29 +107,29 @@ nb_h = COUNT(atm_mat(2,:,1) .EQ. 1, DIM=1)
 nb_c = COUNT(atm_mat(2,:,1) .EQ. 12, DIM=1)
 
 ALLOCATE(nb_center(nb_step))
-DO s=1,nb_step
+DO s = 1, nb_step
     nb_center(s) = COUNT(atm_mat(13,:,s) .EQ. 1, DIM=1)
 END DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Positions:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Positions:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- Read velocities
 IF (file_vel .NE. '0') THEN
     start = OMP_get_wtime()
 
-    OPEN(UNIT=21,FILE=file_vel,STATUS='old',FORM='formatted',ACTION='READ')
-    DO s=1,nb_step
+    OPEN(UNIT=21, FILE=file_vel, STATUS='old', FORM='formatted', ACTION='READ')
+    DO s = 1, nb_step
         READ(21, *)
         READ(21, *)
-        DO i=1,nb_atm
+        DO i = 1, nb_atm
             READ(21, *) atm_el(i), atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
         END DO
     END DO
     CLOSE(UNIT=21)
 
     finish = OMP_get_wtime()
-    PRINT'(A40,F14.2,A20)', "Velocities:",finish-start,"seconds elapsed"
+    PRINT'(A40,F14.2,A20)', "Velocities:", finish-start, "seconds elapsed"
 END IF
 
 !   ----------------------------------------------- Calculate geom center of go carbons and center so Zcarbon_avg = 0.0
@@ -135,12 +137,12 @@ start = OMP_get_wtime()
 
 ALLOCATE(center_avgpos(3,nb_step))
 
-DO s=1,nb_step
+DO s = 1, nb_step
     center_avgpos(:,s) = 0.0_dp
 
-    DO i=1,nb_atm
+    DO i = 1, nb_atm
         IF (atm_mat(13,i,s) .EQ. 1) THEN
-            DO k=1,3
+            DO k = 1, 3
                 center_avgpos(k,s) = center_avgpos(k,s) + atm_mat(k+2,i,s)
             END DO
         END IF
@@ -149,10 +151,10 @@ DO s=1,nb_step
     center_avgpos(:,s) = center_avgpos(:,s) / nb_center(s)
     z_shift = 0.0_dp - center_avgpos(3,s)
 
-    DO i=1,nb_atm
+    DO i = 1, nb_atm
         atm_mat(5,i,s) = atm_mat(5,i,s) + z_shift
-        DO k=1,3
-            atm_mat(k+2,i,s) = atm_mat(k+2,i,s) - box(k) * ANINT(atm_mat(k+2,i,s)/box(k))
+        DO k = 1, 3
+            atm_mat(k+2,i,s) = atm_mat(k+2,i,s) - box(k) * ANINT(atm_mat(k+2,i,s) / box(k))
         END DO
     END DO
 
@@ -161,7 +163,7 @@ END DO
 DEALLOCATE(center_avgpos,nb_center)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Center/Wrap:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Center/Wrap:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- Search the topology, water and oxygen groups
 start = OMP_get_wtime()
@@ -181,51 +183,53 @@ atm_mat(10,:,:) = -1
 atm_mat(11,:,:) = -1
 atm_mat(12,:,:) = -1
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,nb_step, nb_atm, rOH_cut_a, rOC_cut_a,rOSi_cut_a)&
-!$OMP SHARED(nb_epoxide,nb_hydroxide,nb_alcohol,nb_water,nb_hydronium,nb_alkoxide,nb_oxygen_group)&
-!$OMP PRIVATE(s,i,j,k,tOC_disp_vec,tOC_norm,tOH_disp_vec,tOH_norm,tOSi_disp_vec,tOSi_norm)
-DO s=1,nb_step
-    DO i=1,nb_atm
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, nb_atm, nb_step, box)&
+!$OMP SHARED(assign_OpH_rcut, assign_OpC_rcut, assign_OpSi_rcut)&
+!$OMP SHARED(nb_epoxide, nb_hydroxide, nb_alcohol, nb_water, nb_hydronium, nb_alkoxide, nb_oxygen_group)&
+!$OMP PRIVATE(s,i,j,k)&
+!$OMP PRIVATE(OaC_disp_vec, OaC_disp_norm, OaH_disp_vec, OaH_disp_norm, OaSi_disp_vec, OaSi_disp_norm)
+DO s = 1, nb_step
+    DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. 16) THEN ! Select only Oxygens
 
             atm_mat(9,i,s) = 0
             atm_mat(10,i,s) = 0
 
-            DO j=1,nb_atm
+            DO j = 1, nb_atm
                 IF (atm_mat(2,j,s) .EQ. 1) THEN ! Compare with Hydrogens
-                    DO k=1,3
-                        tOH_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
-                        tOH_disp_vec(k) = tOH_disp_vec(k) - box(k) * ANINT(tOH_disp_vec(k)/box(k))
+                    DO k = 1, 3
+                        OaH_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
+                        OaH_disp_vec(k) = OaH_disp_vec(k) - box(k) * ANINT(OaH_disp_vec(k) / box(k))
                     END DO
-                    tOH_norm = NORM2(tOH_disp_vec)
-                    IF(tOH_norm .LE. rOH_cut_a) THEN
+                    OaH_disp_norm = NORM2(OaH_disp_vec)
+                    IF(OaH_disp_norm .LE. assign_OpH_rcut) THEN
                         atm_mat(9,i,s) = atm_mat(9,i,s) + 1
                         atm_mat(11,j,s) = atm_mat(1,i,s)
                     END IF
 
                 ELSE IF (atm_mat(2,j,s) .EQ. 12) THEN ! Compare with Carbons
-                    DO k=1,3
-                        tOC_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
-                        tOC_disp_vec(k) = tOC_disp_vec(k) - box(k) * ANINT(tOC_disp_vec(k)/box(k))
+                    DO k = 1, 3
+                        OaC_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
+                        OaC_disp_vec(k) = OaC_disp_vec(k) - box(k) * ANINT(OaC_disp_vec(k) / box(k))
                     END DO
-                    tOC_norm = NORM2(tOC_disp_vec)
-                    IF(tOC_norm .LE. rOC_cut_a) THEN
+                    OaC_disp_norm = NORM2(OaC_disp_vec)
+                    IF(OaC_disp_norm .LE. assign_OpC_rcut) THEN
                         atm_mat(10,i,s) = atm_mat(10,i,s) + 1
                     END IF
 
                 ELSE IF (atm_mat(2,j,s) .EQ. 28) THEN ! Compare with Carbons
-                    DO k=1,3
-                        tOSi_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
-                        tOSi_disp_vec(k) = tOSi_disp_vec(k) - box(k) * ANINT(tOSi_disp_vec(k)/box(k))
+                    DO k = 1, 3
+                        OaSi_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
+                        OaSi_disp_vec(k) = OaSi_disp_vec(k) - box(k) * ANINT(OaSi_disp_vec(k) / box(k))
                     END DO
-                    tOSi_norm = NORM2(tOSi_disp_vec)
-                    IF(tOSi_norm .LE. rOSi_cut_a) THEN
+                    OaSi_disp_norm = NORM2(OaSi_disp_vec)
+                    IF(OaSi_disp_norm .LE. assign_OpSi_rcut) THEN
                         atm_mat(10,i,s) = atm_mat(10,i,s) + 1
                     END IF
 
                 END IF
             END DO
-            DO j=1,nb_atm
+            DO j = 1, nb_atm
                 IF (atm_mat(1,i,s) .EQ. atm_mat(11,j,s)) THEN
                     atm_mat(12,j,s) = atm_mat(9,i,s)
                 END IF
@@ -245,16 +249,16 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Oxygen groups topologies:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Oxygen groups topologies:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- Print counts
 start = OMP_get_wtime()
 
 OPEN(UNIT=50, FILE = suffix//"_oxygen_groups_population.txt")
-WRITE(50,'(A10,A10,A10,A10,A10,A10,A10,A10,A10)') "Step", "Epoxide", "Alcohol", "Alkoxide", "Water"&
+WRITE(50, '(A10,A10,A10,A10,A10,A10,A10,A10,A10)') "Step", "Epoxide", "Alcohol", "Alkoxide", "Water"&
 , "Hydroxide", "Hydronium", "Total", "Total_O"
 DO s = 1, nb_step
-    WRITE(50,'(I10,I10,I10,I10,I10,I10,I10,I10,I10)') s, nb_epoxide(s), nb_alcohol(s), nb_alkoxide(s)&
+    WRITE(50, '(I10,I10,I10,I10,I10,I10,I10,I10,I10)') s, nb_epoxide(s), nb_alcohol(s), nb_alkoxide(s)&
     , nb_water(s),nb_hydroxide(s), nb_hydronium(s), nb_oxygen_group(s), nb_o
 END DO
 CLOSE(UNIT=50)
@@ -262,7 +266,7 @@ CLOSE(UNIT=50)
 DEALLOCATE(nb_max_OHvec,nb_epoxide,nb_alcohol,nb_alkoxide,nb_water,nb_hydronium,nb_hydroxide,nb_oxygen_group)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Oxygen groups topologies output:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Oxygen groups topologies output:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- Print the xyz and velocities files
 start = OMP_get_wtime()
@@ -304,16 +308,16 @@ CLOSE(UNIT=40)
 IF (file_vel .NE. '0') CLOSE(UNIT=41)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)',"Positions/Velocities output:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Positions/Velocities output:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- Print the waterlist (mask indices for surf)
 IF (waterlist .EQ. 1) THEN
     start = OMP_get_wtime()
 
     OPEN(UNIT=42, FILE = suffix//"_waterlist.txt")
-    DO s=1,nb_step
+    DO s = 1, nb_step
         WRITE(42,'(A14)',advance="no")"mask = indices "
-        DO i=1,nb_atm
+        DO i = 1, nb_atm
             IF (atm_mat(10,i,s) .EQ. 0) THEN
                 WRITE(42,'(I5)',advance="no") INT(atm_mat(1,i,s))
             END IF
@@ -323,12 +327,12 @@ IF (waterlist .EQ. 1) THEN
     CLOSE(UNIT=42)
 
     finish = OMP_get_wtime()
-    PRINT'(A40,F14.2,A20)',"Waterlist (surf):",finish-start,"seconds elapsed"
+    PRINT'(A40,F14.2,A20)', "Waterlist (surf):", finish-start, "seconds elapsed"
 END IF
 
 !   ----------------------------------------------- End
-PRINT'(A100)','--------------------------------------------------'&
-,'--------------------------------------------------'
+PRINT'(A100)', '--------------------------------------------------'&
+, '--------------------------------------------------'
 PRINT'(A100)', 'The END'
 
 !   ----------------------------------------------- Deallocate and exit

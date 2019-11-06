@@ -25,12 +25,12 @@ CHARACTER(LEN=2), ALLOCATABLE   :: atm_el(:)
 INTEGER                         :: nb_line_is, nb_max_is
 INTEGER, ALLOCATABLE            :: nb_is(:)
 REAL(dp), ALLOCATABLE           :: avg_z(:)
-REAL(dp), ALLOCATABLE           :: dens_go(:,:), dens_air(:,:), avg_dens_go(:), avg_dens_air(:)
-REAL(dp), ALLOCATABLE           :: dens_go_c(:,:), avg_dens_go_c(:)
+REAL(dp), ALLOCATABLE           :: dens_down(:,:), dens_up(:,:), avg_dens_down(:), avg_dens_up(:)
+REAL(dp), ALLOCATABLE           :: dens_down_avgz_c(:,:), avg_dens_down_avgz_c(:)
 
-REAL(dp)                        :: tSOvec_disp_vec(3), tSOvec_norm
+REAL(dp)                        :: ISaO_disp_vec(3), ISaO_disp_norm
 REAL(dp)                        :: r
-INTEGER                         :: count_dens_go, count_dens_air, count_dens_go_c
+INTEGER                         :: count_dens_down, count_dens_up, count_dens_down_avgz_c
 
 !   ----------------------------------------------- Counters
 INTEGER                         :: i, s, k, j, o
@@ -46,7 +46,7 @@ PRINT'(A100)','--------------------------------------------------'&
 CAC = COMMAND_ARGUMENT_COUNT()
 
 IF (CAC .EQ. 0) THEN
-    PRINT*,"No input files"
+    PRINT*, "No input files"
     STOP
 END IF
 
@@ -61,8 +61,8 @@ file_is=TRIM(file_is)
 
 !   -----------------------------------------------
 PRINT'(A100)', 'Run, Density, Run!'
-PRINT'(A100)','--------------------------------------------------'&
-,'--------------------------------------------------'
+PRINT'(A100)', '--------------------------------------------------'&
+, '--------------------------------------------------'
 
 !   ----------------------------------------------- Allocate function for reading files
 ALLOCATE(atm_mat(12,nb_atm,nb_step))
@@ -119,26 +119,26 @@ END DO
 CLOSE(UNIT=20)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Positions:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Positions:", finish-start, "seconds elapsed"
 
 ! A ----------------------------------------------- Since the number of points for the IS isn't constant, count it.
 start = OMP_get_wtime()
 
-OPEN(UNIT=21,FILE=file_is,STATUS='old',FORM='formatted',ACTION='READ')
+OPEN(UNIT=21, FILE=file_is, STATUS='old', FORM='formatted', ACTION='READ')
 nb_line_is=0
 DO
-    READ(21,*,IOSTAT=iostatus)
+    READ(21, *, IOSTAT=iostatus)
     IF (iostatus .NE. 0) THEN
         EXIT
     ELSE
-        nb_line_is=nb_line_is+1
+        nb_line_is = nb_line_is + 1
     END IF
 END DO
 REWIND(21)
-nb_max_is=CEILING(1.0*nb_line_is/nb_step)*2
+nb_max_is = CEILING(1.0 * nb_line_is / nb_step) * 2
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "IS grid:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "IS grid:", finish-start, "seconds elapsed"
 
 ! A ----------------------------------------------- Read surface
 start = OMP_get_wtime()
@@ -148,7 +148,7 @@ ALLOCATE(nb_is(nb_step))
 is_mat(:,:,:) = 0.0_dp
 nb_is(:) = 0
 
-OPEN(UNIT=21,FILE=file_is,STATUS='old',FORM='formatted',ACTION='READ')
+OPEN(UNIT=21, FILE=file_is, STATUS='old', FORM='formatted', ACTION='READ')
 DO s = 1, nb_step
     READ(21, *) nb_is(s)
     READ(21, *)
@@ -163,32 +163,33 @@ DO s = 1, nb_step
             is_mat(4,i,s) = 2
         END IF
         DO k = 1, 3
-            is_mat(k,i,s) = is_mat(k,i,s) - box(k) * ANINT(is_mat(k,i,s)/box(k))
+            is_mat(k,i,s) = is_mat(k,i,s) - box(k) * ANINT(is_mat(k,i,s) / box(k))
         END DO
     END DO
 END DO
 CLOSE(UNIT=21)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "IS:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "IS:", finish-start, "seconds elapsed"
 
 ! B ----------------------------------------------- Calculate closest distance between IS and any O atom
 start = OMP_get_wtime()
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,box,is_mat,nb_is,nb_step,nb_atm)&
-!$OMP PRIVATE(s,i,j,k,tSOvec_disp_vec,tSOvec_norm)
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, is_mat, nb_is, nb_step, nb_atm)&
+!$OMP PRIVATE(s, i, j, k)&
+!$OMP PRIVATE(ISaO_disp_vec, ISaO_disp_norm)
 DO s = 1, nb_step
     DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. 16) THEN
             DO j = 1, nb_is(s)
                 IF (is_mat(4,j,s) .EQ. 1) THEN
                     DO k = 1, 3
-                        tSOvec_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
-                        tSOvec_disp_vec(k) = tSOvec_disp_vec(k) - box(k) * ANINT(tSOvec_disp_vec(k)/box(k))
+                        ISaO_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
+                        ISaO_disp_vec(k) = ISaO_disp_vec(k) - box(k) * ANINT(ISaO_disp_vec(k) / box(k))
                     END DO
-                    tSOvec_norm = NORM2(tSOvec_disp_vec)
-                    IF ( (tSOvec_norm .LT. atm_mat(7,i,s)) .OR. atm_mat(7,i,s) .EQ. 0.0 ) THEN
-                        atm_mat(7,i,s) = tSOvec_norm
+                    ISaO_disp_norm = NORM2(ISaO_disp_vec)
+                    IF ( (ISaO_disp_norm .LT. atm_mat(7,i,s)) .OR. atm_mat(7,i,s) .EQ. 0.0 ) THEN
+                        atm_mat(7,i,s) = ISaO_disp_norm
                         IF (atm_mat(6,i,s) .LT. is_mat(3,j,s)) THEN
                             atm_mat(8,i,s) = -1
                         ELSE
@@ -198,12 +199,12 @@ DO s = 1, nb_step
                     END IF
                 ELSE IF (is_mat(4,j,s) .EQ. 2) THEN
                     DO k = 1, 3
-                        tSOvec_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
-                        tSOvec_disp_vec(k) = tSOvec_disp_vec(k) - box(k) * ANINT(tSOvec_disp_vec(k)/box(k))
+                        ISaO_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
+                        ISaO_disp_vec(k) = ISaO_disp_vec(k) - box(k) * ANINT(ISaO_disp_vec(k) / box(k))
                     END DO
-                    tSOvec_norm = NORM2(tSOvec_disp_vec)
-                    IF ( (tSOvec_norm .LT. atm_mat(10,i,s)) .OR. atm_mat(10,i,s) .EQ. 0.0 ) THEN
-                        atm_mat(10,i,s) = tSOvec_norm
+                    ISaO_disp_norm = NORM2(ISaO_disp_vec)
+                    IF ( (ISaO_disp_norm .LT. atm_mat(10,i,s)) .OR. atm_mat(10,i,s) .EQ. 0.0 ) THEN
+                        atm_mat(10,i,s) = ISaO_disp_norm
                         IF (atm_mat(6,i,s) .GT. is_mat(3,j,s)) THEN
                             atm_mat(11,i,s) = -1
                         ELSE
@@ -219,102 +220,107 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Proximity IS and O atoms:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Proximity IS and O atoms:", finish-start, "seconds elapsed"
 
 ! C ----------------------------------------------- Density profiles
 start = OMP_get_wtime()
 
 ! GO-WATER
-ALLOCATE(dens_go(dens_step,nb_step))
-dens_go(:,:) = 0.0_dp
+ALLOCATE(dens_down(dens_step,nb_step))
+dens_down(:,:) = 0.0_dp
 
 ! AIR WATER
-ALLOCATE(dens_air(dens_step,nb_step))
-dens_air(:,:) = 0.0_dp
+ALLOCATE(dens_up(dens_step,nb_step))
+dens_up(:,:) = 0.0_dp
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,nb_atm,nb_step,box,dens_go,dens_air,dens_rstart,dens_dr,dens_step)&
-!$OMP PRIVATE(s,r,j,i,count_dens_go,count_dens_air)
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, is_mat, nb_is, nb_step, nb_atm)&
+!$OMP SHARED(dens_rstart, dens_dr,dens_step)&
+!$OMP SHARED(dens_down, dens_up)&
+!$OMP PRIVATE(s, r, j, i)&
+!$OMP PRIVATE(count_dens_down, count_dens_up)
 DO s = 1, nb_step
     r = dens_rstart
     DO j = 1, dens_step
-        count_dens_go = 0
-        count_dens_air = 0
+        count_dens_down = 0
+        count_dens_up = 0
     C1:DO i = 1, nb_atm
             IF (atm_mat(3,i,s) .NE. 13) THEN
                 CYCLE C1
             END IF
             IF ( (atm_mat(7,i,s)*atm_mat(8,i,s) .GE. r) .AND. (atm_mat(7,i,s)*atm_mat(8,i,s) .LT. r+dens_dr) ) THEN
-                count_dens_go = count_dens_go + 1
+                count_dens_down = count_dens_down + 1
             END IF
             IF ( (atm_mat(10,i,s)*atm_mat(11,i,s) .GE. r) .AND. (atm_mat(10,i,s)*atm_mat(11,i,s) .LT. r+dens_dr) ) THEN
-                count_dens_air = count_dens_air + 1
+                count_dens_up = count_dens_up + 1
             END IF
         END DO C1
-        dens_go(j,s) = (18.0 * count_dens_go ) / (box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23)
-        dens_air(j,s) = (18.0 * count_dens_air ) / (box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23)
+        dens_down(j,s) = (18.0 * count_dens_down ) / (box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23)
+        dens_up(j,s) = (18.0 * count_dens_up ) / (box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23)
         r = r + dens_dr
     END DO
 END DO
 !$OMP END PARALLEL DO
 
-ALLOCATE(avg_dens_go(dens_step))
-avg_dens_go(:) = 0.0_dp
-ALLOCATE(avg_dens_air(dens_step))
-avg_dens_air(:) = 0.0_dp
+ALLOCATE(avg_dens_down(dens_step))
+avg_dens_down(:) = 0.0_dp
+ALLOCATE(avg_dens_up(dens_step))
+avg_dens_up(:) = 0.0_dp
 
 DO j = 1, dens_step
-    avg_dens_go(j) = SUM(dens_go(j,:)) / nb_step
-    avg_dens_air(j) = SUM(dens_air(j,:)) / nb_step
+    avg_dens_down(j) = SUM(dens_down(j,:)) / nb_step
+    avg_dens_up(j) = SUM(dens_up(j,:)) / nb_step
 END DO
 
-OPEN(UNIT=41, FILE = suffix//"_density_profile_go.txt")
-OPEN(UNIT=42, FILE = suffix//"_density_profile_air.txt")
-WRITE(41, '(A24,A24,A24,A24)') "step","[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
-WRITE(42, '(A24,A24,A24,A24)') "step","[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
+OPEN(UNIT=41, FILE = suffix//"_density_profile_down.txt")
+OPEN(UNIT=42, FILE = suffix//"_density_profile_up.txt")
+WRITE(41, '(A24,A24,A24,A24)') "step", "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
+WRITE(42, '(A24,A24,A24,A24)') "step", "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
 DO s = 1, nb_step
     DO j = 1, dens_step
-        WRITE(41, '(I24,E24.14,E24.14,E24.14)') s, (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), dens_go(j,s)
-        WRITE(42, '(I24,E24.14,E24.14,E24.14)') s, (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), dens_air(j,s)
+        WRITE(41, '(I24,E24.14,E24.14,E24.14)') s, (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), dens_down(j,s)
+        WRITE(42, '(I24,E24.14,E24.14,E24.14)') s, (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), dens_up(j,s)
     END DO
 END DO
 CLOSE(UNIT=41)
 CLOSE(UNIT=42)
 
-DEALLOCATE(dens_go,dens_air)
+DEALLOCATE(dens_down,dens_up)
 
-OPEN(UNIT=43, FILE = suffix//"_avg_density_profile_go.txt")
-OPEN(UNIT=44, FILE = suffix//"_avg_density_profile_air.txt")
-WRITE(43, '(A24,A24,A24)') "[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
-WRITE(44, '(A24,A24,A24)') "[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
+OPEN(UNIT=43, FILE = suffix//"_avg_density_profile_down.txt")
+OPEN(UNIT=44, FILE = suffix//"_avg_density_profile_up.txt")
+WRITE(43, '(A24,A24,A24)') "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
+WRITE(44, '(A24,A24,A24)') "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
 DO j = 1, dens_step
-    WRITE(43, '(E24.14,E24.14,E24.14)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_go(j)
-    WRITE(44, '(E24.14,E24.14,E24.14)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_air(j)
+    WRITE(43, '(E24.14,E24.14,E24.14)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_down(j)
+    WRITE(44, '(E24.14,E24.14,E24.14)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_up(j)
 END DO
 CLOSE(UNIT=43)
 CLOSE(UNIT=44)
 
-DEALLOCATE(avg_dens_go,avg_dens_air)
+DEALLOCATE(avg_dens_down,avg_dens_up)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Density profiles:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Density profiles:", finish-start, "seconds elapsed"
 
 ! D -----------------------------------------------
 start = OMP_get_wtime()
 
 ! AVGz of sheet
-ALLOCATE(dens_go_c(dens_step,nb_step))
+ALLOCATE(dens_down_avgz_c(dens_step,nb_step))
 ALLOCATE(avg_z(nb_step))
 
-dens_go_c(:,:) = 0.0_dp
+dens_down_avgz_c(:,:) = 0.0_dp
 avg_z(:) = 0.0_dp
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat,nb_atm,nb_step,box,dens_go_c,avg_z,dens_rstart,dens_dr,dens_step)&
-!$OMP SHARED(atomicnb_center_density)&
-!$OMP PRIVATE(s,r,j,i,count_dens_go_c,o)
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, is_mat, nb_is, nb_step, nb_atm)&
+!$OMP SHARED(dens_rstart, dens_dr, dens_step, dens_center_atmnb)&
+!$OMP SHARED(avg_z, dens_down_avgz_c)&
+!$OMP PRIVATE(s, r, j, i, o)&
+!$OMP PRIVATE(count_dens_down_avgz_c)
 DO s = 1, nb_step
     o = 0
     DO i = 1, nb_atm
-        IF (atm_mat(2,i,s) .EQ. atomicnb_center_density) THEN
+        IF (atm_mat(2,i,s) .EQ. dens_center_atmnb) THEN
             avg_z(s) = avg_z(s) + atm_mat(6,i,s)
             o = o + 1
         END IF
@@ -322,16 +328,16 @@ DO s = 1, nb_step
     avg_z(s) = avg_z(s) / o
     r = dens_rstart
     DO j = 1, dens_step
-        count_dens_go_c = 0
+        count_dens_down_avgz_c = 0
     D1:DO i = 1, nb_atm
             IF (atm_mat(3,i,s) .NE. 13) THEN
                 CYCLE D1
             END IF
             IF ( ((atm_mat(6,i,s) - avg_z(s)) .GE. r) .AND. ( (atm_mat(6,i,s) - avg_z(s)) .LT. r+dens_dr)) THEN
-                count_dens_go_c = count_dens_go_c + 1
+                count_dens_down_avgz_c = count_dens_down_avgz_c + 1
             END IF
         END DO D1
-        dens_go_c(j,s) = (18.0 * count_dens_go_c ) / (box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23)
+        dens_down_avgz_c(j,s) = (18.0 * count_dens_down_avgz_c ) / (box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23)
         r = r + dens_dr
     END DO
 END DO
@@ -339,39 +345,40 @@ END DO
 
 DEALLOCATE(avg_z)
 
-ALLOCATE(avg_dens_go_c(dens_step))
-avg_dens_go_c(:) = 0.0_dp
+ALLOCATE(avg_dens_down_avgz_c(dens_step))
+avg_dens_down_avgz_c(:) = 0.0_dp
 
 DO j = 1, dens_step
-    avg_dens_go_c(j) = SUM(dens_go_c(j,:)) / nb_step
+    avg_dens_down_avgz_c(j) = SUM(dens_down_avgz_c(j,:)) / nb_step
 END DO
 
-OPEN(UNIT=41, FILE = suffix//"_density_profile_go_c.txt")
-WRITE(41, '(A10,A24,A24,A24)') "step","[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
+OPEN(UNIT=41, FILE = suffix//"_density_profile_down_avgz_c.txt")
+WRITE(41, '(A10,A24,A24,A24)') "step", "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
 DO s = 1, nb_step
     DO j = 1, dens_step
-        WRITE(41, '(I10,E24.14,E24.14,E24.14)') s, (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), dens_go_c(j,s)
+        WRITE(41, '(I10,E24.14,E24.14,E24.14)') s, (dens_rstart + (j-1) * dens_dr)&
+        , (dens_rstart + j * dens_dr), dens_down_avgz_c(j,s)
     END DO
 END DO
 CLOSE(UNIT=41)
 
-DEALLOCATE(dens_go_c)
+DEALLOCATE(dens_down_avgz_c)
 
-OPEN(UNIT=43, FILE = suffix//"_avg_density_profile_go_c.txt")
-WRITE(43, '(A24,A24,A24)') "[ r (Å)","r+dr (Å) [", "ρ/ρ(bulk)"
+OPEN(UNIT=43, FILE = suffix//"_avg_density_profile_down_avgz_c.txt")
+WRITE(43, '(A24,A24,A24)') "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
 DO j = 1, dens_step
-    WRITE(43, '(E24.14,E24.14,E24.14)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_go_c(j)
+    WRITE(43, '(E24.14,E24.14,E24.14)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_down_avgz_c(j)
 END DO
 CLOSE(UNIT=43)
 
-DEALLOCATE(avg_dens_go_c)
+DEALLOCATE(avg_dens_down_avgz_c)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Density profiles:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Density profiles:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- End
-PRINT'(A100)','--------------------------------------------------'&
-,'--------------------------------------------------'
+PRINT'(A100)', '--------------------------------------------------'&
+, '--------------------------------------------------'
 PRINT'(A100)', 'The END'
 
 !   ----------------------------------------------- Deallocate and exit
