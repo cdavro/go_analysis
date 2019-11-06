@@ -237,7 +237,7 @@ PRINT'(A40,F14.2,A20)', "OH groups:", finish-start, "seconds elapsed"
 ! C ----------------------------------------------- OH/O Hbonds
 start = OMP_get_wtime()
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, nb_atm)&
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, nb_atm, nb_step)&
 !$OMP SHARED(hb_oHpO_rcut)&
 !$OMP PRIVATE(s, i, j, k, l)&
 !$OMP PRIVATE(oHpO_disp_vec, oHpO_disp_norm, Udonnor_count, Udonnor_count2)
@@ -396,7 +396,7 @@ IF (IS_c .EQ. 'Y' ) THEN
     ! F ----------------------------------------------- Calculate closest distance between IS and any OH groups
     start = OMP_get_wtime()
 
-    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, is_mat, nb_is)&
+    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, is_mat, nb_is, nb_step)&
     !$OMP PRIVATE(s, i, j, k)&
     !$OMP PRIVATE(SpOh_disp_vec, SpOh_disp_norm)
     DO s = 1, nb_step
@@ -449,7 +449,7 @@ IF (IS_c .EQ. 'Y' ) THEN
     start = OMP_get_wtime()
 
     !nb_step, nb_atm, always shared.
-    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, nb_o, is_mat, nb_is, nb_atm)&
+    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, nb_o, is_mat, nb_is, nb_atm, nb_step)&
     !$OMP PRIVATE(s, i, j, k)&
     !$OMP PRIVATE(SpO_disp_vec, SpO_disp_norm)
     DO s = 1, nb_step

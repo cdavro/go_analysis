@@ -223,7 +223,7 @@ nb_max_OHvec(:) = 0.0
 OHvec_mat(:,:,:) = 0.0_dp
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_max_OHvec, nb_step, nb_atm)&
-!$OMP SHARED(hb_OpH_rcut)&
+!$OMP SHARED(vvcf_OpH_rcut)&
 !$OMP PRIVATE(s, i, j, k, o)&
 !$OMP PRIVATE(OpH_disp_vec, OpH_disp_norm)
 DO s = 1, nb_step
@@ -237,7 +237,7 @@ DO s = 1, nb_step
                         OpH_disp_vec(k) = OpH_disp_vec(k) - box(k) * ANINT(OpH_disp_vec(k)/box(k))
                     END DO
                     OpH_disp_norm = NORM2(OpH_disp_vec)
-                    IF(OpH_disp_norm .LT. hb_OpH_rcut) THEN
+                    IF(OpH_disp_norm .LT. vvcf_OpH_rcut) THEN
                         o = o + 1
                         OHvec_mat(1,o,s) = atm_mat(1,i,s)
                         OHvec_mat(2,o,s) = atm_mat(1,j,s)
@@ -265,8 +265,8 @@ PRINT'(A40,F14.2,A20)', "OH groups:", finish-start, "seconds elapsed"
 ! C ----------------------------------------------- OH/O Hbonds
 start = OMP_get_wtime()
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, nb_atm)&
-!$OMP SHARED(hb_oHpO_rcut)&
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, nb_atm, nb_step)&
+!$OMP SHARED(vvcf_oHpO_rcut)&
 !$OMP PRIVATE(s, i, j, k, l)&
 !$OMP PRIVATE(oHpO_disp_vec, oHpO_disp_norm, Udonnor_count, Udonnor_count2)
 DO s = 1, nb_step
@@ -283,7 +283,7 @@ DO s = 1, nb_step
                     oHpO_disp_vec(k) = oHpO_disp_vec(k) - box(k) * ANINT(oHpO_disp_vec(k)/box(k))
                 END DO
                 oHpO_disp_norm = NORM2(oHpO_disp_vec)
-                IF( (oHpO_disp_norm .LE. hb_oHpO_rcut) .AND. (atm_mat(1,j,s) .NE. OHvec_mat(1,i,s))) THEN
+                IF( (oHpO_disp_norm .LE. vvcf_oHpO_rcut) .AND. (atm_mat(1,j,s) .NE. OHvec_mat(1,i,s))) THEN
                     atm_mat(10,j,s) = atm_mat(10,j,s) + 1 ! Acceptor count (O)
                     OHvec_mat(18,i,s) = OHvec_mat(18,i,s) + 1 ! Donnor count (OH)
                     IF (Udonnor_count .EQ. 0) THEN
@@ -333,7 +333,7 @@ PRINT'(A40,F14.2,A20)', "OH/O Hbonds:", finish-start, "seconds elapsed"
 start = OMP_get_wtime()
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, nb_step, nb_atm)&
-!$OMP SHARED(hb_XpOh_rcut, hb_CpOh_rcut)&
+!$OMP SHARED(vvcf_XpOh_rcut, vvcf_CpOh_rcut)&
 !$OMP PRIVATE(s, i, j, k)&
 !$OMP PRIVATE(XpOh_disp_vec, XpOh_disp_norm)
 DO s = 1, nb_step
@@ -350,7 +350,7 @@ DO s = 1, nb_step
                 XpOh_disp_vec(k) = XpOh_disp_vec(k) - box(k) * ANINT(XpOh_disp_vec(k)/box(k))
             END DO
             XpOh_disp_norm = NORM2(XpOh_disp_vec)
-            IF( (XpOh_disp_norm .LE. hb_XpOh_rcut) .AND. (atm_mat(1,j,s) .NE. OHvec_mat(1,i,s))) THEN
+            IF( (XpOh_disp_norm .LE. vvcf_XpOh_rcut) .AND. (atm_mat(1,j,s) .NE. OHvec_mat(1,i,s))) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(23,i,s) = 1
                     OHvec_mat(27,i,s) = 1
@@ -361,7 +361,7 @@ DO s = 1, nb_step
                 ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
                     OHvec_mat(26,i,s) = 1
                 END IF
-            ELSE IF( (XpOh_disp_norm .LE. hb_CpOh_rcut) .AND. (atm_mat(1,j,s) .NE. OHvec_mat(1,i,s))) THEN
+            ELSE IF( (XpOh_disp_norm .LE. vvcf_CpOh_rcut) .AND. (atm_mat(1,j,s) .NE. OHvec_mat(1,i,s))) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(27,i,s) = 1
                 END IF
@@ -379,7 +379,7 @@ IF (IS_c .EQ. 'Y' ) THEN
     ! F ----------------------------------------------- Calculate closest distance between IS and any OH groups
     start = OMP_get_wtime()
 
-    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, is_mat, nb_is)&
+    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, is_mat, nb_is, nb_step)&
     !$OMP PRIVATE(s, i, j, k)&
     !$OMP PRIVATE(SpOh_disp_vec, SpOh_disp_norm)
     DO s = 1, nb_step
