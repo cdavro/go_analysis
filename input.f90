@@ -153,6 +153,18 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('hb_OpH_rcut')
                     READ(value, * , IOSTAT=iostatus) hb_OpH_rcut
                     PRINT'(A50,E64.2)', 'hb_OpH_rcut: ', hb_OpH_rcut
+                CASE ('hb_XpOh_rcut')
+                    READ(value, * , IOSTAT=iostatus) hb_XpOh_rcut
+                    PRINT'(A50,E64.2)', 'hb_XpOh_rcut: ', hb_XpOh_rcut
+                CASE ('hb_CpOh_rcut')
+                    READ(value, * , IOSTAT=iostatus) hb_CpOh_rcut
+                    PRINT'(A50,E64.2)', 'hb_CpOh_rcut: ', hb_CpOh_rcut
+                CASE ('hb_XpO_rcut')
+                    READ(value, * , IOSTAT=iostatus) hb_XpO_rcut
+                    PRINT'(A50,E64.2)', 'hb_XpO_rcut: ', hb_XpO_rcut
+                CASE ('hb_CpO_rcut')
+                    READ(value, * , IOSTAT=iostatus) hb_CpO_rcut
+                    PRINT'(A50,E64.2)', 'hb_CpO_rcut: ', hb_CpO_rcut
 
                 CASE DEFAULT
                     PRINT'(A50,I64)', 'Invalid label, line:', line_c
