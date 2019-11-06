@@ -13,6 +13,9 @@ INTEGER                     :: iostatus=0
 INTEGER                     :: line_c=0
 INTEGER                     :: delim
 INTEGER, PARAMETER          :: file_unit=99
+! ----------------------------------------------- Parameters
+REAL(dp), PARAMETER         :: bohr_to_angstrom=0.529177249_dp
+REAL(dp), PARAMETER         :: aut_to_fs=0.0241888432658569977_dp
 ! -----------------------------------------------Variables
 CHARACTER(LEN=64)           :: file_pos='0', file_vel='0', file_is='0'
 INTEGER                     :: nb_atm, nb_step
@@ -36,6 +39,14 @@ INTEGER                     :: wa_AS_center_atmnb
 REAL(dp)                    :: hb_oHpO_rcut, hb_OpH_rcut
 REAL(dp)                    :: hb_XpOh_rcut, hb_CpOh_rcut
 REAL(dp)                    :: hb_XpO_rcut, hb_CpO_rcut
+! VVCF
+REAL(dp)                    :: vvcf_oHpO_rcut, vvcf_OpH_rcut
+REAL(dp)                    :: vvcf_XpOh_rcut, vvcf_CpOh_rcut
+REAL(dp)                    :: vvcf_rcut
+REAL(dp)                    :: timestep_fs=0.5_dp, mct, mctb
+CHARACTER(LEN=1)            :: hbonds, hbonds_c, layers, layers_c, intra_only
+INTEGER                     :: UDC, AC
+REAL(dp)                    :: layer_down, layer_up
 ! Surface related
 CHARACTER(LEN=1)            :: IS_c
 CHARACTER(LEN=1)            :: AS_c
@@ -165,7 +176,57 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('hb_CpO_rcut')
                     READ(value, * , IOSTAT=iostatus) hb_CpO_rcut
                     PRINT'(A50,E64.2)', 'hb_CpO_rcut: ', hb_CpO_rcut
-
+                CASE ('vvcf_oHpO_rcut')
+                    READ(value, * , IOSTAT=iostatus) vvcf_oHpO_rcut
+                    PRINT'(A50,E64.2)', 'vvcf_oHpO_rcut: ', vvcf_oHpO_rcut
+                CASE ('vvcf_OpH_rcut')
+                    READ(value, * , IOSTAT=iostatus) vvcf_OpH_rcut
+                    PRINT'(A50,E64.2)', 'vvcf_OpH_rcut: ', vvcf_OpH_rcut
+                CASE ('vvcf_XpOh_rcut')
+                    READ(value, * , IOSTAT=iostatus) vvcf_XpOh_rcut
+                    PRINT'(A50,E64.2)', 'vvcf_XpOh_rcut: ', vvcf_XpOh_rcut
+                CASE ('vvcf_CpOh_rcut')
+                    READ(value, * , IOSTAT=iostatus) vvcf_CpOh_rcut
+                    PRINT'(A50,E64.2)', 'vvcf_CpOh_rcut: ', vvcf_CpOh_rcut
+                CASE ('vvcf_rcut')
+                    READ(value, * , IOSTAT=iostatus) vvcf_rcut
+                    PRINT'(A50,E64.2)', 'vvcf_rcut: ', vvcf_rcut
+                CASE ('mct')
+                    READ(value, * , IOSTAT=iostatus) mct
+                    PRINT'(A50,E64.2)', 'mct: ', mct
+                CASE ('mctb')
+                    READ(value, * , IOSTAT=iostatus) mctb
+                    PRINT'(A50,E64.2)', 'mctb: ', mctb
+                CASE ('timestep_fs')
+                    READ(value, * , IOSTAT=iostatus) timestep_fs
+                    PRINT'(A50,E64.2)', 'timestep_fs: ', timestep_fs
+                CASE ('hbonds')
+                    READ(value, * , IOSTAT=iostatus) hbonds
+                    PRINT'(A50,A64)', 'hbonds: ', hbonds
+                CASE ('hbonds_c')
+                    READ(value, * , IOSTAT=iostatus) hbonds_c
+                    PRINT'(A50,A64)', 'hbonds_c: ', hbonds_c
+                CASE ('layers')
+                    READ(value, * , IOSTAT=iostatus) layers
+                    PRINT'(A50,A64)', 'layers: ', layers
+                CASE ('layers_c')
+                    READ(value, * , IOSTAT=iostatus) layers_c
+                    PRINT'(A50,A64)', 'layers_c: ', layers_c
+                CASE ('intra_only')
+                    READ(value, * , IOSTAT=iostatus) intra_only
+                    PRINT'(A50,A64)', 'intra_only: ', intra_only
+                CASE ('UDC')
+                    READ(value, * , IOSTAT=iostatus) UDC
+                    PRINT'(A50,I64)', 'UDC: ', UDC
+                CASE ('AC')
+                    READ(value, * , IOSTAT=iostatus) AC
+                    PRINT'(A50,I64)', 'AC: ', AC
+                CASE ('layer_down')
+                    READ(value, * , IOSTAT=iostatus) layer_down
+                    PRINT'(A50,E64.2)', 'layer_down: ', layer_down
+                CASE ('layer_up')
+                    READ(value, * , IOSTAT=iostatus) layer_up
+                    PRINT'(A50,E64.2)', 'layer_up: ', layer_up
                 CASE DEFAULT
                     PRINT'(A50,I64)', 'Invalid label, line:', line_c
             END SELECT
