@@ -138,18 +138,18 @@ IF (IS_c .EQ. 'Y' ) THEN
     ! A ----------------------------------------------- Since the number of points for the IS isn't constant, count it.
     start = OMP_get_wtime()
 
-    OPEN(UNIT=21,FILE=file_is,STATUS='old',FORM='formatted',ACTION='READ')
-    nb_line_is=0
+    OPEN(UNIT=21, FILE=file_is, STATUS='old', FORM='formatted', ACTION='READ')
+    nb_line_is = 0
     DO
-        READ(21,*,IOSTAT=iostatus)
+        READ(21, *, IOSTAT=iostatus)
         IF (iostatus .NE. 0) THEN
             EXIT
         ELSE
-            nb_line_is=nb_line_is+1
+            nb_line_is = nb_line_is + 1
         END IF
     END DO
     REWIND(21)
-    nb_max_is=CEILING(1.0*nb_line_is/nb_step)*2
+    nb_max_is = CEILING(1.0 * nb_line_is / nb_step) * 2
 
     finish = OMP_get_wtime()
     PRINT'(A40,F14.2,A20)', "IS grid:", finish-start, "seconds elapsed"
@@ -162,7 +162,7 @@ IF (IS_c .EQ. 'Y' ) THEN
     is_mat(:,:,:) = 0.0_dp
     nb_is(:) = 0
 
-    OPEN(UNIT=21,FILE=file_is,STATUS='old',FORM='formatted',ACTION='READ')
+    OPEN(UNIT=21, FILE=file_is, STATUS='old', FORM='formatted', ACTION='READ')
     DO s = 1, nb_step
         READ(21, *) nb_is(s)
         READ(21, *)
@@ -501,7 +501,7 @@ END IF
 ! X ----------------------------------------------- Write OH BOND
 start = OMP_get_wtime()
 
-OPEN(UNIT=31, FILE = suffix//"_O_hbonds.txt")
+OPEN(UNIT=31, FILE=suffix//"_O_hbonds.txt")
 WRITE(31, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24)')&
  "O_id", "Step","O_type", "Acc", "Don", "UDon"&
 , "C", "OE", "OH", "OA", "C9", "dist_IS_down", "dist_IS_up"
