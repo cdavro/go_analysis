@@ -4,7 +4,7 @@
 
 PROGRAM water_angle
 USE OMP_LIB
-USE INPUT_MOD
+USE INPUT
 
 IMPLICIT NONE
 
@@ -43,7 +43,6 @@ INTEGER                         :: i, s, k, j, o
 INTEGER                         :: CAC
 
 !   ----------------------------------------------- Parameters
-REAL(dp), PARAMETER             :: pi=4.0_dp*DATAN(1.0_dp)
 
 !   -----------------------------------------------
 PRINT'(A100)', '--------------------------------------------------'&
@@ -457,7 +456,7 @@ IF (IS_c .EQ. 'Y' ) THEN
                         SpS2_disp_norm = NORM2(SpS2_disp_vec)
 
                         IF ( (ACOS(DOT_PRODUCT(SpS1_disp_vec(:)/SpS1_disp_norm,SpS2_disp_vec(:)/SpS2_disp_norm)) .LT. 0.50).OR.&
-                        (ACOS(DOT_PRODUCT(SpS1_disp_vec(:)/SpS1_disp_norm,SpS2_disp_vec(:)/SpS2_disp_norm)) .GT. pi-0.50) ) THEN
+                        (ACOS(DOT_PRODUCT(SpS1_disp_vec(:)/SpS1_disp_norm,SpS2_disp_vec(:)/SpS2_disp_norm)) .GT. c_pi-0.50) ) THEN
                             CYCLE D4
                         END IF
 
@@ -485,7 +484,7 @@ IF (IS_c .EQ. 'Y' ) THEN
                         SpS2_disp_norm = NORM2(SpS2_disp_vec)
 
                         IF ( (ACOS(DOT_PRODUCT(SpS1_disp_vec(:)/SpS1_disp_norm,SpS2_disp_vec(:)/SpS2_disp_norm)) .LT. 0.50).OR.&
-                        (ACOS(DOT_PRODUCT(SpS1_disp_vec(:)/SpS1_disp_norm,SpS2_disp_vec(:)/SpS2_disp_norm)) .GT. pi-0.50) ) THEN
+                        (ACOS(DOT_PRODUCT(SpS1_disp_vec(:)/SpS1_disp_norm,SpS2_disp_vec(:)/SpS2_disp_norm)) .GT. c_pi-0.50) ) THEN
                             CYCLE D4
                         END IF
 
@@ -560,14 +559,14 @@ IF (IS_c .EQ. 'Y' ) THEN
                 tPSuvec_up(:) = -1.0 * tPSuvec_up(:)
             END IF
 
-            IF (ACOS(DOT_PRODUCT(tPSuvec_down(:), HpH_disp_uvec(:))) .LT. pi/2.0) THEN
+            IF (ACOS(DOT_PRODUCT(tPSuvec_down(:), HpH_disp_uvec(:))) .LT. c_pi/2.0) THEN
                 HpH_disp_uvec(:) = -1.0 * HpH_disp_uvec(:)
             END IF
 
             WAT_mat(35,i,s) = ACOS(DOT_PRODUCT(tPSuvec_down(:), WD_uvec(:)))
             WAT_mat(36,i,s) = ACOS(DOT_PRODUCT(tPSuvec_down(:), HpH_disp_uvec(:)))
 
-            IF (ACOS(DOT_PRODUCT(tPSuvec_up(:), HpH_disp_uvec(:))) .LT. pi/2.0) THEN
+            IF (ACOS(DOT_PRODUCT(tPSuvec_up(:), HpH_disp_uvec(:))) .LT. c_pi/2.0) THEN
                 HpH_disp_uvec(:) = -1.0 * HpH_disp_uvec(:)
             END IF
 
@@ -683,7 +682,7 @@ IF (AS_c .EQ. 'Y' ) THEN
                         SpS2_disp_norm = NORM2(SpS2_disp_vec)
 
                         IF ( (ACOS(DOT_PRODUCT(SpS1_disp_vec(:)/SpS1_disp_norm,SpS2_disp_vec(:)/SpS2_disp_norm)) .LT. 0.50).OR.&
-                        (ACOS(DOT_PRODUCT(SpS1_disp_vec(:)/SpS1_disp_norm,SpS2_disp_vec(:)/SpS2_disp_norm)) .GT. pi-0.50) ) THEN
+                        (ACOS(DOT_PRODUCT(SpS1_disp_vec(:)/SpS1_disp_norm,SpS2_disp_vec(:)/SpS2_disp_norm)) .GT. c_pi-0.50) ) THEN
                             CYCLE E4
                         END IF
 
@@ -736,7 +735,7 @@ IF (AS_c .EQ. 'Y' ) THEN
                 tPSuvec_down(:) = -1.0 * tPSuvec_down(:)
             END IF
 
-            IF (ACOS(DOT_PRODUCT(tPSuvec_down(:), HpH_disp_uvec(:))) .LT. pi/2.0) THEN
+            IF (ACOS(DOT_PRODUCT(tPSuvec_down(:), HpH_disp_uvec(:))) .LT. c_pi/2.0) THEN
                 HpH_disp_uvec(:) = -1.0 * HpH_disp_uvec(:)
             END IF
 

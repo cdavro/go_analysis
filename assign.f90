@@ -4,7 +4,7 @@
 
 PROGRAM assign
 USE OMP_LIB
-USE INPUT_MOD
+USE INPUT
 
 IMPLICIT NONE
 
@@ -21,7 +21,6 @@ CHARACTER(LEN=100)              :: input_file
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:)
 CHARACTER(LEN=3), ALLOCATABLE   :: atm_el(:)
 REAL(dp), ALLOCATABLE           :: center_avgpos(:,:)
-INTEGER, ALLOCATABLE            :: nb_max_OHvec(:)
 
 !   ----------------------------------------------- Temporary variables
 REAL(dp)                        :: z_shift
@@ -71,7 +70,6 @@ PRINT'(A100)', '--------------------------------------------------'&
 , '--------------------------------------------------'
 
 !   ----------------------------------------------- Allocate function for reading files
-! DEFINE AS: atm_id, atm_nb, atm_x, atm_y, atm_z, vel_x, vel_y, vel_z, nb_H, nb_C
 ALLOCATE(atm_mat(13,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
@@ -167,7 +165,6 @@ PRINT'(A40,F14.2,A20)', "Center/Wrap:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- Search the topology, water and oxygen groups
 start = OMP_get_wtime()
-ALLOCATE(nb_max_OHvec(nb_step))
 
 ALLOCATE(nb_epoxide(nb_step))
 ALLOCATE(nb_alcohol(nb_step))
@@ -177,16 +174,15 @@ ALLOCATE(nb_hydronium(nb_step))
 ALLOCATE(nb_hydroxide(nb_step))
 ALLOCATE(nb_oxygen_group(nb_step))
 
-nb_max_OHvec = 0
-atm_mat(9,:,:) = -1
-atm_mat(10,:,:) = -1
-atm_mat(11,:,:) = -1
-atm_mat(12,:,:) = -1
+atm_mat(9,:,:) = -1 ! NbH => O
+atm_mat(10,:,:) = -1 ! NbHeavy => O
+atm_mat(11,:,:) = -1 ! O_id => H
+atm_mat(12,:,:) = -1 ! (NbH => O) => H
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, nb_atm, nb_step, box)&
 !$OMP SHARED(assign_OpH_rcut, assign_OpC_rcut, assign_OpSi_rcut)&
 !$OMP SHARED(nb_epoxide, nb_hydroxide, nb_alcohol, nb_water, nb_hydronium, nb_alkoxide, nb_oxygen_group)&
-!$OMP PRIVATE(s,i,j,k)&
+!$OMP PRIVATE(s, i, j, k)&
 !$OMP PRIVATE(OaC_disp_vec, OaC_disp_norm, OaH_disp_vec, OaH_disp_norm, OaSi_disp_vec, OaSi_disp_norm)
 DO s = 1, nb_step
     DO i = 1, nb_atm
@@ -217,7 +213,7 @@ DO s = 1, nb_step
                         atm_mat(10,i,s) = atm_mat(10,i,s) + 1
                     END IF
 
-                ELSE IF (atm_mat(2,j,s) .EQ. 28) THEN ! Compare with Carbons
+                ELSE IF (atm_mat(2,j,s) .EQ. 28) THEN ! Compare with Sulphurs
                     DO k = 1, 3
                         OaSi_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
                         OaSi_disp_vec(k) = OaSi_disp_vec(k) - box(k) * ANINT(OaSi_disp_vec(k) / box(k))
@@ -263,7 +259,7 @@ DO s = 1, nb_step
 END DO
 CLOSE(UNIT=50)
 
-DEALLOCATE(nb_max_OHvec,nb_epoxide,nb_alcohol,nb_alkoxide,nb_water,nb_hydronium,nb_hydroxide,nb_oxygen_group)
+DEALLOCATE(nb_epoxide,nb_alcohol,nb_alkoxide,nb_water,nb_hydronium,nb_hydroxide,nb_oxygen_group)
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Oxygen groups topologies output:", finish-start, "seconds elapsed"

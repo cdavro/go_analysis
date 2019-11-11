@@ -2,7 +2,7 @@
 ! License:MIT
 ! UTF-8, CRLF, Fortran2003, OpenMP
 
-MODULE INPUT_MOD
+MODULE INPUT
 
 IMPLICIT NONE
 ! -----------------------------------------------Set Double precision
@@ -16,6 +16,8 @@ INTEGER, PARAMETER          :: file_unit=99
 ! ----------------------------------------------- Parameters
 REAL(dp), PARAMETER         :: bohr_to_angstrom=0.529177249_dp
 REAL(dp), PARAMETER         :: aut_to_fs=0.0241888432658569977_dp
+REAL(dp), PARAMETER         :: c_pi=4.0_dp*DATAN(1.0_dp)
+
 ! -----------------------------------------------Variables
 CHARACTER(LEN=64)           :: file_pos='0', file_vel='0', file_is='0'
 INTEGER                     :: nb_atm, nb_step
@@ -252,4 +254,4 @@ SUBROUTINE READINPUTSUB(input_file)
 
 END SUBROUTINE READINPUTSUB
 
-END MODULE INPUT_MOD
+END MODULE INPUT
