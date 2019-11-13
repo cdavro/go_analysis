@@ -354,6 +354,12 @@ DO s = 1, nb_step
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(23,i,s) = 1
                     OHvec_mat(27,i,s) = 1
+                    IF ( (XpOh_disp_norm .LE. OHvec_mat(35,i,s)) .AND.&
+                    (OHvec_mat(35,i,s) .NE. 0) ) THEN
+                        atm_mat(1,j,s) = OHvec_mat(34,i,s)
+                        XpOh_disp_norm = OHvec_mat(35,i,s)
+                        atm_mat(6,j,s) = OHvec_mat(36,i,s)
+                    END IF
                 ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
                     OHvec_mat(24,i,s) = 1
                 ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OH

@@ -318,6 +318,12 @@ DO s = 1, nb_step
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C or SiF
                     WAT_mat(27,i,s) = 1
                     WAT_mat(28,i,s) = 1
+                    IF ( (XpOwat_disp_norm .LE. WAT_mat(45,i,s)) .AND.&
+                    (WAT_mat(45,i,s) .NE. 0) ) THEN
+                        atm_mat(1,j,s) = WAT_mat(44,i,s)
+                        XpOwat_disp_norm = WAT_mat(45,i,s)
+                        atm_mat(6,j,s) = WAT_mat(46,i,s)
+                    END IF
                 ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
                     WAT_mat(24,i,s) = 1
                 ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OH
