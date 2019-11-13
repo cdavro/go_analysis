@@ -354,11 +354,11 @@ DO s = 1, nb_step
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(23,i,s) = 1
                     OHvec_mat(27,i,s) = 1
-                    IF ( (XpOh_disp_norm .LE. OHvec_mat(35,i,s)) .AND.&
-                    (OHvec_mat(35,i,s) .NE. 0) ) THEN
-                        atm_mat(1,j,s) = OHvec_mat(34,i,s)
-                        XpOh_disp_norm = OHvec_mat(35,i,s)
-                        atm_mat(6,j,s) = OHvec_mat(36,i,s)
+                    IF ( (XpOh_disp_norm .LE. OHvec_mat(35,i,s)) .OR.&
+                    (OHvec_mat(35,i,s) .EQ. 0.0) ) THEN
+                        OHvec_mat(34,i,s) = atm_mat(1,j,s)
+                        OHvec_mat(35,i,s) = XpOh_disp_norm
+                        OHvec_mat(36,i,s) = atm_mat(6,j,s)
                     END IF
                 ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
                     OHvec_mat(24,i,s) = 1
@@ -445,11 +445,9 @@ IF (mcs+1 .GE. nb_step) THEN
     PRINT*, "Error: Max correlation time > trajectory time"
     STOP
 END IF
-
 ALLOCATE(vvcf_xxz(mcs+1))
 ALLOCATE(timings(mcs+1))
 timings(:) = 0.0_dp
-!nb_step is a parameter so always shared
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vvcf_xxz, mcsb, mcs, OHvec_mat, nb_o, box, timings, nb_step)&
 !$OMP SHARED(layers, layers_c, hbonds, hbonds_c, intra_only, IS_c, layer_up, layer_down, udc, ac, timestep_fs, vvcf_rcut)&
 !$OMP PRIVATE(t, s, i, j, l, v, u)&
@@ -462,7 +460,6 @@ DO t = mcsb, mcs+1
     DO s = 1, nb_step
         IF (s-1+t-1 .LT. nb_step) THEN
          H1:DO i = 1, nb_o*3
-
                 IF (OHvec_mat(1,i,s) .EQ. 0) THEN ! Skip empty
                     CYCLE H1
                 END IF

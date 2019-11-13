@@ -326,11 +326,11 @@ DO s = 1, nb_step
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(20,i,s) = 1
                     OHvec_mat(24,i,s) = 1
-                    IF ( (XpOh_disp_norm .LE. OHvec_mat(32,i,s)) .AND.&
-                    (OHvec_mat(32,i,s) .NE. 0) ) THEN
-                        atm_mat(1,j,s) = OHvec_mat(31,i,s)
-                        XpOh_disp_norm = OHvec_mat(32,i,s)
-                        atm_mat(6,j,s) = OHvec_mat(33,i,s)
+                    IF ( (XpOh_disp_norm .LE. OHvec_mat(32,i,s)) .OR.&
+                    (OHvec_mat(32,i,s) .EQ. 0.0) ) THEN
+                        OHvec_mat(31,i,s) = atm_mat(1,j,s)
+                        OHvec_mat(32,i,s) = XpOh_disp_norm
+                        OHvec_mat(33,i,s) = atm_mat(6,j,s)
                     END IF
                 ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
                     OHvec_mat(21,i,s) = 1
@@ -377,11 +377,11 @@ DO s = 1, nb_step
                 IF (atm_mat(3,j,s) .EQ. 1) THEN ! C
                     atm_mat(10,i,s) = 1
                     atm_mat(14,i,s) = 1
-                    IF ( (XpO_disp_norm .LE. atm_mat(22,i,s)) .AND.&
-                    (atm_mat(22,i,s) .NE. 0) ) THEN
-                        atm_mat(1,j,s) = atm_mat(21,i,s)
-                        XpO_disp_norm = atm_mat(22,i,s)
-                        atm_mat(6,j,s) = atm_mat(23,i,s)
+                    IF ( (XpO_disp_norm .LE. atm_mat(22,i,s)) .OR.&
+                    (atm_mat(22,i,s) .EQ. 0.0) ) THEN
+                        atm_mat(21,i,s) = atm_mat(1,j,s)
+                        atm_mat(22,i,s) = XpO_disp_norm
+                        atm_mat(23,i,s) = atm_mat(6,j,s)
                     END IF
                 ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
                     atm_mat(11,i,s) = 1
