@@ -216,7 +216,7 @@ END IF
 
 ! B ----------------------------------------------- OH groups and corresponding values
 start = OMP_get_wtime()
-ALLOCATE(OHvec_mat(33,nb_o*3,nb_step))
+ALLOCATE(OHvec_mat(36,nb_o*3,nb_step))
 ALLOCATE(nb_max_OHvec(nb_step))
 
 nb_max_OHvec(:) = 0.0

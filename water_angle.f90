@@ -224,7 +224,7 @@ END IF
 
 ! B ----------------------------------------------- Water
 start = OMP_get_wtime()
-ALLOCATE(WAT_mat(43,nb_o*3,nb_step))
+ALLOCATE(WAT_mat(46,nb_o*3,nb_step))
 ALLOCATE(nb_max_WAT(nb_step))
 
 nb_max_WAT(:) = 0.0

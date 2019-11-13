@@ -70,7 +70,7 @@ PRINT'(A100)','--------------------------------------------------'&
 ,'--------------------------------------------------'
 
 !   ----------------------------------------------- Allocate function for reading files
-ALLOCATE(atm_mat(20,nb_atm,nb_step))
+ALLOCATE(atm_mat(23,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
 ! A ----------------------------------------------- Read positions
@@ -189,7 +189,7 @@ END IF
 
 ! B ----------------------------------------------- OH groups and corresponding values
 start = OMP_get_wtime()
-ALLOCATE(OHvec_mat(30,nb_o*3,nb_step))
+ALLOCATE(OHvec_mat(33,nb_o*3,nb_step))
 ALLOCATE(nb_max_OHvec(nb_step))
 
 nb_max_OHvec(:) = 0.0
