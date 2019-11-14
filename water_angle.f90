@@ -309,21 +309,26 @@ DO s = 1, nb_step
             IF (atm_mat(3,j,s) .EQ. -1) THEN
                 CYCLE C2
             END IF
+            IF (atm_mat(1,j,s) .EQ. WAT_mat(1,i,s)) THEN
+                CYCLE C2
+            END IF
             DO k = 1, 3
                 XpOwat_disp_vec(k) = atm_mat(k+3,j,s) - WAT_mat(k+1,i,s)
                 XpOwat_disp_vec(k) = XpOwat_disp_vec(k) - box(k) * ANINT(XpOwat_disp_vec(k) / box(k))
             END DO
             XpOwat_disp_norm = NORM2(XpOwat_disp_vec)
-            IF( (XpOwat_disp_norm .LE. wa_XpOwat_rcut) .AND. (atm_mat(1,j,s) .NE. WAT_mat(1,i,s))) THEN
+
+            IF ( ( (XpOwat_disp_norm .LE. WAT_mat(45,i,s)) .OR.&
+            (WAT_mat(45,i,s) .EQ. 0.0) ) .AND.&
+            (atm_mat(3,j,s) .EQ. 1.) ) THEN
+                WAT_mat(44,i,s) = atm_mat(1,j,s)
+                WAT_mat(45,i,s) = XpOwat_disp_norm
+                WAT_mat(46,i,s) = atm_mat(6,j,s)
+            END IF
+            IF (XpOwat_disp_norm .LE. wa_XpOwat_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C or SiF
                     WAT_mat(27,i,s) = 1
                     WAT_mat(28,i,s) = 1
-                    IF ( (XpOwat_disp_norm .LE. WAT_mat(45,i,s)) .OR.&
-                    (WAT_mat(45,i,s) .EQ. 0.0) ) THEN
-                        WAT_mat(44,i,s) = atm_mat(1,j,s)
-                        WAT_mat(45,i,s) = XpOwat_disp_norm
-                        WAT_mat(46,i,s) = atm_mat(6,j,s)
-                    END IF
                 ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
                     WAT_mat(24,i,s) = 1
                 ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OH
@@ -331,7 +336,7 @@ DO s = 1, nb_step
                 ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
                     WAT_mat(26,i,s) = 1
                 END IF
-            ELSE IF( (XpOwat_disp_norm .LE. wa_CpOwat_rcut) .AND. (atm_mat(1,j,s) .NE. WAT_mat(1,i,s))) THEN
+            ELSE IF (XpOwat_disp_norm .LE. wa_CpOwat_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C or SiF
                     WAT_mat(28,i,s) = 1
                 END IF

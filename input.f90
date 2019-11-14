@@ -26,6 +26,9 @@ REAL(dp)                    :: xlo=0.0_dp, xhi=0.0_dp
 REAL(dp)                    :: ylo=0.0_dp, yhi=0.0_dp
 REAL(dp)                    :: zlo=0.0_dp, zhi=0.0_dp
 REAL(dp)                    :: box(3)
+! Surface related
+CHARACTER(LEN=1)            :: IS_c
+CHARACTER(LEN=1)            :: AS_c
 ! Assign
 CHARACTER(LEN=3)            :: assign_center_el
 REAL(dp)                    :: assign_OpH_rcut, assign_OpC_rcut, assign_OpSi_rcut
@@ -46,12 +49,11 @@ REAL(dp)                    :: vvcf_oHpO_rcut, vvcf_OpH_rcut
 REAL(dp)                    :: vvcf_XpOh_rcut, vvcf_CpOh_rcut
 REAL(dp)                    :: vvcf_rcut
 REAL(dp)                    :: timestep_fs=0.5_dp, mct, mctb
-CHARACTER(LEN=1)            :: hbonds, hbonds_c, layers, layers_c, intra_only
+CHARACTER(LEN=1)            :: hbonds, hbonds_c, layers, layers_c
+CHARACTER(LEN=1)            :: intra_only, water_only, close_c_only
+CHARACTER(LEN=1)            :: up_down_only="U"
 INTEGER                     :: UDC, AC
 REAL(dp)                    :: layer_down, layer_up
-! Surface related
-CHARACTER(LEN=1)            :: IS_c
-CHARACTER(LEN=1)            :: AS_c
 ! -----------------------------------------------Counters
 INTEGER, PRIVATE            :: i
 
@@ -119,8 +121,7 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('zhi')
                     READ(value, * , IOSTAT=iostatus) zhi
                     PRINT'(A50,E64.10)', 'Box_Z_high: ', zhi
-
-
+! Assign
                 CASE('assign_center_el')
                     READ(value, * , IOSTAT=iostatus) assign_center_el
                     PRINT'(A50,A64)', 'assign_center_el:', ADJUSTR(assign_center_el)
@@ -136,7 +137,7 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('waterlist')
                     READ(value, * , IOSTAT=iostatus) waterlist
                     PRINT'(A50,I64)', 'waterlist: ', waterlist
-
+! Density
                 CASE ('dens_center_atmnb')
                     READ(value, * , IOSTAT=iostatus) dens_center_atmnb
                     PRINT'(A50,I64)', 'dens_center_atmnb: ', dens_center_atmnb
@@ -149,7 +150,7 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('dens_rstart')
                     READ(value, * , IOSTAT=iostatus) dens_rstart
                     PRINT'(A50,E64.2)', 'dens_rstart: ', dens_rstart
-
+! Water Angle
                 CASE ('wa_AS_center_atmnb')
                     READ(value, * , IOSTAT=iostatus) wa_AS_center_atmnb
                     PRINT'(A50,I64)', 'wa_AS_center_atmnb: ', wa_AS_center_atmnb
@@ -159,7 +160,7 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('wa_CpOwat_rcut')
                     READ(value, * , IOSTAT=iostatus) wa_CpOwat_rcut
                     PRINT'(A50,E64.2)', 'wa_CpOwat_rcut: ', wa_CpOwat_rcut
-
+! HBonds
                 CASE ('hb_oHpO_rcut')
                     READ(value, * , IOSTAT=iostatus) hb_oHpO_rcut
                     PRINT'(A50,E64.2)', 'hb_oHpO_rcut: ', hb_oHpO_rcut
@@ -178,6 +179,7 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('hb_CpO_rcut')
                     READ(value, * , IOSTAT=iostatus) hb_CpO_rcut
                     PRINT'(A50,E64.2)', 'hb_CpO_rcut: ', hb_CpO_rcut
+! VVCF
                 CASE ('vvcf_oHpO_rcut')
                     READ(value, * , IOSTAT=iostatus) vvcf_oHpO_rcut
                     PRINT'(A50,E64.2)', 'vvcf_oHpO_rcut: ', vvcf_oHpO_rcut
@@ -217,6 +219,15 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('intra_only')
                     READ(value, * , IOSTAT=iostatus) intra_only
                     PRINT'(A50,A64)', 'intra_only: ', intra_only
+                CASE ('water_only')
+                    READ(value, * , IOSTAT=iostatus) water_only
+                    PRINT'(A50,A64)', 'water_only: ', water_only
+                CASE ('close_c_only')
+                    READ(value, * , IOSTAT=iostatus) close_c_only
+                    PRINT'(A50,A64)', 'close_c_only: ', close_c_only
+                CASE ('up_down_only')
+                    READ(value, * , IOSTAT=iostatus) up_down_only
+                    PRINT'(A50,A64)', 'up_down_only: ', up_down_only
                 CASE ('UDC')
                     READ(value, * , IOSTAT=iostatus) UDC
                     PRINT'(A50,I64)', 'UDC: ', UDC

@@ -345,21 +345,26 @@ DO s = 1, nb_step
             IF (atm_mat(3,j,s) .EQ. -1) THEN
                 CYCLE D2
             END IF
+            IF (atm_mat(1,j,s) .EQ. OHvec_mat(1,i,s)) THEN
+                CYCLE D2
+            END IF
             DO k = 1, 3
                 XpOh_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+10,i,s)
                 XpOh_disp_vec(k) = XpOh_disp_vec(k) - box(k) * ANINT(XpOh_disp_vec(k)/box(k))
             END DO
             XpOh_disp_norm = NORM2(XpOh_disp_vec)
-            IF( (XpOh_disp_norm .LE. vvcf_XpOh_rcut) .AND. (atm_mat(1,j,s) .NE. OHvec_mat(1,i,s))) THEN
+
+            IF ( ( (XpOh_disp_norm .LE. OHvec_mat(35,i,s)) .OR.&
+            (OHvec_mat(35,i,s) .EQ. 0.0) ) .AND.&
+            (atm_mat(3,j,s) .EQ. 1.) ) THEN
+                OHvec_mat(34,i,s) = atm_mat(1,j,s)
+                OHvec_mat(35,i,s) = XpOh_disp_norm
+                OHvec_mat(36,i,s) = atm_mat(6,j,s)
+            END IF
+            IF (XpOh_disp_norm .LE. vvcf_XpOh_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(23,i,s) = 1
                     OHvec_mat(27,i,s) = 1
-                    IF ( (XpOh_disp_norm .LE. OHvec_mat(35,i,s)) .OR.&
-                    (OHvec_mat(35,i,s) .EQ. 0.0) ) THEN
-                        OHvec_mat(34,i,s) = atm_mat(1,j,s)
-                        OHvec_mat(35,i,s) = XpOh_disp_norm
-                        OHvec_mat(36,i,s) = atm_mat(6,j,s)
-                    END IF
                 ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
                     OHvec_mat(24,i,s) = 1
                 ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OH
@@ -367,7 +372,7 @@ DO s = 1, nb_step
                 ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
                     OHvec_mat(26,i,s) = 1
                 END IF
-            ELSE IF( (XpOh_disp_norm .LE. vvcf_CpOh_rcut) .AND. (atm_mat(1,j,s) .NE. OHvec_mat(1,i,s))) THEN
+            ELSE IF (XpOh_disp_norm .LE. vvcf_CpOh_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(27,i,s) = 1
                 END IF
@@ -450,6 +455,7 @@ ALLOCATE(timings(mcs+1))
 timings(:) = 0.0_dp
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vvcf_xxz, mcsb, mcs, OHvec_mat, nb_o, box, timings, nb_step)&
 !$OMP SHARED(layers, layers_c, hbonds, hbonds_c, intra_only, IS_c, layer_up, layer_down, udc, ac, timestep_fs, vvcf_rcut)&
+!$OMP SHARED(water_only, close_c_only, up_down_only)&
 !$OMP PRIVATE(t, s, i, j, l, v, u)&
 !$OMP PRIVATE(tij_vec, trij, OH_vel_vec, OH_disp_vec, start_i, finish_i)
 DO t = mcsb, mcs+1
@@ -460,13 +466,29 @@ DO t = mcsb, mcs+1
     DO s = 1, nb_step
         IF (s-1+t-1 .LT. nb_step) THEN
          H1:DO i = 1, nb_o*3
+
                 IF (OHvec_mat(1,i,s) .EQ. 0) THEN ! Skip empty
                     CYCLE H1
                 END IF
-                IF (OHvec_mat(3,i,s) .NE. 13) THEN ! Select water only
+
+                IF ( (water_only .EQ. "Y") .AND.& ! Select water only
+                (OHvec_mat(3,i,s) .NE. 13) ) THEN
+                    CYCLE H1
+                ELSE IF ( (water_only .EQ. "E") .AND.& ! NOT WATER
+                (OHvec_mat(3,i,s) .EQ. 13) ) THEN
                     CYCLE H1
                 END IF
-                IF (OHvec_mat(27,i,s) .NE. 1) THEN ! Select water close to the C surface (<=9A)
+
+                IF ( (close_c_only .EQ. "Y") .AND.& ! Select OHvec close to the C surface (<=9A)
+                (OHvec_mat(27,i,s) .NE. 1) ) THEN
+                    CYCLE H1
+                END IF
+
+                IF ( (up_down_only .EQ. "D") .AND.&
+                (OHvec_mat(13,i,s) .GT. OHvec_mat(36,i,s)) ) THEN ! Down only
+                    CYCLE H1
+                ELSE IF ( (up_down_only .EQ. "U") .AND.&
+                (OHvec_mat(13,i,s) .LT. OHvec_mat(36,i,s)) ) THEN ! Up only
                     CYCLE H1
                 END IF
 

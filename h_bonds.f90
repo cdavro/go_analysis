@@ -317,21 +317,26 @@ DO s = 1, nb_step
             IF (atm_mat(3,j,s) .EQ. -1) THEN
                 CYCLE D2
             END IF
+            IF (atm_mat(1,j,s) .EQ. OHvec_mat(1,i,s)) THEN
+                CYCLE D2
+            END IF
             DO k = 1, 3
                 XpOh_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+7,i,s)
                 XpOh_disp_vec(k) = XpOh_disp_vec(k) - box(k) * ANINT(XpOh_disp_vec(k)/box(k))
             END DO
             XpOh_disp_norm = NORM2(XpOh_disp_vec)
-            IF( (XpOh_disp_norm .LE. hb_XpOh_rcut) .AND. (atm_mat(1,j,s) .NE. OHvec_mat(1,i,s))) THEN
+
+            IF ( ( (XpOh_disp_norm .LE. OHvec_mat(32,i,s)) .OR.&
+            (OHvec_mat(32,i,s) .EQ. 0.0) ) .AND.&
+            (atm_mat(3,j,s) .EQ. 1.) ) THEN
+                OHvec_mat(31,i,s) = atm_mat(1,j,s)
+                OHvec_mat(32,i,s) = XpOh_disp_norm
+                OHvec_mat(33,i,s) = atm_mat(6,j,s)
+            END IF
+            IF (XpOh_disp_norm .LE. hb_XpOh_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(20,i,s) = 1
                     OHvec_mat(24,i,s) = 1
-                    IF ( (XpOh_disp_norm .LE. OHvec_mat(32,i,s)) .OR.&
-                    (OHvec_mat(32,i,s) .EQ. 0.0) ) THEN
-                        OHvec_mat(31,i,s) = atm_mat(1,j,s)
-                        OHvec_mat(32,i,s) = XpOh_disp_norm
-                        OHvec_mat(33,i,s) = atm_mat(6,j,s)
-                    END IF
                 ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
                     OHvec_mat(21,i,s) = 1
                 ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OH
@@ -339,7 +344,7 @@ DO s = 1, nb_step
                 ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
                     OHvec_mat(23,i,s) = 1
                 END IF
-            ELSE IF( (XpOh_disp_norm .LE. hb_CpOh_rcut) .AND. (atm_mat(1,j,s) .NE. OHvec_mat(1,i,s))) THEN
+            ELSE IF (XpOh_disp_norm .LE. hb_CpOh_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(24,i,s) = 1
                 END IF
@@ -368,21 +373,27 @@ DO s = 1, nb_step
             IF (atm_mat(3,j,s) .EQ. -1) THEN
                 CYCLE E2
             END IF
+            IF (atm_mat(1,j,s) .EQ. atm_mat(1,i,s)) THEN
+                CYCLE E2
+            END IF
             DO k = 1, 3
                 XpO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
                 XpO_disp_vec(k) = XpO_disp_vec(k) - box(k) * ANINT(XpO_disp_vec(k)/box(k))
             END DO
             XpO_disp_norm = NORM2(XpO_disp_vec)
-            IF ( (XpO_disp_norm .LE. hb_XpO_rcut) .AND. (atm_mat(1,j,s) .NE. atm_mat(1,i,s))) THEN
+
+            IF ( ( (XpO_disp_norm .LE. atm_mat(22,i,s)) .OR.&
+            (atm_mat(22,i,s) .EQ. 0.0) ) .AND.&
+            (atm_mat(3,j,s) .EQ. 1.) ) THEN
+                atm_mat(21,i,s) = atm_mat(1,j,s)
+                atm_mat(22,i,s) = XpO_disp_norm
+                atm_mat(23,i,s) = atm_mat(6,j,s)
+            END IF
+            IF (XpO_disp_norm .LE. hb_XpO_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1) THEN ! C
                     atm_mat(10,i,s) = 1
                     atm_mat(14,i,s) = 1
-                    IF ( (XpO_disp_norm .LE. atm_mat(22,i,s)) .OR.&
-                    (atm_mat(22,i,s) .EQ. 0.0) ) THEN
-                        atm_mat(21,i,s) = atm_mat(1,j,s)
-                        atm_mat(22,i,s) = XpO_disp_norm
-                        atm_mat(23,i,s) = atm_mat(6,j,s)
-                    END IF
+
                 ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
                     atm_mat(11,i,s) = 1
                 ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OH
@@ -390,7 +401,7 @@ DO s = 1, nb_step
                 ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
                     atm_mat(13,i,s) = 1
                 END IF
-            ELSE IF ( (XpO_disp_norm .LE. hb_CpO_rcut) .AND. (atm_mat(1,j,s) .NE. atm_mat(1,i,s))) THEN
+            ELSE IF (XpO_disp_norm .LE. hb_CpO_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1) THEN ! C
                     atm_mat(14,i,s) = 1
                 END IF
