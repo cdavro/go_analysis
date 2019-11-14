@@ -22,6 +22,9 @@ h_bonds.o: h_bonds.f90
 vvcf.o: vvcf.f90
 	$(FC) $(FCFLAGS) -c vvcf.f90
 
+vdos.o: vdos.f90
+	$(FC) $(FCFLAGS) -c vdos.f90
+
 assign: input.o assign.o
 	$(FC) $(FCFLAGS) input.o assign.o -o assign
 
@@ -40,16 +43,20 @@ h_bonds: input.o h_bonds.o
 vvcf: input.o vvcf.o
 	$(FC) $(FCFLAGS) input.o vvcf.o -o vvcf
 
-all: input.o density.o assign.o surface_wrap.o water_angle.o h_bonds.o vvcf.o
+vdos: input.o vdos.o
+	$(FC) $(FCFLAGS) input.o vdos.o -o vdos
+
+all: input.o density.o assign.o surface_wrap.o water_angle.o h_bonds.o vvcf.o vdos.o
 	$(FC) $(FCFLAGS) input.o density.o -o density
 	$(FC) $(FCFLAGS) input.o assign.o -o assign
 	$(FC) $(FCFLAGS) input.o surface_wrap.o -o surface_wrap
 	$(FC) $(FCFLAGS) input.o water_angle.o -o water_angle
 	$(FC) $(FCFLAGS) input.o h_bonds.o -o h_bonds
 	$(FC) $(FCFLAGS) input.o vvcf.o -o vvcf
+	$(FC) $(FCFLAGS) input.o vdos.o -o vdos
 
 clean:
 	rm -f *.o
 
 realclean:
-	rm -f *.o assign density surface_wrap water_angle h_bonds vvcf
+	rm -f *.o assign density surface_wrap water_angle h_bonds vvcf vdos

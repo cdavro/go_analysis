@@ -65,6 +65,7 @@ CALL GET_COMMAND_ARGUMENT(1, input_file)
 input_file=TRIM(input_file)
 CALL READINPUTSUB(input_file)
 file_pos=TRIM(file_pos)
+file_vel=TRIM(file_vel)
 file_is=TRIM(file_is)
 
 !   ----------------------------------------------- Controls
@@ -453,6 +454,7 @@ END IF
 ALLOCATE(vvcf_xxz(mcs+1))
 ALLOCATE(timings(mcs+1))
 timings(:) = 0.0_dp
+
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vvcf_xxz, mcsb, mcs, OHvec_mat, nb_o, box, timings, nb_step)&
 !$OMP SHARED(layers, layers_c, hbonds, hbonds_c, intra_only, IS_c, layer_up, layer_down, udc, ac, timestep_fs, vvcf_rcut)&
 !$OMP SHARED(water_only, close_c_only, up_down_only)&
@@ -639,7 +641,7 @@ DO t = mcsb, mcs+1
     timings(t)=finish_i-start_i
 
     IF (MODULO(t,25) .EQ. 0) THEN
-        PRINT('(I10,A1,I10,E24.14,E24.14,E24.14)'),t,"/",mcs+1, (t-1)*timestep_fs, vvcf_xxz(t),timings(t)
+        PRINT('(I10,A1,I10,E24.14,E24.14,E24.14)'), t, "/", mcs+1, (t-1)*timestep_fs, vvcf_xxz(t), timings(t)
     END IF
 
 END DO ! Corr
@@ -648,21 +650,21 @@ END DO ! Corr
 avg_timigs = (SUM(timings(:)) / (mcs+1-mcsb) )
 finish = OMP_get_wtime()
 
-PRINT'(A40,F14.2,A20,A20,F14.2)', "Done with VVCF_xxz:",finish-start,"seconds elapsed","avg per step:",avg_timigs
+PRINT'(A40,F14.2,A20,A20,F14.2)', "Done with VVCF_xxz:", finish-start, "seconds elapsed", "avg per step:", avg_timigs
 
 start = OMP_get_wtime()
 
-open(UNIT=51, FILE = suffix//"_vvcf_xxz.txt")
-WRITE(51,'(A20,A20)') "Time (fs)","VVCF_xxz (Å2.fs2)"
+open(UNIT=51, FILE=suffix//"_vvcf_xxz.txt")
+WRITE(51,'(A20,A20)') "Time (fs)", "VVCF_xxz (Å2.fs2)"
 DO t = mcsb, mcs+1
     WRITE(51,'(E24.14,E24.14)') (t-1)*timestep_fs, vvcf_xxz(t)
 END DO
 CLOSE(UNIT=51)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Done with VVCF_xxz output:",finish-start,"seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Done with VVCF_xxz output:", finish-start, "seconds elapsed"
 
-DEALLOCATE(vvcf_xxz,timings)
+DEALLOCATE(vvcf_xxz, timings)
 
 !   ----------------------------------------------- End
 PRINT'(A100)', '--------------------------------------------------'&

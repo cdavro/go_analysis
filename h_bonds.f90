@@ -471,7 +471,6 @@ IF (IS_c .EQ. 'Y' ) THEN
     ! X ----------------------------------------------- Calculate closest distance between IS and any O atom
     start = OMP_get_wtime()
 
-    !nb_step, nb_atm, always shared.
     !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, nb_o, is_mat, nb_is, nb_atm, nb_step)&
     !$OMP PRIVATE(s, i, j, k)&
     !$OMP PRIVATE(SpO_disp_vec, SpO_disp_norm)
