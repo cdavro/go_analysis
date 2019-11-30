@@ -28,6 +28,7 @@ REAL(dp)                        :: OpH_disp_vec(3), OpH_disp_norm
 REAL(dp)                        :: XpOwat_disp_vec(3), XpOwat_disp_norm
 REAL(dp)                        :: SpOwat_disp_vec(3), SpOwat_disp_norm
 REAL(dp)                        :: SpS1_disp_vec(3), SpS1_disp_norm, SpS2_disp_vec(3), SpS2_disp_norm
+REAL(dp)                        :: tPSvec_down(3), tPSvec_up(3)
 REAL(dp)                        :: tPSuvec_down(3), tPSuvec_up(3)
 REAL(dp)                        :: WD_vec(3), HpH_disp_vec(3),WD_uvec(3), HpH_disp_uvec(3)
 REAL(dp)                        :: tO_pos_iPS_down(3), tO_pos_iPS_up(3), tS_pos_PS_down(3), tS_pos_PS_up(3)
@@ -235,23 +236,24 @@ WAT_mat(:,:,:) = 0.0_dp
 !$OMP PRIVATE(OpH_disp_vec, OpH_disp_norm)
 DO s = 1, nb_step
     o = 0
-    DO i=1,nb_atm
+    DO i = 1, nb_atm
         IF (atm_mat(3,i,s) .EQ. 13) THEN
             o = o + 1
             WAT_mat(1,o,s) = atm_mat(1,i,s)
             DO k = 1, 3
                 WAT_mat(k+1,o,s) = atm_mat(k+3,i,s)
             END DO
-            DO j=1,nb_atm
+            DO j = 1, nb_atm
                 IF (atm_mat(3,j,s) .EQ. 23) THEN
                     DO k = 1, 3
                         OpH_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
                         OpH_disp_vec(k) = OpH_disp_vec(k) - box(k) * ANINT(OpH_disp_vec(k) / box(k))
                     END DO
+
                     OpH_disp_norm = NORM2(OpH_disp_vec(:))
                     IF ( ( (OpH_disp_norm .LT. WAT_mat(6,o,s)) .OR.&
                     (WAT_mat(6,o,s) .EQ. 0.0) ) .AND.&
-                    (atm_mat(1,j,s) .NE. WAT_mat(5,i,s)) ) THEN
+                    (atm_mat(1,j,s) .NE. WAT_mat(5,o,s)) ) THEN
                         WAT_mat(10,o,s) = WAT_mat(5,o,s)
                         WAT_mat(11,o,s) = WAT_mat(6,o,s)
                         WAT_mat(5,o,s) = atm_mat(1,j,s)
@@ -357,7 +359,7 @@ IF (IS_c .EQ. 'Y' ) THEN
     !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, WAT_mat, nb_o, is_mat, nb_is, nb_step)&
     !$OMP PRIVATE(s, i, j, k)&
     !$OMP PRIVATE(SpOwat_disp_vec, SpOwat_disp_norm, SpS1_disp_vec, SpS1_disp_norm, SpS2_disp_vec, SpS2_disp_norm)&
-    !$OMP PRIVATE(tPSuvec_down, tPSuvec_up,WD_vec, HpH_disp_vec, WD_uvec, HpH_disp_uvec)&
+    !$OMP PRIVATE(tPSuvec_down, tPSuvec_up, tPSvec_down, tPSvec_up, WD_vec, HpH_disp_vec, WD_uvec, HpH_disp_uvec)&
     !$OMP PRIVATE(tO_pos_iPS_down, tO_pos_iPS_up, tS_pos_PS_down, tS_pos_PS_up)&
     !$OMP PRIVATE(tOS_disp_oPS_down, tOS_disp_oPS_up)
     DO s = 1, nb_step
@@ -540,13 +542,17 @@ IF (IS_c .EQ. 'Y' ) THEN
             END IF
 
             DO k = 1, 3
-                tPSuvec_down(k) = is_mat(k+15,INT(WAT_mat(31,i,s)),s)
-                tPSuvec_up(k) = is_mat(k+15,INT(WAT_mat(34,i,s)),s)
+                tPSvec_down(k) = is_mat(k+15,INT(WAT_mat(31,i,s)),s)
+                tPSvec_up(k) = is_mat(k+15,INT(WAT_mat(34,i,s)),s)
                 WD_vec(k) = WAT_mat(k+17,i,s)
                 HpH_disp_vec(k) = WAT_mat(k+20,i,s)
             END DO
+
+            tPSuvec_down(:) = tPSuvec_down(:) / NORM2(tPSuvec_down(:))
+            tPSuvec_up(:) = tPSuvec_up(:) / NORM2(tPSuvec_up(:))
             WD_uvec(:) = WD_vec(:) / NORM2(WD_vec(:))
             HpH_disp_uvec(:) = HpH_disp_vec(:) / NORM2(HpH_disp_vec(:))
+
             DO k = 1, 3
                 ! To check orientation of the normal isace vector
                 tO_pos_iPS_down(k) = WAT_mat(k+1,i,s) - 0.01*tPSuvec_down(k)
@@ -625,7 +631,7 @@ IF (AS_c .EQ. 'Y' ) THEN
     !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, WAT_mat, nb_o, as_mat, nb_as, nb_step)&
     !$OMP PRIVATE(s, i, j, k)&
     !$OMP PRIVATE(SpOwat_disp_vec, SpOwat_disp_norm, SpS1_disp_vec, SpS1_disp_norm, SpS2_disp_vec, SpS2_disp_norm)&
-    !$OMP PRIVATE(tPSuvec_down, WD_vec, HpH_disp_vec ,WD_uvec, HpH_disp_uvec)&
+    !$OMP PRIVATE(tPSuvec_down, tPSvec_down, WD_vec, HpH_disp_vec ,WD_uvec, HpH_disp_uvec)&
     !$OMP PRIVATE(tO_pos_iPS_down, tS_pos_PS_down)&
     !$OMP PRIVATE(tOS_disp_oPS_down)
     DO s = 1, nb_step
@@ -726,12 +732,14 @@ IF (AS_c .EQ. 'Y' ) THEN
             END IF
 
             DO k = 1, 3
-                tPSuvec_down(k) = as_mat(k+15,INT(WAT_mat(41,i,s)),s)
+                tPSvec_down(k) = as_mat(k+15,INT(WAT_mat(41,i,s)),s)
                 WD_vec(k) = WAT_mat(k+17,i,s)
                 HpH_disp_vec(k) = WAT_mat(k+20,i,s)
             END DO
+            tPSuvec_down(:) = tPSvec_down(:) / NORM2(tPSvec_down(:))
             WD_uvec(:) = WD_vec(:) / NORM2(WD_vec(:))
             HpH_disp_uvec(:) = HpH_disp_vec(:) / NORM2(HpH_disp_vec(:))
+
             DO k = 1, 3
                 ! To check orientation of the normal isace vector
                 tO_pos_iPS_down(k) = WAT_mat(k+1,i,s) - 0.01*tPSuvec_down(k)
