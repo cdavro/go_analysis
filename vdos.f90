@@ -2,7 +2,7 @@
 !License: MIT
 !UTF-8, CRLF, Fortran2003, OpenMP
 
-PROGRAM h_bonds
+PROGRAM vdos
 USE OMP_LIB
 USE INPUT
 
@@ -32,7 +32,7 @@ CHARACTER(LEN=2)                :: dummy_char
 
 ! ----------------------------------------------- VDOS
 INTEGER                         :: mcs, mcsb
-REAL(dp), ALLOCATABLE           :: vdos(:,:), vdos_atm(:), vdos_cnt(:)
+REAL(dp), ALLOCATABLE           :: vdos_mat(:,:), vdos_atm(:), vdos_cnt(:)
 
 !   ----------------------------------------------- Count variables
 
@@ -322,19 +322,19 @@ IF (mcs+1 .GE. nb_step) THEN
     PRINT*, "Error: Max correlation time > trajectory time"
     STOP
 END IF
-ALLOCATE(vdos(nb_atm,mcs+1))
+ALLOCATE(vdos_mat(nb_atm,mcs+1))
 ALLOCATE(vdos_cnt(mcs+1))
 ALLOCATE(vdos_atm(mcs+1))
 ALLOCATE(timings(mcs+1))
 timings(:) = 0.0_dp
 
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vdos, mcsb, mcs, atm_mat, box, timings, nb_step, nb_atm)&
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vdos_mat, mcsb, mcs, atm_mat, box, timings, nb_step, nb_atm)&
 !$OMP SHARED(vdos_atm, vdos_cnt, timestep_fs)&
 !$OMP PRIVATE(t, s, i, k)&
 !$OMP PRIVATE(atm_vel0_vec, atm_vel_vec, start_i, finish_i)
 DO t = mcsb, mcs+1
     start_i = OMP_get_wtime()
-    vdos(:,t) = 0.0_dp
+    vdos_mat(:,t) = 0.0_dp
     vdos_atm(t) = 0.0_dp
     vdos_cnt(t) = 0.0_dp
     DO s = 1, nb_step
@@ -378,16 +378,16 @@ DO t = mcsb, mcs+1
                     atm_vel_vec(k) =  atm_mat(k+6,i,s+t-1)
                 END DO
 
-                vdos(i,t) = vdos(i,t) + DOT_PRODUCT(atm_vel0_vec,atm_vel_vec)
+                vdos_mat(i,t) = vdos_mat(i,t) + DOT_PRODUCT(atm_vel0_vec,atm_vel_vec)
 
             END DO H1 ! i at 0
 
         END IF
     END DO ! Time
 
-    vdos(:,t) = vdos(:,t) * 1.0 / (nb_step - (t-1))
+    vdos_mat(:,t) = vdos_mat(:,t) * 1.0 / (nb_step - (t-1))
 
-    vdos_atm(t) = SUM(vdos(:,t)) * 1.0 / (vdos_cnt(t))
+    vdos_atm(t) = SUM(vdos_mat(:,t)) * 1.0 / (vdos_cnt(t))
 
     finish_i = OMP_get_wtime()
     timings(t)=finish_i-start_i
@@ -416,7 +416,7 @@ CLOSE(UNIT=51)
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Done with VDOS output:",finish-start,"seconds elapsed"
 
-DEALLOCATE(vdos, timings, vdos_atm, vdos_cnt)
+DEALLOCATE(vdos_mat, timings, vdos_atm, vdos_cnt)
 
 !   ----------------------------------------------- End
 PRINT'(A100)', '--------------------------------------------------'&
@@ -427,4 +427,4 @@ PRINT'(A100)', 'The END'
 IF (IS_c .EQ. 'Y') DEALLOCATE(is_mat, nb_is)
 
 DEALLOCATE(atm_mat, atm_el)
-END PROGRAM h_bonds
+END PROGRAM vdos

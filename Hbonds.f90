@@ -2,7 +2,7 @@
 !License: MIT
 !UTF-8, CRLF, Fortran2003, OpenMP
 
-PROGRAM h_bonds
+PROGRAM Hbonds
 USE OMP_LIB
 USE INPUT
 
@@ -523,7 +523,7 @@ END IF
 ! X ----------------------------------------------- Write OH BOND
 start = OMP_get_wtime()
 
-OPEN(UNIT=31, FILE=suffix//"_O_hbonds.txt")
+OPEN(UNIT=31, FILE=suffix//"_O_Hbonds.txt")
 WRITE(31, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24)')&
  "O_id", "Step","O_type", "Acc", "Don", "UDon"&
 , "C", "OE", "OH", "OA", "C9", "dist_IS_down", "dist_IS_up"
@@ -540,7 +540,7 @@ DO s = 1, nb_step
 END DO
 CLOSE(UNIT=31)
 
-OPEN(UNIT=32, FILE = suffix//"_OH_hbonds.txt")
+OPEN(UNIT=32, FILE = suffix//"_OH_Hbonds.txt")
 WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24)')&
     "O_id", "O_type", "H_id", "step"&
     , "TAcc", "Don", "UDon"&
@@ -570,4 +570,4 @@ PRINT'(A100)', 'The END'
 IF (IS_c .EQ. 'Y') DEALLOCATE(is_mat, nb_is)
 
 DEALLOCATE(OHvec_mat, atm_mat, atm_el, nb_max_OHvec)
-END PROGRAM h_bonds
+END PROGRAM Hbonds

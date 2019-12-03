@@ -456,7 +456,7 @@ ALLOCATE(timings(mcs+1))
 timings(:) = 0.0_dp
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vvcf_xxz, mcsb, mcs, OHvec_mat, nb_o, box, timings, nb_step)&
-!$OMP SHARED(layers, layers_c, hbonds, hbonds_c, intra_only, IS_c, layer_up, layer_down, udc, ac, timestep_fs, vvcf_rcut)&
+!$OMP SHARED(layers_s, layers_c, hbonds_s, hbonds_c, intra_only, IS_c, layer_up, layer_down, udc, ac, timestep_fs, vvcf_rcut)&
 !$OMP SHARED(water_only, close_c_only, up_down_only)&
 !$OMP PRIVATE(t, s, i, j, l, v, u)&
 !$OMP PRIVATE(tij_vec, trij, OH_vel_vec, OH_disp_vec, start_i, finish_i)
@@ -494,7 +494,7 @@ DO t = mcsb, mcs+1
                     CYCLE H1
                 END IF
 
-                IF ((layers .EQ. "Y") .AND. (IS_c .EQ. 'Y' )) THEN
+                IF ((layers_s .EQ. "Y") .AND. (IS_c .EQ. 'Y' )) THEN
 
                     IF ( (OHvec_mat(28,i,s)*OHvec_mat(29,i,s) .GT. layer_up) .OR.&
                     (OHvec_mat(28,i,s)*OHvec_mat(29,i,s) .LE. layer_down)) THEN ! Surface distance (go)
@@ -540,7 +540,7 @@ DO t = mcsb, mcs+1
                     END IF
                 END IF
 
-                IF (hbonds .EQ. "Y") THEN
+                IF (hbonds_s .EQ. "Y") THEN
 
                     IF ( (OHvec_mat(22,i,s) .NE. UDC ) .OR.& ! Exclude S (1) or D (2) (Unique hbond, O-H water engaged in any nb of Hbonds)
                     (OHvec_mat(20,i,s) .NE. AC ) ) THEN ! Exclude nb of incoming Hbonds (Acceptor)

@@ -49,7 +49,7 @@ REAL(dp)                    :: vvcf_oHpO_rcut, vvcf_OpH_rcut
 REAL(dp)                    :: vvcf_XpOh_rcut, vvcf_CpOh_rcut
 REAL(dp)                    :: vvcf_rcut
 REAL(dp)                    :: timestep_fs=0.5_dp, mct, mctb
-CHARACTER(LEN=1)            :: hbonds, hbonds_c, layers, layers_c
+CHARACTER(LEN=1)            :: hbonds_s, hbonds_c, layers_s, layers_c
 CHARACTER(LEN=1)            :: intra_only, water_only, close_c_only
 CHARACTER(LEN=1)            :: up_down_only="U"
 INTEGER                     :: UDC, AC
@@ -205,14 +205,14 @@ SUBROUTINE READINPUTSUB(input_file)
                     READ(value, * , IOSTAT=iostatus) timestep_fs
                     PRINT'(A50,E64.2)', 'timestep_fs: ', timestep_fs
                 CASE ('hbonds')
-                    READ(value, * , IOSTAT=iostatus) hbonds
-                    PRINT'(A50,A64)', 'hbonds: ', hbonds
+                    READ(value, * , IOSTAT=iostatus) hbonds_s
+                    PRINT'(A50,A64)', 'hbonds: ', hbonds_s
                 CASE ('hbonds_c')
                     READ(value, * , IOSTAT=iostatus) hbonds_c
                     PRINT'(A50,A64)', 'hbonds_c: ', hbonds_c
                 CASE ('layers')
-                    READ(value, * , IOSTAT=iostatus) layers
-                    PRINT'(A50,A64)', 'layers: ', layers
+                    READ(value, * , IOSTAT=iostatus) layers_s
+                    PRINT'(A50,A64)', 'layers: ', layers_s
                 CASE ('layers_c')
                     READ(value, * , IOSTAT=iostatus) layers_c
                     PRINT'(A50,A64)', 'layers_c: ', layers_c
