@@ -18,7 +18,7 @@ REAL(dp)                        :: start,finish
 CHARACTER(LEN=100)              :: input_file
 
 !   ----------------------------------------------- Infos/properties
-REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:), OHvec_mat(:,:,:), is_mat(:,:,:)
+REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:), OHvec_mat(:,:,:), is_mat(:,:,:), OHvec_hbond_mat(:,:,:)
 CHARACTER(LEN=2), ALLOCATABLE   :: atm_el(:)
 INTEGER                         :: nb_line_is, nb_max_is
 INTEGER, ALLOCATABLE            :: nb_is(:)
@@ -37,7 +37,7 @@ INTEGER                         :: nb_o, Udonnor_count, Udonnor_count2
 INTEGER, ALLOCATABLE            :: nb_max_OHvec(:)
 
 !   ----------------------------------------------- Counters
-INTEGER                         :: i, s, k, j, o, l
+INTEGER                         :: i, s, k, j, o, l, n
 INTEGER                         :: CAC
 
 !   -----------------------------------------------
@@ -236,10 +236,12 @@ PRINT'(A40,F14.2,A20)', "OH groups:", finish-start, "seconds elapsed"
 
 ! C ----------------------------------------------- OH/O Hbonds
 start = OMP_get_wtime()
+ALLOCATE(OHvec_hbond_mat(10,nb_o*3,nb_step))
+OHvec_hbond_mat(:,:,:) = 0.0_dp
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, nb_atm, nb_step)&
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, nb_atm, nb_step, OHvec_hbond_mat)&
 !$OMP SHARED(hb_oHpO_rcut)&
-!$OMP PRIVATE(s, i, j, k, l)&
+!$OMP PRIVATE(s, i, j, k, l, n)&
 !$OMP PRIVATE(oHpO_disp_vec, oHpO_disp_norm, Udonnor_count, Udonnor_count2)
 DO s = 1, nb_step
  C1:DO i = 1, nb_o*3
@@ -248,6 +250,9 @@ DO s = 1, nb_step
         END IF
         Udonnor_count = 0
         Udonnor_count2 = 0
+        n = 1
+        OHvec_hbond_mat(1,i,s) = OHvec_mat(1,i,s)
+        OHvec_hbond_mat(2,i,s) = OHvec_mat(3,i,s)
         DO j = 1, nb_atm
             IF (atm_mat(2,j,s) .EQ. 16) THEN
                 DO k = 1, 3
@@ -258,6 +263,13 @@ DO s = 1, nb_step
                 IF( (oHpO_disp_norm .LE. hb_oHpO_rcut) .AND. (atm_mat(1,j,s) .NE. OHvec_mat(1,i,s))) THEN
                     atm_mat(7,j,s) = atm_mat(7,j,s) + 1 ! Acceptor count (O)
                     OHvec_mat(15,i,s) = OHvec_mat(15,i,s) + 1 ! Donnor count (OH)
+                    n = n + 2
+                    IF (n .GT. 9) THEN
+                        PRINT*, "HBONDS OVERFLOW", OHvec_mat(1,i,s)
+                    END IF
+                    OHvec_hbond_mat(n,i,s) = atm_mat(1,j,s)
+                    OHvec_hbond_mat(n+1,i,s) = oHpO_disp_norm
+
                     IF (Udonnor_count .EQ. 0) THEN
                         OHvec_mat(16,i,s) = OHvec_mat(16,i,s) + 1 ! Unique donnor count (OH)
                         Udonnor_count = 1
@@ -557,6 +569,23 @@ DO s = 1, nb_step
     END DO
 END DO
 CLOSE(UNIT=32)
+
+OPEN(UNIT=33, FILE = suffix//"_OH_Hbonds_dist.txt")
+WRITE(33, '(A10,A10,A10,A10,A10,A10,A10,A10)')&
+    "OH_id", "O_type", "O_Type", "Dist", "O_Type", "Dist", "O_Type", "Dist"
+
+DO s = 1, nb_step
+    DO i = 1, nb_max_OHvec(s)
+        WRITE(33, '(I10,I10)', ADVANCE = "no")&
+            INT(OHvec_hbond_mat(1,i,s)), INT(OHvec_hbond_mat(2,i,s))
+        DO j = 3, 9, 2
+            WRITE(33, '(I10,F10.3)', ADVANCE = "no")&
+                INT(OHvec_hbond_mat(j,i,s)), OHvec_hbond_mat(j+1,i,s)
+        END DO
+        WRITE(33,'()')
+    END DO
+END DO
+CLOSE(UNIT=33) 
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "O/OH Hbonds output:" ,finish-start, "seconds elapsed"
