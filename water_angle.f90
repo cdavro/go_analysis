@@ -540,7 +540,6 @@ IF (IS_c .EQ. 'Y' ) THEN
                 is_mat(19,INT(WAT_mat(34,i,s)),s) = 1
 
             END IF
-
             DO k = 1, 3
                 tPSvec_down(k) = is_mat(k+15,INT(WAT_mat(31,i,s)),s)
                 tPSvec_up(k) = is_mat(k+15,INT(WAT_mat(34,i,s)),s)
@@ -548,11 +547,10 @@ IF (IS_c .EQ. 'Y' ) THEN
                 HpH_disp_vec(k) = WAT_mat(k+20,i,s)
             END DO
 
-            tPSuvec_down(:) = tPSuvec_down(:) / NORM2(tPSuvec_down(:))
-            tPSuvec_up(:) = tPSuvec_up(:) / NORM2(tPSuvec_up(:))
+            tPSuvec_down(:) = tPSvec_down(:) / NORM2(tPSvec_down(:))
+            tPSuvec_up(:) = tPSvec_up(:) / NORM2(tPSvec_up(:))
             WD_uvec(:) = WD_vec(:) / NORM2(WD_vec(:))
             HpH_disp_uvec(:) = HpH_disp_vec(:) / NORM2(HpH_disp_vec(:))
-
             DO k = 1, 3
                 ! To check orientation of the normal isace vector
                 tO_pos_iPS_down(k) = WAT_mat(k+1,i,s) - 0.01*tPSuvec_down(k)
@@ -601,19 +599,21 @@ IF (IS_c .EQ. 'Y' ) THEN
     start = OMP_get_wtime()
 
     OPEN(UNIT=32, FILE = suffix//"_IS_water_angle.txt")
-    WRITE(32, '(A10,A10,A10,A10,A10,A10,A20,A20,A20,A20,A20,A20)')&
+    WRITE(32, '(A10,A10,A10,A10,A10,A10,A20,A20,A20,A20,A20,A20,A10)')&
         "O_id", "cOE", "cOH", "cOA", "cC", "cC9"&
         , "dist_IS_down", "dist_IS_up"&
         , "Angle OH/NIS_down", "Angle OH/NIS_up"&
-        , "Angle HH/NIS_down", "Angle HH/NIS_up"
+        , "Angle HH/NIS_down", "Angle HH/NIS_up"&
+        , "step"
     DO s = 1, nb_step
         DO i = 1, nb_max_WAT(s)
-            WRITE(32, '(I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7)')&
+            WRITE(32, '(I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7,I10)')&
             INT(WAT_mat(1,i,s)), INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
             , INT(WAT_mat(26,i,s)), INT(WAT_mat(27,i,s)), INT(WAT_mat(28,i,s))&
             , (WAT_mat(29,i,s)*WAT_mat(30,i,s)), (WAT_mat(32,i,s)*WAT_mat(33,i,s))&
             , WAT_mat(35,i,s), WAT_mat(37,i,s)&
-            , WAT_mat(36,i,s), WAT_mat(38,i,s)
+            , WAT_mat(36,i,s), WAT_mat(38,i,s)&
+            , s
         END DO
     END DO
     CLOSE(UNIT=32)
@@ -772,15 +772,16 @@ IF (AS_c .EQ. 'Y' ) THEN
     start = OMP_get_wtime()
 
     OPEN(UNIT=33, FILE = suffix//"_AS_water_angle.txt")
-    WRITE(33, '(A10,A10,A10,A10,A10,A10,A20,A20,A20)')&
+    WRITE(33, '(A10,A10,A10,A10,A10,A10,A20,A20,A20,A10)')&
         "O_id", "cOE", "cOH", "cOA", "cC", "cC9"&
-        , "dist_AS_down", "Angle OH/NAS", "Angle HH/NAS"
+        , "dist_AS_down", "Angle OH/NAS", "Angle HH/NAS", "step"
     DO s = 1, nb_step
         DO i = 1, nb_max_WAT(s)
-            WRITE(33, '(I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7)')&
+            WRITE(33, '(I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7, I10)')&
             INT(WAT_mat(1,i,s)), INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
             , INT(WAT_mat(26,i,s)), INT(WAT_mat(27,i,s)), INT(WAT_mat(28,i,s))&
-            , (WAT_mat(39,i,s)*WAT_mat(40,i,s)), WAT_mat(42,i,s), WAT_mat(43,i,s)
+            , (WAT_mat(39,i,s)*WAT_mat(40,i,s)), WAT_mat(42,i,s), WAT_mat(43,i,s)&
+            , s
         END DO
     END DO
     CLOSE(UNIT=33)
