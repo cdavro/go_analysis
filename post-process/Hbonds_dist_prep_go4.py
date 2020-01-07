@@ -93,12 +93,4 @@ print("write: ",datetime.now())
 print("Timings: ", time.time()-start)
 
 #----------------------------------------------------------------------------------------------
-start = time.time()
-
-np.save('Hbonds_dist_revPBED3_go4.npy', hbonds_n)
-
-print("write: ",datetime.now())
-print("Timings: ", time.time()-start)
-
-#----------------------------------------------------------------------------------------------
 quit()
