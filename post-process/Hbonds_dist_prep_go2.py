@@ -35,7 +35,7 @@ print("Timings: ", time.time()-start)
 #----------------------------------------------------------------------------------------------
 start = time.time()
 
-hbonds_1=np.zeros((1,10))
+hbonds_1=np.zeros((1,14))
 for f in list_filename:
     filename = (f+'_OH_Hbonds_dist.txt')
     if (os.path.isfile(filename)):
@@ -66,10 +66,10 @@ print("Timings: ", time.time()-start)
 start = time.time()
 
 hbonds_0 = hbonds[:,:8]
-hbonds_1 = hbonds[:,8:10]
-hbonds_2 = hbonds[:,10:12]
-hbonds_3 = hbonds[:,12:14]
-hbonds_4 = hbonds[:,14:16]
+hbonds_1 = hbonds[:,8:11]
+hbonds_2 = hbonds[:,11:14]
+hbonds_3 = hbonds[:,14:17]
+hbonds_4 = hbonds[:,17:20]
 hbonds_5=np.hstack((hbonds_0,hbonds_1))
 hbonds_6=np.hstack((hbonds_0,hbonds_2))
 hbonds_7=np.hstack((hbonds_0,hbonds_3))
