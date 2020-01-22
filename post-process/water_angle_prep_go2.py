@@ -25,9 +25,6 @@ for f in list_filename:
         in_c = np.full((in_v.shape[0],1),int(f))
         in_z = np.hstack((in_c,in_v))
         del(in_c,in_v)
-        print(f)
-        print(in_z.shape)
-        print(WA_AS_revPBED3_go2.shape)
         WA_AS_revPBED3_go2 = np.append(WA_AS_revPBED3_go2, in_z, axis=0)
 WA_AS_revPBED3_go2=np.delete(WA_AS_revPBED3_go2,(0),axis=0)
 
@@ -65,9 +62,6 @@ for f in list_filename:
         in_c = np.full((in_v.shape[0],1),int(f))
         in_z = np.hstack((in_c,in_v))
         del(in_c,in_v)
-        print(f)
-        print(in_z.shape)
-        print(WA_IS_revPBED3_go2.shape)
         WA_IS_revPBED3_go2 = np.append(WA_IS_revPBED3_go2, in_z, axis=0)
 WA_IS_revPBED3_go2=np.delete(WA_IS_revPBED3_go2,(0),axis=0)
 
