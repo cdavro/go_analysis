@@ -21,6 +21,7 @@ WA_AS_revPBED3_go4=np.zeros((1,11))
 for f in list_filename:
     filename = (f+'_AS_water_angle.txt')
     if (os.path.isfile(filename)):
+        # O_id cOE cOH cOA cC cC9 dist_AS_down Angle OH/NAS Angle HH/NAS step
         in_v = np.genfromtxt(filename,dtype='float64',skip_header=1,usecols=(0,1,2,3,4,5,6,7,8,9))
         in_c = np.full((in_v.shape[0],1),int(f))
         in_z = np.hstack((in_c,in_v))
@@ -34,7 +35,8 @@ print("Timings: ", time.time()-start)
 #----------------------------------------------------------------------------------------------
 start = time.time()
 
-np.savez_compressed('WA_AS_revPBED3_go4.npz', ar1=WA_AS_revPBED3_go4)
+# TrajNum O_id cOE cOH cOA cC cC9 dist_AS_down Angle OH/NAS Angle HH/NAS step
+np.savez_compressed('go4_WA_AS.npz', ar1=WA_AS_revPBED3_go4)
 
 print("Write_npz  AS: ",datetime.now())
 print("Timings: ", time.time()-start)
@@ -58,6 +60,7 @@ WA_IS_revPBED3_go4=np.zeros((1,11))
 for f in list_filename:
     filename = (f+'_IS_water_angle.txt')
     if (os.path.isfile(filename)):
+        # O_id cOE cOH cOA cC cC9 dist_IS_down Angle OH/NIS_down Angle HH/NIS_down step
         in_v = np.genfromtxt(filename,dtype='float64',skip_header=1,usecols=(0,1,2,3,4,5,6,8,10,12))
         in_c = np.full((in_v.shape[0],1),int(f))
         in_z = np.hstack((in_c,in_v))
@@ -71,7 +74,8 @@ print("Timings: ", time.time()-start)
 #----------------------------------------------------------------------------------------------
 start = time.time()
 
-np.savez_compressed('WA_IS_revPBED3_go4.npz', ar1=WA_IS_revPBED3_go4)
+# TrajNum O_id cOE cOH cOA cC cC9 dist_IS_down Angle OH/NIS_down Angle HH/NIS_down step
+np.savez_compressed('go4_WA_IS.npz', ar1=WA_IS_revPBED3_go4)
 
 print("Write_npz  IS: ",datetime.now())
 print("Timings: ", time.time()-start)

@@ -21,6 +21,7 @@ hbonds_2=np.zeros((1,6))
 for f in list_filename:
     filename = (f+'_OH_Hbonds.txt')
     if (os.path.isfile(filename)):
+        # Step C9 dist_IS_down dist_IS_up dist_AS
         in_v = np.genfromtxt(filename,dtype='float64',skip_header=1,usecols=(3,11,15,16,17))
         in_c = np.full((in_v.shape[0],1),int(f))
         in_z = np.hstack((in_c,in_v))
@@ -39,6 +40,7 @@ hbonds_1=np.zeros((1,14))
 for f in list_filename:
     filename = (f+'_OH_Hbonds_dist.txt')
     if (os.path.isfile(filename)):
+        # OH_id O_type O_id O_Type Dist O_id O_Type Dist O_id O_Type Dist O_id O_Type Dist
         hbonds_1 = np.append(hbonds_1, np.genfromtxt(filename,dtype='float64',skip_header=1),axis=0)
 hbonds_1=np.delete(hbonds_1,(0),axis=0)
 
@@ -50,6 +52,15 @@ start = time.time()
 
 hbonds=np.hstack((hbonds_2,hbonds_1))
 del(hbonds_2,hbonds_1)
+
+print("hbonds: ",datetime.now())
+print("Timings: ", time.time()-start)
+
+#----------------------------------------------------------------------------------------------
+start = time.time()
+
+# TrajNum Step C9 dist_IS_down dist_IS_up dist_AS OH_id O_type O_id O_Type Dist O_id O_Type Dist O_id O_Type Dist O_id O_Type Dist
+np.savez_compressed('go2_HB_TD_full.npz', ar1=hbonds)
 
 print("hbonds: ",datetime.now())
 print("Timings: ", time.time()-start)
@@ -87,7 +98,11 @@ print("Timings: ", time.time()-start)
 #----------------------------------------------------------------------------------------------
 start = time.time()
 
-np.savez_compressed('Hbonds_dist_revPBED3_go2.npz', ar1=hbonds_n)
+# TrajNum Step C9 dist_IS_down dist_IS_up dist_AS OH_id O_type O_id O_Type Dist
+# TrajNum Step C9 dist_IS_down dist_IS_up dist_AS OH_id O_type O_id O_Type Dist
+# TrajNum Step C9 dist_IS_down dist_IS_up dist_AS OH_id O_type O_id O_Type Dist
+# TrajNum Step C9 dist_IS_down dist_IS_up dist_AS OH_id O_type O_id O_Type Dist
+np.savez_compressed('go2_HB_TD_inline_mod10.npz', ar1=hbonds_n)
 
 print("write: ",datetime.now())
 print("Timings: ", time.time()-start)

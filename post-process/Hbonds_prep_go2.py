@@ -15,6 +15,7 @@ hbonds=np.zeros((1,6))
 for f in list_filename:
     filename = (f+'_O_Hbonds.txt')
     if (os.path.isfile(filename)):
+        # Step O_type Acc UDon C9 dist_IS_down
         hbonds = np.append(hbonds, np.genfromtxt(filename,dtype='float64',skip_header=1,usecols=(1,2,3,5,10,11)), axis=0)
 
 hbonds=np.delete(hbonds,(0),axis=0)
@@ -25,11 +26,11 @@ print("Timings: ", time.time()-start)
 #----------------------------------------------------------------------------------------------
 start = time.time()
 
-np.savez_compressed('Hbonds_revPBED3_go2.npz', ar1=hbonds)
+# Step O_type Acc UDon C9 dist_IS_down
+np.savez_compressed('go2_HB_TADCIS.npz', ar1=hbonds)
 
 print("write: ",datetime.now())
 print("Timings: ", time.time()-start)
-
 
 #----------------------------------------------------------------------------------------------
 quit()
