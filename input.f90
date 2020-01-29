@@ -38,19 +38,19 @@ REAL(dp)                    :: dens_dr=0.0_dp, dens_rstart=0.0_dp
 INTEGER                     :: dens_step=75
 INTEGER                     :: dens_center_atmnb
 ! Water Angle
-REAL(dp)                    :: wa_XpOwat_rcut, wa_CpOwat_rcut
+REAL(dp)                    :: wa_X1Owat_rcut, wa_X2Owat_rcut
 INTEGER                     :: wa_AS_center_atmnb
 ! Hbonds
 REAL(dp)                    :: hb_oHpO_rcut, hb_OpH_rcut
-REAL(dp)                    :: hb_XpOh_rcut, hb_CpOh_rcut
-REAL(dp)                    :: hb_XpO_rcut, hb_CpO_rcut
+REAL(dp)                    :: hb_X1Oh_rcut, hb_X2Oh_rcut
+REAL(dp)                    :: hb_X1O_rcut, hb_X2O_rcut
 ! VVCF
 REAL(dp)                    :: vvcf_oHpO_rcut, vvcf_OpH_rcut
-REAL(dp)                    :: vvcf_XpOh_rcut, vvcf_CpOh_rcut
+REAL(dp)                    :: vvcf_X1Oh_rcut, vvcf_X2Oh_rcut
 REAL(dp)                    :: vvcf_rcut
 REAL(dp)                    :: timestep_fs=0.5_dp, mct, mctb
 CHARACTER(LEN=1)            :: hbonds_s, hbonds_c, layers_s, layers_c
-CHARACTER(LEN=1)            :: intra_only, water_only, close_c_only
+CHARACTER(LEN=1)            :: intra_only, water_only, close_c_only, close_gl_only
 CHARACTER(LEN=1)            :: up_down_only="U"
 INTEGER                     :: UDC, AC
 REAL(dp)                    :: layer_down, layer_up
@@ -154,12 +154,12 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('wa_AS_center_atmnb')
                     READ(value, * , IOSTAT=iostatus) wa_AS_center_atmnb
                     PRINT'(A50,I64)', 'wa_AS_center_atmnb: ', wa_AS_center_atmnb
-                CASE ('wa_XpOwat_rcut')
-                    READ(value, * , IOSTAT=iostatus) wa_XpOwat_rcut
-                    PRINT'(A50,E64.2)', 'wa_XpOwat_rcut: ', wa_XpOwat_rcut
-                CASE ('wa_CpOwat_rcut')
-                    READ(value, * , IOSTAT=iostatus) wa_CpOwat_rcut
-                    PRINT'(A50,E64.2)', 'wa_CpOwat_rcut: ', wa_CpOwat_rcut
+                CASE ('wa_X1Owat_rcut')
+                    READ(value, * , IOSTAT=iostatus) wa_X1Owat_rcut
+                    PRINT'(A50,E64.2)', 'wa_X1Owat_rcut: ', wa_X1Owat_rcut
+                CASE ('wa_X2Owat_rcut')
+                    READ(value, * , IOSTAT=iostatus) wa_X2Owat_rcut
+                    PRINT'(A50,E64.2)', 'wa_X2Owat_rcut: ', wa_X2Owat_rcut
 ! HBonds
                 CASE ('hb_oHpO_rcut')
                     READ(value, * , IOSTAT=iostatus) hb_oHpO_rcut
@@ -167,18 +167,18 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('hb_OpH_rcut')
                     READ(value, * , IOSTAT=iostatus) hb_OpH_rcut
                     PRINT'(A50,E64.2)', 'hb_OpH_rcut: ', hb_OpH_rcut
-                CASE ('hb_XpOh_rcut')
-                    READ(value, * , IOSTAT=iostatus) hb_XpOh_rcut
-                    PRINT'(A50,E64.2)', 'hb_XpOh_rcut: ', hb_XpOh_rcut
-                CASE ('hb_CpOh_rcut')
-                    READ(value, * , IOSTAT=iostatus) hb_CpOh_rcut
-                    PRINT'(A50,E64.2)', 'hb_CpOh_rcut: ', hb_CpOh_rcut
-                CASE ('hb_XpO_rcut')
-                    READ(value, * , IOSTAT=iostatus) hb_XpO_rcut
-                    PRINT'(A50,E64.2)', 'hb_XpO_rcut: ', hb_XpO_rcut
-                CASE ('hb_CpO_rcut')
-                    READ(value, * , IOSTAT=iostatus) hb_CpO_rcut
-                    PRINT'(A50,E64.2)', 'hb_CpO_rcut: ', hb_CpO_rcut
+                CASE ('hb_X1Oh_rcut')
+                    READ(value, * , IOSTAT=iostatus) hb_X1Oh_rcut
+                    PRINT'(A50,E64.2)', 'hb_X1Oh_rcut: ', hb_X1Oh_rcut
+                CASE ('hb_X2Oh_rcut')
+                    READ(value, * , IOSTAT=iostatus) hb_X2Oh_rcut
+                    PRINT'(A50,E64.2)', 'hb_X2Oh_rcut: ', hb_X2Oh_rcut
+                CASE ('hb_X1O_rcut')
+                    READ(value, * , IOSTAT=iostatus) hb_X1O_rcut
+                    PRINT'(A50,E64.2)', 'hb_X1O_rcut: ', hb_X1O_rcut
+                CASE ('hb_X2O_rcut')
+                    READ(value, * , IOSTAT=iostatus) hb_X2O_rcut
+                    PRINT'(A50,E64.2)', 'hb_X2O_rcut: ', hb_X2O_rcut
 ! VVCF
                 CASE ('vvcf_oHpO_rcut')
                     READ(value, * , IOSTAT=iostatus) vvcf_oHpO_rcut
@@ -186,12 +186,12 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('vvcf_OpH_rcut')
                     READ(value, * , IOSTAT=iostatus) vvcf_OpH_rcut
                     PRINT'(A50,E64.2)', 'vvcf_OpH_rcut: ', vvcf_OpH_rcut
-                CASE ('vvcf_XpOh_rcut')
-                    READ(value, * , IOSTAT=iostatus) vvcf_XpOh_rcut
-                    PRINT'(A50,E64.2)', 'vvcf_XpOh_rcut: ', vvcf_XpOh_rcut
-                CASE ('vvcf_CpOh_rcut')
-                    READ(value, * , IOSTAT=iostatus) vvcf_CpOh_rcut
-                    PRINT'(A50,E64.2)', 'vvcf_CpOh_rcut: ', vvcf_CpOh_rcut
+                CASE ('vvcf_X1Oh_rcut')
+                    READ(value, * , IOSTAT=iostatus) vvcf_X1Oh_rcut
+                    PRINT'(A50,E64.2)', 'vvcf_X1Oh_rcut: ', vvcf_X1Oh_rcut
+                CASE ('vvcf_X2Oh_rcut')
+                    READ(value, * , IOSTAT=iostatus) vvcf_X2Oh_rcut
+                    PRINT'(A50,E64.2)', 'vvcf_X2Oh_rcut: ', vvcf_X2Oh_rcut
                 CASE ('vvcf_rcut')
                     READ(value, * , IOSTAT=iostatus) vvcf_rcut
                     PRINT'(A50,E64.2)', 'vvcf_rcut: ', vvcf_rcut
@@ -225,6 +225,9 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('close_c_only')
                     READ(value, * , IOSTAT=iostatus) close_c_only
                     PRINT'(A50,A64)', 'close_c_only: ', close_c_only
+                CASE ('close_gl_only')
+                    READ(value, * , IOSTAT=iostatus) close_gl_only
+                    PRINT'(A50,A64)', 'close_gl_only: ', close_gl_only
                 CASE ('up_down_only')
                     READ(value, * , IOSTAT=iostatus) up_down_only
                     PRINT'(A50,A64)', 'up_down_only: ', up_down_only

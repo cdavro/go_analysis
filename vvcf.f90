@@ -27,7 +27,7 @@ INTEGER, ALLOCATABLE            :: nb_is(:)
 !   ----------------------------------------------- Temp variables
 REAL(dp)                        :: OpH_disp_vec(3), OpH_disp_norm
 REAL(dp)                        :: oHpO_disp_vec(3), oHpO_disp_norm
-REAL(dp)                        :: XpOh_disp_vec(3), XpOh_disp_norm
+REAL(dp)                        :: XOh_disp_vec(3), XOh_disp_norm
 REAL(dp)                        :: SpOh_disp_vec(3), SpOh_disp_norm
 CHARACTER(LEN=2)                :: dummy_char
 
@@ -334,9 +334,9 @@ PRINT'(A40,F14.2,A20)', "OH/O Hbonds:", finish-start, "seconds elapsed"
 start = OMP_get_wtime()
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, nb_step, nb_atm)&
-!$OMP SHARED(vvcf_XpOh_rcut, vvcf_CpOh_rcut)&
+!$OMP SHARED(vvcf_X1Oh_rcut, vvcf_X2Oh_rcut)&
 !$OMP PRIVATE(s, i, j, k)&
-!$OMP PRIVATE(XpOh_disp_vec, XpOh_disp_norm)
+!$OMP PRIVATE(XOh_disp_vec, XOh_disp_norm)
 DO s = 1, nb_step
  D1:DO i = 1, nb_o*3
         IF (OHvec_mat(1,i,s) .EQ. 0) THEN
@@ -350,19 +350,19 @@ DO s = 1, nb_step
                 CYCLE D2
             END IF
             DO k = 1, 3
-                XpOh_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+10,i,s)
-                XpOh_disp_vec(k) = XpOh_disp_vec(k) - box(k) * ANINT(XpOh_disp_vec(k)/box(k))
+                XOh_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+10,i,s)
+                XOh_disp_vec(k) = XOh_disp_vec(k) - box(k) * ANINT(XOh_disp_vec(k)/box(k))
             END DO
-            XpOh_disp_norm = NORM2(XpOh_disp_vec)
+            XOh_disp_norm = NORM2(XOh_disp_vec)
 
-            IF ( ( (XpOh_disp_norm .LE. OHvec_mat(35,i,s)) .OR.&
+            IF ( ( (XOh_disp_norm .LE. OHvec_mat(35,i,s)) .OR.&
             (OHvec_mat(35,i,s) .EQ. 0.0) ) .AND.&
             (atm_mat(3,j,s) .EQ. 1.) ) THEN
                 OHvec_mat(34,i,s) = atm_mat(1,j,s)
-                OHvec_mat(35,i,s) = XpOh_disp_norm
+                OHvec_mat(35,i,s) = XOh_disp_norm
                 OHvec_mat(36,i,s) = atm_mat(6,j,s)
             END IF
-            IF (XpOh_disp_norm .LE. vvcf_XpOh_rcut) THEN
+            IF (XOh_disp_norm .LE. vvcf_X1Oh_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(23,i,s) = 1
                     OHvec_mat(27,i,s) = 1
@@ -373,7 +373,7 @@ DO s = 1, nb_step
                 ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
                     OHvec_mat(26,i,s) = 1
                 END IF
-            ELSE IF (XpOh_disp_norm .LE. vvcf_CpOh_rcut) THEN
+            ELSE IF (XOh_disp_norm .LE. vvcf_X2Oh_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(27,i,s) = 1
                 END IF
@@ -457,7 +457,7 @@ timings(:) = 0.0_dp
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vvcf_xxz, mcsb, mcs, OHvec_mat, nb_o, box, timings, nb_step)&
 !$OMP SHARED(layers_s, layers_c, hbonds_s, hbonds_c, intra_only, IS_c, layer_up, layer_down, udc, ac, timestep_fs, vvcf_rcut)&
-!$OMP SHARED(water_only, close_c_only, up_down_only)&
+!$OMP SHARED(water_only, close_c_only, up_down_only, close_gl_only)&
 !$OMP PRIVATE(t, s, i, j, l, v, u)&
 !$OMP PRIVATE(tij_vec, trij, OH_vel_vec, OH_disp_vec, start_i, finish_i)
 DO t = mcsb, mcs+1
@@ -481,8 +481,16 @@ DO t = mcsb, mcs+1
                     CYCLE H1
                 END IF
 
-                IF ( (close_c_only .EQ. "Y") .AND.& ! Select OHvec close to the C surface (<=9A)
+                IF ( (close_c_only .EQ. "Y") .AND.& ! Select OHvec close to the C surface (<=value)
                 (OHvec_mat(27,i,s) .NE. 1) ) THEN
+                    CYCLE H1
+                END IF
+
+                IF ( (close_gl_only .EQ. "Y") .AND.&
+                (OHvec_mat(23,i,s) .EQ. 0) .AND.&
+                ( (OHvec_mat(24,i,s) .EQ. 1) .OR.&
+                (OHvec_mat(25,i,s) .EQ. 1) .OR.&
+                (OHvec_mat(26,i,s) .EQ. 1) ) ) THEN
                     CYCLE H1
                 END IF
 

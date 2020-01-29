@@ -26,7 +26,7 @@ INTEGER, ALLOCATABLE            :: nb_is(:)
 
 !   ----------------------------------------------- Temp variables
 REAL(dp)                        :: atm_vel0_vec(3), atm_vel_vec(3)
-REAL(dp)                        :: XpO_disp_vec(3), XpO_disp_norm
+REAL(dp)                        :: XO_disp_vec(3), XO_disp_norm
 REAL(dp)                        :: SpO_disp_vec(3), SpO_disp_norm
 CHARACTER(LEN=2)                :: dummy_char
 
@@ -211,9 +211,9 @@ END IF
 start = OMP_get_wtime()
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, nb_step, nb_atm)&
-!$OMP SHARED(hb_XpO_rcut, hb_CpO_rcut)&
+!$OMP SHARED(hb_X1O_rcut, hb_X2O_rcut)&
 !$OMP PRIVATE(s, i, j, k)&
-!$OMP PRIVATE(XpO_disp_vec, XpO_disp_norm)
+!$OMP PRIVATE(XO_disp_vec, XO_disp_norm)
 DO s = 1, nb_step
     E1:DO i = 1, nb_atm
         E2:DO j = 1, nb_atm
@@ -224,19 +224,19 @@ DO s = 1, nb_step
                 CYCLE E2
             END IF
             DO k = 1, 3
-                XpO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
-                XpO_disp_vec(k) = XpO_disp_vec(k) - box(k) * ANINT(XpO_disp_vec(k)/box(k))
+                XO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
+                XO_disp_vec(k) = XO_disp_vec(k) - box(k) * ANINT(XO_disp_vec(k)/box(k))
             END DO
-            XpO_disp_norm = NORM2(XpO_disp_vec)
+            XO_disp_norm = NORM2(XO_disp_vec)
 
-            IF ( ( (XpO_disp_norm .LE. atm_mat(22,i,s)) .OR.&
+            IF ( ( (XO_disp_norm .LE. atm_mat(22,i,s)) .OR.&
             (atm_mat(22,i,s) .EQ. 0.0) ) .AND.&
             (atm_mat(3,j,s) .EQ. 1.) ) THEN
                 atm_mat(21,i,s) = atm_mat(1,j,s)
-                atm_mat(22,i,s) = XpO_disp_norm
+                atm_mat(22,i,s) = XO_disp_norm
                 atm_mat(23,i,s) = atm_mat(6,j,s)
             END IF
-            IF (XpO_disp_norm .LE. hb_XpO_rcut) THEN
+            IF (XO_disp_norm .LE. hb_X1O_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1) THEN ! C
                     atm_mat(10,i,s) = 1
                     atm_mat(14,i,s) = 1
@@ -247,7 +247,7 @@ DO s = 1, nb_step
                 ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
                     atm_mat(13,i,s) = 1
                 END IF
-            ELSE IF (XpO_disp_norm .LE. hb_CpO_rcut) THEN
+            ELSE IF (XO_disp_norm .LE. hb_X2O_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1) THEN ! C
                     atm_mat(14,i,s) = 1
                 END IF

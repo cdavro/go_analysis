@@ -25,7 +25,7 @@ INTEGER, ALLOCATABLE            :: nb_is(:), nb_as(:)
 
 !   ----------------------------------------------- Temp variables
 REAL(dp)                        :: OpH_disp_vec(3), OpH_disp_norm
-REAL(dp)                        :: XpOwat_disp_vec(3), XpOwat_disp_norm
+REAL(dp)                        :: XOwat_disp_vec(3), XOwat_disp_norm
 REAL(dp)                        :: SpOwat_disp_vec(3), SpOwat_disp_norm
 REAL(dp)                        :: SpS1_disp_vec(3), SpS1_disp_norm, SpS2_disp_vec(3), SpS2_disp_norm
 REAL(dp)                        :: tPSvec_down(3), tPSvec_up(3)
@@ -299,9 +299,9 @@ PRINT'(A40,F14.2,A20)', "WAT groups:", finish-start, "seconds elapsed"
 start = OMP_get_wtime()
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, WAT_mat, nb_o, nb_step, nb_atm)&
-!$OMP SHARED(wa_XpOwat_rcut, wa_CpOwat_rcut)&
+!$OMP SHARED(wa_X1Owat_rcut, wa_X2Owat_rcut)&
 !$OMP PRIVATE(s, i, j, k)&
-!$OMP PRIVATE(XpOwat_disp_vec, XpOwat_disp_norm)
+!$OMP PRIVATE(XOwat_disp_vec, XOwat_disp_norm)
 DO s = 1, nb_step
     C1:DO i = 1, nb_o*3
         IF (WAT_mat(1,i,s) .EQ. 0) THEN
@@ -315,19 +315,19 @@ DO s = 1, nb_step
                 CYCLE C2
             END IF
             DO k = 1, 3
-                XpOwat_disp_vec(k) = atm_mat(k+3,j,s) - WAT_mat(k+1,i,s)
-                XpOwat_disp_vec(k) = XpOwat_disp_vec(k) - box(k) * ANINT(XpOwat_disp_vec(k) / box(k))
+                XOwat_disp_vec(k) = atm_mat(k+3,j,s) - WAT_mat(k+1,i,s)
+                XOwat_disp_vec(k) = XOwat_disp_vec(k) - box(k) * ANINT(XOwat_disp_vec(k) / box(k))
             END DO
-            XpOwat_disp_norm = NORM2(XpOwat_disp_vec)
+            XOwat_disp_norm = NORM2(XOwat_disp_vec)
 
-            IF ( ( (XpOwat_disp_norm .LE. WAT_mat(45,i,s)) .OR.&
+            IF ( ( (XOwat_disp_norm .LE. WAT_mat(45,i,s)) .OR.&
             (WAT_mat(45,i,s) .EQ. 0.0) ) .AND.&
             (atm_mat(3,j,s) .EQ. 1.) ) THEN
                 WAT_mat(44,i,s) = atm_mat(1,j,s)
-                WAT_mat(45,i,s) = XpOwat_disp_norm
+                WAT_mat(45,i,s) = XOwat_disp_norm
                 WAT_mat(46,i,s) = atm_mat(6,j,s)
             END IF
-            IF (XpOwat_disp_norm .LE. wa_XpOwat_rcut) THEN
+            IF (XOwat_disp_norm .LE. wa_X1Owat_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C or SiF
                     WAT_mat(27,i,s) = 1
                     WAT_mat(28,i,s) = 1
@@ -338,7 +338,7 @@ DO s = 1, nb_step
                 ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
                     WAT_mat(26,i,s) = 1
                 END IF
-            ELSE IF (XpOwat_disp_norm .LE. wa_CpOwat_rcut) THEN
+            ELSE IF (XOwat_disp_norm .LE. wa_X2Owat_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C or SiF
                     WAT_mat(28,i,s) = 1
                 END IF
@@ -600,7 +600,7 @@ IF (IS_c .EQ. 'Y' ) THEN
 
     OPEN(UNIT=32, FILE = suffix//"_IS_water_angle.txt")
     WRITE(32, '(A10,A10,A10,A10,A10,A10,A20,A20,A20,A20,A20,A20,A10)')&
-        "O_id", "cOE", "cOH", "cOA", "cC", "cC9"&
+        "O_id", "cOE", "cOH", "cOA", "cC", "cCX"&
         , "dist_IS_down", "dist_IS_up"&
         , "Angle OH/NIS_down", "Angle OH/NIS_up"&
         , "Angle HH/NIS_down", "Angle HH/NIS_up"&
@@ -773,7 +773,7 @@ IF (AS_c .EQ. 'Y' ) THEN
 
     OPEN(UNIT=33, FILE = suffix//"_AS_water_angle.txt")
     WRITE(33, '(A10,A10,A10,A10,A10,A10,A20,A20,A20,A10)')&
-        "O_id", "cOE", "cOH", "cOA", "cC", "cC9"&
+        "O_id", "cOE", "cOH", "cOA", "cC", "cCX"&
         , "dist_AS_down", "Angle OH/NAS", "Angle HH/NAS", "step"
     DO s = 1, nb_step
         DO i = 1, nb_max_WAT(s)

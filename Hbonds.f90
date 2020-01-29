@@ -26,8 +26,8 @@ INTEGER, ALLOCATABLE            :: nb_is(:)
 !   ----------------------------------------------- Temp variables
 REAL(dp)                        :: OpH_disp_vec(3), OpH_disp_norm
 REAL(dp)                        :: oHpO_disp_vec(3), oHpO_disp_norm
-REAL(dp)                        :: XpOh_disp_vec(3), XpOh_disp_norm
-REAL(dp)                        :: XpO_disp_vec(3), XpO_disp_norm
+REAL(dp)                        :: XOh_disp_vec(3), XOh_disp_norm
+REAL(dp)                        :: XO_disp_vec(3), XO_disp_norm
 REAL(dp)                        :: SpOh_disp_vec(3), SpOh_disp_norm
 REAL(dp)                        :: SpO_disp_vec(3), SpO_disp_norm
 CHARACTER(LEN=2)                :: dummy_char
@@ -317,9 +317,9 @@ PRINT'(A40,F14.2,A20)', "OH/O Hbonds:", finish-start, "seconds elapsed"
 start = OMP_get_wtime()
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, nb_step, nb_atm)&
-!$OMP SHARED(hb_XpOh_rcut, hb_CpOh_rcut)&
+!$OMP SHARED(hb_X1Oh_rcut, hb_X2Oh_rcut)&
 !$OMP PRIVATE(s, i, j, k)&
-!$OMP PRIVATE(XpOh_disp_vec, XpOh_disp_norm)
+!$OMP PRIVATE(XOh_disp_vec, XOh_disp_norm)
 DO s = 1, nb_step
  D1:DO i = 1, nb_o*3
         IF (OHvec_mat(1,i,s) .EQ. 0) THEN
@@ -333,19 +333,19 @@ DO s = 1, nb_step
                 CYCLE D2
             END IF
             DO k = 1, 3
-                XpOh_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+7,i,s)
-                XpOh_disp_vec(k) = XpOh_disp_vec(k) - box(k) * ANINT(XpOh_disp_vec(k)/box(k))
+                XOh_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+7,i,s)
+                XOh_disp_vec(k) = XOh_disp_vec(k) - box(k) * ANINT(XOh_disp_vec(k)/box(k))
             END DO
-            XpOh_disp_norm = NORM2(XpOh_disp_vec)
+            XOh_disp_norm = NORM2(XOh_disp_vec)
 
-            IF ( ( (XpOh_disp_norm .LE. OHvec_mat(32,i,s)) .OR.&
+            IF ( ( (XOh_disp_norm .LE. OHvec_mat(32,i,s)) .OR.&
             (OHvec_mat(32,i,s) .EQ. 0.0) ) .AND.&
             (atm_mat(3,j,s) .EQ. 1.) ) THEN
                 OHvec_mat(31,i,s) = atm_mat(1,j,s)
-                OHvec_mat(32,i,s) = XpOh_disp_norm
+                OHvec_mat(32,i,s) = XOh_disp_norm
                 OHvec_mat(33,i,s) = atm_mat(6,j,s)
             END IF
-            IF (XpOh_disp_norm .LE. hb_XpOh_rcut) THEN
+            IF (XOh_disp_norm .LE. hb_X1Oh_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(20,i,s) = 1
                     OHvec_mat(24,i,s) = 1
@@ -356,7 +356,7 @@ DO s = 1, nb_step
                 ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
                     OHvec_mat(23,i,s) = 1
                 END IF
-            ELSE IF (XpOh_disp_norm .LE. hb_CpOh_rcut) THEN
+            ELSE IF (XOh_disp_norm .LE. hb_X2Oh_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(24,i,s) = 1
                 END IF
@@ -378,9 +378,9 @@ PRINT'(A40,F14.2,A20)', "Proximity FG and OH group:", finish-start, "seconds ela
 start = OMP_get_wtime()
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, nb_step, nb_atm)&
-!$OMP SHARED(hb_XpO_rcut, hb_CpO_rcut)&
+!$OMP SHARED(hb_X1O_rcut, hb_X2O_rcut)&
 !$OMP PRIVATE(s, i, j, k)&
-!$OMP PRIVATE(XpO_disp_vec, XpO_disp_norm)
+!$OMP PRIVATE(XO_disp_vec, XO_disp_norm)
 DO s = 1, nb_step
     E1:DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .NE. 16) THEN
@@ -394,19 +394,19 @@ DO s = 1, nb_step
                 CYCLE E2
             END IF
             DO k = 1, 3
-                XpO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
-                XpO_disp_vec(k) = XpO_disp_vec(k) - box(k) * ANINT(XpO_disp_vec(k)/box(k))
+                XO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
+                XO_disp_vec(k) = XO_disp_vec(k) - box(k) * ANINT(XO_disp_vec(k)/box(k))
             END DO
-            XpO_disp_norm = NORM2(XpO_disp_vec)
+            XO_disp_norm = NORM2(XO_disp_vec)
 
-            IF ( ( (XpO_disp_norm .LE. atm_mat(22,i,s)) .OR.&
+            IF ( ( (XO_disp_norm .LE. atm_mat(22,i,s)) .OR.&
             (atm_mat(22,i,s) .EQ. 0.0) ) .AND.&
             (atm_mat(3,j,s) .EQ. 1.) ) THEN
                 atm_mat(21,i,s) = atm_mat(1,j,s)
-                atm_mat(22,i,s) = XpO_disp_norm
+                atm_mat(22,i,s) = XO_disp_norm
                 atm_mat(23,i,s) = atm_mat(6,j,s)
             END IF
-            IF (XpO_disp_norm .LE. hb_XpO_rcut) THEN
+            IF (XO_disp_norm .LE. hb_X1O_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1) THEN ! C
                     atm_mat(10,i,s) = 1
                     atm_mat(14,i,s) = 1
@@ -418,7 +418,7 @@ DO s = 1, nb_step
                 ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
                     atm_mat(13,i,s) = 1
                 END IF
-            ELSE IF (XpO_disp_norm .LE. hb_CpO_rcut) THEN
+            ELSE IF (XO_disp_norm .LE. hb_X2O_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1) THEN ! C
                     atm_mat(14,i,s) = 1
                 END IF
@@ -548,7 +548,7 @@ start = OMP_get_wtime()
 OPEN(UNIT=31, FILE=suffix//"_O_Hbonds.txt")
 WRITE(31, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24,A24)')&
  "O_id", "Step","O_type", "Acc", "Don", "UDon"&
-, "C", "OE", "OH", "OA", "C9", "dist_IS_down", "dist_IS_up", "dist_AS"
+, "C", "OE", "OH", "OA", "CX", "dist_IS_down", "dist_IS_up", "dist_AS"
 DO s = 1, nb_step
     DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. 16) THEN
@@ -567,7 +567,7 @@ OPEN(UNIT=32, FILE = suffix//"_OH_Hbonds.txt")
 WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24,A24)')&
     "O_id", "O_type", "H_id", "step"&
     , "TAcc", "Don", "UDon"&
-    , "C", "OE", "OH", "OA", "C9"&
+    , "C", "OE", "OH", "OA", "CX"&
     , "TAcc", "TDon", "TUDon", "dist_IS_down", "dist_IS_up"&
     , "dist_AS"
 DO s = 1, nb_step
