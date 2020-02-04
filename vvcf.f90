@@ -457,7 +457,7 @@ timings(:) = 0.0_dp
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vvcf_xxz, mcsb, mcs, OHvec_mat, nb_o, box, timings, nb_step)&
 !$OMP SHARED(layers_s, layers_c, hbonds_s, hbonds_c, intra_only, IS_c, layer_up, layer_down, udc, ac, timestep_fs, vvcf_rcut)&
-!$OMP SHARED(water_only, close_c_only, up_down_only, close_gl_only)&
+!$OMP SHARED(water_only, close_c_only, up_down_only, close_gl_only, close_gol_only)&
 !$OMP PRIVATE(t, s, i, j, l, v, u)&
 !$OMP PRIVATE(tij_vec, trij, OH_vel_vec, OH_disp_vec, start_i, finish_i)
 DO t = mcsb, mcs+1
@@ -486,11 +486,19 @@ DO t = mcsb, mcs+1
                     CYCLE H1
                 END IF
 
-                IF ( (close_gl_only .EQ. "Y") .AND.&
-                (OHvec_mat(23,i,s) .EQ. 0) .AND.&
+                IF ( (close_gl_only .EQ. "Y") .AND. (&
+                (OHvec_mat(23,i,s) .EQ. 0) .OR.&
                 ( (OHvec_mat(24,i,s) .EQ. 1) .OR.&
                 (OHvec_mat(25,i,s) .EQ. 1) .OR.&
-                (OHvec_mat(26,i,s) .EQ. 1) ) ) THEN
+                (OHvec_mat(26,i,s) .EQ. 1) ) ) )THEN
+                    CYCLE H1
+                END IF
+
+                IF ( (close_gol_only .EQ. "Y") .AND. (&
+                (OHvec_mat(23,i,s) .EQ. 0) .OR.&
+                ( (OHvec_mat(24,i,s) .EQ. 0) .OR.&
+                (OHvec_mat(25,i,s) .EQ. 0) .OR.&
+                (OHvec_mat(26,i,s) .EQ. 0) ) ) )THEN
                     CYCLE H1
                 END IF
 
