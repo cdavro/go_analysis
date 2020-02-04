@@ -315,7 +315,7 @@ IF (waterlist .EQ. 1) THEN
         WRITE(42,'(A14)',advance="no")"mask = indices "
         DO i = 1, nb_atm
             IF (atm_mat(10,i,s) .EQ. 0) THEN
-                WRITE(42,'(I5)',advance="no") INT(atm_mat(1,i,s))
+                WRITE(42,'(I5)',advance="no") INT(atm_mat(1,i,s) - 1)
             END IF
         END DO
         WRITE(42,*)
