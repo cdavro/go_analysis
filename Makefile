@@ -56,7 +56,7 @@ all: input.o density.o assign.o surface_wrap.o water_angle.o Hbonds.o vvcf.o vdo
 	$(FC) $(FCFLAGS) input.o vdos.o -o vdos
 
 clean:
-	rm -f *.o
+	rm -f *.o 
 
 realclean:
-	rm -f *.o assign density surface_wrap water_angle Hbonds vvcf vdos
+	rm -f *.o *.mod assign density surface_wrap water_angle Hbonds vvcf vdos

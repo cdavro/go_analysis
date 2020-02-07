@@ -51,7 +51,7 @@ REAL(dp)                    :: vvcf_rcut
 REAL(dp)                    :: timestep_fs=0.5_dp, mct, mctb
 CHARACTER(LEN=1)            :: hbonds_s, hbonds_c, layers_s, layers_c
 CHARACTER(LEN=1)            :: intra_only, water_only, close_c_only
-CHARACTER(LEN=1)            :: close_gl_only, close_gol_only
+CHARACTER(LEN=1)            :: close_gl_only, close_gol_only, close_ol_only
 CHARACTER(LEN=1)            :: up_down_only="U"
 INTEGER                     :: UDC, AC
 REAL(dp)                    :: layer_down, layer_up
@@ -232,6 +232,9 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('close_gol_only')
                     READ(value, * , IOSTAT=iostatus) close_gol_only
                     PRINT'(A50,A64)', 'close_gol_only: ', close_gol_only
+                CASE ('close_ol_only')
+                    READ(value, * , IOSTAT=iostatus) close_ol_only
+                    PRINT'(A50,A64)', 'close_ol_only: ', close_ol_only
                 CASE ('up_down_only')
                     READ(value, * , IOSTAT=iostatus) up_down_only
                     PRINT'(A50,A64)', 'up_down_only: ', up_down_only
