@@ -38,7 +38,7 @@ start = timer()
 for f in list_filename:
     filename = (f+'_OH_Hbonds_dist.txt')
     if (os.path.isfile(filename)):
-        # OH_id O_type O_id O_Type Dist O_id O_Type Dist O_id O_Type Dist O_id O_Type Dist
+        # OH_id H_id O_type O_id O_Type Dist O_id O_Type Dist O_id O_Type Dist O_id O_Type Dist
         H2_import = np.genfromtxt(filename,dtype='float64',skip_header=1)
         try:
             _ = H2.shape
@@ -61,7 +61,7 @@ print("HStack Timings: ", timedelta(seconds=timer()-start))
 #----------------------------------------------------------------------------------------------
 start = timer()
 
-# TrajNum Step C9 dist_IS_down dist_IS_up dist_AS TUDon TAcc TDon OH_id O_type O_id O_Type Dist O_id O_Type Dist O_id O_Type Dist O_id O_Type Dist
+# TrajNum Step C9 dist_IS_down dist_IS_up dist_AS TUDon TAcc TDon OH_id H_id O_type (11) O_id O_Type Dist O_id (15) O_Type Dist O_id O_Type Dist O_id O_Type Dist
 np.savez_compressed('go2_HB_TD_full.npz', ar1=HStacked)
 
 print("Write go2_HB_TD_full.npz Timings: ", timedelta(seconds=timer()-start))
@@ -76,10 +76,10 @@ print("Modulo Timings: ", timedelta(seconds=timer()-start))
 #----------------------------------------------------------------------------------------------
 start = timer()
 
-H_in=np.concatenate((HStacked[:,:14],
-np.hstack((HStacked[HStacked[:,14] !=0 ][:,:11],HStacked[HStacked[:,14] !=0 ][:,14:17])),
-np.hstack((HStacked[HStacked[:,17] !=0 ][:,:11],HStacked[HStacked[:,17] !=0 ][:,17:20])),
-np.hstack((HStacked[HStacked[:,20] !=0 ][:,:11],HStacked[HStacked[:,20] !=0 ][:,20:23]))))
+H_in=np.concatenate((HStacked[:,:15],
+np.hstack((HStacked[HStacked[:,15] !=0 ][:,:12],HStacked[HStacked[:,15] !=0 ][:,15:18])),
+np.hstack((HStacked[HStacked[:,18] !=0 ][:,:12],HStacked[HStacked[:,18] !=0 ][:,18:21])),
+np.hstack((HStacked[HStacked[:,21] !=0 ][:,:12],HStacked[HStacked[:,21] !=0 ][:,21:24]))))
 
 del(HStacked)
 
@@ -88,7 +88,7 @@ print("Inline Timings: ", timedelta(seconds=timer()-start))
 #----------------------------------------------------------------------------------------------
 start = timer()
 
-# TrajNum Step C9 dist_IS_down dist_IS_up dist_AS TUDon TAcc TDon OH_id O_type O_id O_Type Dist
+# TrajNum Step C9 dist_IS_down dist_IS_up dist_AS TUDon TAcc TDon OH_id H_id O_type O_id O_Type Dist
 np.savez_compressed('go2_HB_TD_inline_mod10.npz', ar1=H_in)
 
 print("Write go2_HB_TD_inline_mod10.npz Timings: ", timedelta(seconds=timer()-start))
