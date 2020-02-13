@@ -2,35 +2,36 @@
 import sys
 import os.path
 import numpy as np
-from datetime import datetime
-import time
+from timeit import default_timer as timer
+from datetime import datetime, timedelta
 
 #----------------------------------------------------------------------------------------------
 print("Start: ",datetime.now())
-start = time.time()
+start = timer()
 
 list_filename=["00","01","02","03","04","05"]
 
-hbonds=np.zeros((1,6))
 for f in list_filename:
     filename = (f+'_O_Hbonds.txt')
     if (os.path.isfile(filename)):
         # Step O_type Acc UDon C9 dist_IS_down
-        hbonds = np.append(hbonds, np.genfromtxt(filename,dtype='float64',skip_header=1,usecols=(1,2,3,5,10,11)), axis=0)
+        H1_import = np.genfromtxt(filename,dtype='float64',skip_header=1,usecols=(1,2,3,5,10,11))
+        try:
+            _ = H1.shape
+        except NameError:
+            H1 = np.zeros((1,H1_import.shape[1]))
+        H1 = np.append(H1, H1_import, axis=0)
+H1=np.delete(H1,(0),axis=0)
 
-hbonds=np.delete(hbonds,(0),axis=0)
-
-print("Read: ",datetime.now())
-print("Timings: ", time.time()-start)
+print("Load O_Hbonds.txt Timings: ", timedelta(seconds=timer()-start))
 
 #----------------------------------------------------------------------------------------------
-start = time.time()
+start = timer()
 
 # Step O_type Acc UDon C9 dist_IS_down
-np.savez_compressed('go2_HB_TADCIS.npz', ar1=hbonds)
+np.savez_compressed('go2_HB_TADCIS.npz', ar1=H1)
 
-print("write: ",datetime.now())
-print("Timings: ", time.time()-start)
+print("Write go2_HB_TADCIS.npz Timings: ", timedelta(seconds=timer()-start))
 
 #----------------------------------------------------------------------------------------------
 quit()
