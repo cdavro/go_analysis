@@ -53,7 +53,7 @@ CHARACTER(LEN=1)            :: hbonds_s, hbonds_c, layers_s, layers_c
 CHARACTER(LEN=1)            :: intra_only, water_only, close_c_only
 CHARACTER(LEN=1)            :: close_gl_only, close_gol_only, close_ol_only
 CHARACTER(LEN=1)            :: up_down_only="U"
-INTEGER                     :: UDC, AC
+INTEGER                     :: ACLE, ACGT, DCLE, DCGT
 REAL(dp)                    :: layer_down, layer_up
 ! -----------------------------------------------Counters
 INTEGER, PRIVATE            :: i
@@ -238,12 +238,18 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('up_down_only')
                     READ(value, * , IOSTAT=iostatus) up_down_only
                     PRINT'(A50,A64)', 'up_down_only: ', up_down_only
-                CASE ('UDC')
-                    READ(value, * , IOSTAT=iostatus) UDC
-                    PRINT'(A50,I64)', 'UDC: ', UDC
-                CASE ('AC')
-                    READ(value, * , IOSTAT=iostatus) AC
-                    PRINT'(A50,I64)', 'AC: ', AC
+                CASE ('DCLE')
+                    READ(value, * , IOSTAT=iostatus) DCLE
+                    PRINT'(A50,I64)', 'DCLE: ', DCLE
+                CASE ('ACLE')
+                    READ(value, * , IOSTAT=iostatus) ACLE
+                    PRINT'(A50,I64)', 'ACLE: ', ACLE
+                CASE ('DCGT')
+                    READ(value, * , IOSTAT=iostatus) DCGT
+                    PRINT'(A50,I64)', 'DCGT: ', DCGT
+                CASE ('ACGT')
+                    READ(value, * , IOSTAT=iostatus) ACGT
+                    PRINT'(A50,I64)', 'ACGT: ', ACGT
                 CASE ('layer_down')
                     READ(value, * , IOSTAT=iostatus) layer_down
                     PRINT'(A50,E64.2)', 'layer_down: ', layer_down

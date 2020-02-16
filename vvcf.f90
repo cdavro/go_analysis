@@ -456,8 +456,9 @@ ALLOCATE(timings(mcs+1))
 timings(:) = 0.0_dp
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vvcf_xxz, mcsb, mcs, OHvec_mat, nb_o, box, timings, nb_step)&
-!$OMP SHARED(layers_s, layers_c, hbonds_s, hbonds_c, intra_only, IS_c, layer_up, layer_down, udc, ac, timestep_fs, vvcf_rcut)&
+!$OMP SHARED(layers_s, layers_c, hbonds_s, hbonds_c, intra_only, IS_c, layer_up, layer_down, timestep_fs, vvcf_rcut)&
 !$OMP SHARED(water_only, close_c_only, up_down_only, close_gl_only, close_gol_only, close_ol_only)&
+!$OMP SHARED(dcle, dcgt, acle, acgt)&
 !$OMP PRIVATE(t, s, i, j, l, v, u)&
 !$OMP PRIVATE(tij_vec, trij, OH_vel_vec, OH_disp_vec, start_i, finish_i)
 DO t = mcsb, mcs+1
@@ -566,8 +567,8 @@ DO t = mcsb, mcs+1
 
                 IF (hbonds_s .EQ. "Y") THEN
 
-                    IF ( (OHvec_mat(22,i,s) .NE. UDC ) .OR.& ! Exclude S (1) or D (2) (Unique hbond, O-H water engaged in any nb of Hbonds)
-                    (OHvec_mat(20,i,s) .NE. AC ) ) THEN ! Exclude nb of incoming Hbonds (Acceptor)
+                    IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
+                    ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
                         CYCLE H1
                     END IF
 
@@ -575,8 +576,8 @@ DO t = mcsb, mcs+1
 
                         IF (s .EQ. 1) THEN ! init
                             DO u = s, s+t-1
-                                IF ( (OHvec_mat(22,i,u) .NE. UDC ) .OR.&
-                                (OHvec_mat(20,i,u) .NE. AC ) ) THEN
+                                IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
+                                ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
                                     CYCLE H1
                                 END IF
                                 v(i,s) = v(i,s) + 1
@@ -587,8 +588,8 @@ DO t = mcsb, mcs+1
                             END IF
                         ELSE IF (v(i,s-1) .LE. 1) THEN
                             DO u = s, s+t-1
-                                IF ( (OHvec_mat(22,i,u) .NE. UDC ) .OR.&
-                                (OHvec_mat(20,i,u) .NE. AC ) ) THEN
+                                IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
+                                ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
                                     CYCLE H1
                                 END IF
                                 v(i,s) = v(i,s) + 1
@@ -598,8 +599,8 @@ DO t = mcsb, mcs+1
                                 CYCLE H1
                             END IF
                         ELSE IF (v(i,s-1) .EQ. t) THEN
-                            IF ( (OHvec_mat(22,i,s+t-1) .NE. UDC ) .OR.&
-                            (OHvec_mat(20,i,s+t-1) .NE. AC ) ) THEN
+                            IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
+                            ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
                                 CYCLE H1
                             END IF
                             v(i,s) = t
