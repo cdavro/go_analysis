@@ -50,10 +50,12 @@ REAL(dp)                    :: vvcf_X1Oh_rcut, vvcf_X2Oh_rcut
 REAL(dp)                    :: vvcf_rcut
 REAL(dp)                    :: timestep_fs=0.5_dp, mct, mctb
 CHARACTER(LEN=1)            :: hbonds_s, hbonds_c, layers_s, layers_c
+CHARACTER(LEN=1)            :: hbonds_double="N"
 CHARACTER(LEN=1)            :: intra_only, water_only, close_c_only
 CHARACTER(LEN=1)            :: close_gl_only, close_gol_only, close_ol_only
 CHARACTER(LEN=1)            :: up_down_only="U"
 INTEGER                     :: ACLE, ACGT, DCLE, DCGT
+INTEGER                     :: ACLE2, ACGT2, DCLE2, DCGT2
 REAL(dp)                    :: layer_down, layer_up
 ! -----------------------------------------------Counters
 INTEGER, PRIVATE            :: i
@@ -250,6 +252,21 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('ACGT')
                     READ(value, * , IOSTAT=iostatus) ACGT
                     PRINT'(A50,I64)', 'ACGT: ', ACGT
+                CASE ('hbonds_double')
+                    READ(value, * , IOSTAT=iostatus) hbonds_double
+                    PRINT'(A50,A64)', 'hbonds_double: ', hbonds_double
+                CASE ('DCLE2')
+                    READ(value, * , IOSTAT=iostatus) DCLE2
+                    PRINT'(A50,I64)', 'DCLE2: ', DCLE2
+                CASE ('ACLE2')
+                    READ(value, * , IOSTAT=iostatus) ACLE2
+                    PRINT'(A50,I64)', 'ACLE2: ', ACLE2
+                CASE ('DCGT2')
+                    READ(value, * , IOSTAT=iostatus) DCGT2
+                    PRINT'(A50,I64)', 'DCGT2: ', DCGT2
+                CASE ('ACGT2')
+                    READ(value, * , IOSTAT=iostatus) ACGT2
+                    PRINT'(A50,I64)', 'ACGT2: ', ACGT2
                 CASE ('layer_down')
                     READ(value, * , IOSTAT=iostatus) layer_down
                     PRINT'(A50,E64.2)', 'layer_down: ', layer_down
