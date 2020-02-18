@@ -40,11 +40,10 @@ INTEGER, ALLOCATABLE            :: v(:,:)
 
 !   ----------------------------------------------- Count variables
 INTEGER                         :: nb_o, Udonnor_count, Udonnor_count2
-INTEGER, ALLOCATABLE            :: nb_max_OHvec(:)
 
 !   ----------------------------------------------- Counters
 INTEGER                         :: i, s, k, j, o, l, t, u
-INTEGER                         :: CAC
+INTEGER                         :: CAC, keep
 
 !   -----------------------------------------------
 PRINT'(A100)','--------------------------------------------------'&
@@ -138,6 +137,8 @@ CLOSE(UNIT=20)
 
 nb_o = COUNT(atm_mat(2,:,1) .EQ. 16, DIM=1)
 
+DEALLOCATE(atm_el)
+
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Positions:", finish-start, "seconds elapsed"
 
@@ -218,12 +219,10 @@ END IF
 ! B ----------------------------------------------- OH groups and corresponding values
 start = OMP_get_wtime()
 ALLOCATE(OHvec_mat(36,nb_o*3,nb_step))
-ALLOCATE(nb_max_OHvec(nb_step))
 
-nb_max_OHvec(:) = 0.0
 OHvec_mat(:,:,:) = 0.0_dp
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_max_OHvec, nb_step, nb_atm)&
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_step, nb_atm)&
 !$OMP SHARED(vvcf_OpH_rcut)&
 !$OMP PRIVATE(s, i, j, k, o)&
 !$OMP PRIVATE(OpH_disp_vec, OpH_disp_norm)
@@ -256,7 +255,6 @@ DO s = 1, nb_step
             END DO
         END IF
     END DO
-    nb_max_OHvec(s) = COUNT(OHvec_mat(1,:,s) .NE. 0, DIM=1)
 END DO
 !$OMP END PARALLEL DO
 
@@ -383,6 +381,8 @@ DO s = 1, nb_step
 END DO
 !$OMP END PARALLEL DO
 
+DEALLOCATE(atm_mat)
+
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Proximity FG and OH group:", finish-start, "seconds elapsed"
 
@@ -391,7 +391,7 @@ IF (IS_c .EQ. 'Y' ) THEN
     ! F ----------------------------------------------- Calculate closest distance between IS and any OH groups
     start = OMP_get_wtime()
 
-    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, is_mat, nb_is, nb_step)&
+    !$OMP PARALLEL DO DEFAULT(NONE) SHARED(box, OHvec_mat, nb_o, is_mat, nb_is, nb_step)&
     !$OMP PRIVATE(s, i, j, k)&
     !$OMP PRIVATE(SpOh_disp_vec, SpOh_disp_norm)
     DO s = 1, nb_step
@@ -442,6 +442,8 @@ IF (IS_c .EQ. 'Y' ) THEN
 
 END IF
 
+IF (IS_c .EQ. 'Y') DEALLOCATE(is_mat, nb_is)
+
 ! H ----------------------------------------------- VVCF
 start = OMP_get_wtime()
 mcs = INT(mct / timestep_fs)
@@ -458,7 +460,7 @@ timings(:) = 0.0_dp
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vvcf_xxz, mcsb, mcs, OHvec_mat, nb_o, box, timings, nb_step)&
 !$OMP SHARED(layers_s, layers_c, hbonds_s, hbonds_c, intra_only, IS_c, layer_up, layer_down, timestep_fs, vvcf_rcut)&
 !$OMP SHARED(water_only, close_c_only, up_down_only, close_gl_only, close_gol_only, close_ol_only, hbonds_double)&
-!$OMP SHARED(dcle, dcgt, acle, acgt, dcle2, dcgt2, acle2, acgt2)&
+!$OMP SHARED(dcle, dcgt, acle, acgt, dcle2, dcgt2, acle2, acgt2,keep)&
 !$OMP PRIVATE(t, s, i, j, l, v, u)&
 !$OMP PRIVATE(tij_vec, trij, OH_vel_vec, OH_disp_vec, start_i, finish_i)
 DO t = mcsb, mcs+1
@@ -567,30 +569,46 @@ DO t = mcsb, mcs+1
 
                 IF (hbonds_s .EQ. "Y") THEN
 
-                    IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
-                    ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
-                        CYCLE H1
-                    END IF
-                    IF (hbonds_double .EQ. "Y") THEN
-                        IF ( ( (OHvec_mat(21,i,s) .GT. DCGT2) .OR. (OHvec_mat(21,i,s) .LE. DCLE2) ) .OR.&
-                        ( (OHvec_mat(20,i,s) .GT. ACGT2 ) .OR. (OHvec_mat(20,i,s) .LE. ACLE2) ) ) THEN
+                    IF (hbonds_double .EQ. "N") THEN
+                        IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
+                        ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
                             CYCLE H1
                         END IF
+                    ELSE IF (hbonds_double .EQ. "Y") THEN
+                        keep=0
+                        IF ( ( (OHvec_mat(21,i,s) .LE. DCGT) .AND. (OHvec_mat(21,i,s) .GT. DCLE) ) .AND.&
+                        ( (OHvec_mat(20,i,s) .LE. ACGT ) .AND. (OHvec_mat(20,i,s) .GT. ACLE) ) ) THEN
+                            keep=1
+                        ELSE IF ( ( (OHvec_mat(21,i,s) .LE. DCGT2) .AND. (OHvec_mat(21,i,s) .GT. DCLE2) ) .AND.&
+                        ( (OHvec_mat(20,i,s) .LE. ACGT2 ) .AND. (OHvec_mat(20,i,s) .GT. ACLE2) ) ) THEN
+                            keep=1
+                        ELSE
+                            keep=0
+                        END IF
+                        IF (keep .EQ. 0) CYCLE H1
                     END IF
 
                     IF (hbonds_c .EQ. "Y") THEN
 
                         IF (s .EQ. 1) THEN ! init
                             DO u = s, s+t-1
-                                IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
-                                ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
-                                    CYCLE H1
-                                END IF
-                                IF (hbonds_double .EQ. "Y") THEN
-                                    IF ( ( (OHvec_mat(21,i,s) .GT. DCGT2) .OR. (OHvec_mat(21,i,s) .LE. DCLE2) ) .OR.&
-                                    ( (OHvec_mat(20,i,s) .GT. ACGT2 ) .OR. (OHvec_mat(20,i,s) .LE. ACLE2) ) ) THEN
+                                IF (hbonds_double .EQ. "N") THEN
+                                    IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
+                                    ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
                                         CYCLE H1
                                     END IF
+                                ELSE IF (hbonds_double .EQ. "Y") THEN
+                                    keep=0
+                                    IF ( ( (OHvec_mat(21,i,s) .LE. DCGT) .AND. (OHvec_mat(21,i,s) .GT. DCLE) ) .AND.&
+                                    ( (OHvec_mat(20,i,s) .LE. ACGT ) .AND. (OHvec_mat(20,i,s) .GT. ACLE) ) ) THEN
+                                        keep=1
+                                    ELSE IF ( ( (OHvec_mat(21,i,s) .LE. DCGT2) .AND. (OHvec_mat(21,i,s) .GT. DCLE2) ) .AND.&
+                                    ( (OHvec_mat(20,i,s) .LE. ACGT2 ) .AND. (OHvec_mat(20,i,s) .GT. ACLE2) ) ) THEN
+                                        keep=1
+                                    ELSE
+                                        keep=0
+                                    END IF
+                                    IF (keep .EQ. 0) CYCLE H1
                                 END IF
                                 v(i,s) = v(i,s) + 1
                             END DO
@@ -600,15 +618,23 @@ DO t = mcsb, mcs+1
                             END IF
                         ELSE IF (v(i,s-1) .LE. 1) THEN
                             DO u = s, s+t-1
-                                IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
-                                ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
-                                    CYCLE H1
-                                END IF
-                                IF (hbonds_double .EQ. "Y") THEN
-                                    IF ( ( (OHvec_mat(21,i,s) .GT. DCGT2) .OR. (OHvec_mat(21,i,s) .LE. DCLE2) ) .OR.&
-                                    ( (OHvec_mat(20,i,s) .GT. ACGT2 ) .OR. (OHvec_mat(20,i,s) .LE. ACLE2) ) ) THEN
+                                IF (hbonds_double .EQ. "N") THEN
+                                    IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
+                                    ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
                                         CYCLE H1
                                     END IF
+                                ELSE IF (hbonds_double .EQ. "Y") THEN
+                                    keep=0
+                                    IF ( ( (OHvec_mat(21,i,s) .LE. DCGT) .AND. (OHvec_mat(21,i,s) .GT. DCLE) ) .AND.&
+                                    ( (OHvec_mat(20,i,s) .LE. ACGT ) .AND. (OHvec_mat(20,i,s) .GT. ACLE) ) ) THEN
+                                        keep=1
+                                    ELSE IF ( ( (OHvec_mat(21,i,s) .LE. DCGT2) .AND. (OHvec_mat(21,i,s) .GT. DCLE2) ) .AND.&
+                                    ( (OHvec_mat(20,i,s) .LE. ACGT2 ) .AND. (OHvec_mat(20,i,s) .GT. ACLE2) ) ) THEN
+                                        keep=1
+                                    ELSE
+                                        keep=0
+                                    END IF
+                                    IF (keep .EQ. 0) CYCLE H1
                                 END IF
                                 v(i,s) = v(i,s) + 1
                             END DO
@@ -617,15 +643,23 @@ DO t = mcsb, mcs+1
                                 CYCLE H1
                             END IF
                         ELSE IF (v(i,s-1) .EQ. t) THEN
-                            IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
-                            ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
-                                CYCLE H1
-                            END IF
-                            IF (hbonds_double .EQ. "Y") THEN
-                                IF ( ( (OHvec_mat(21,i,s) .GT. DCGT2) .OR. (OHvec_mat(21,i,s) .LE. DCLE2) ) .OR.&
-                                ( (OHvec_mat(20,i,s) .GT. ACGT2 ) .OR. (OHvec_mat(20,i,s) .LE. ACLE2) ) ) THEN
+                            IF (hbonds_double .EQ. "N") THEN
+                                IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
+                                ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
                                     CYCLE H1
                                 END IF
+                            ELSE IF (hbonds_double .EQ. "Y") THEN
+                                keep=0
+                                IF ( ( (OHvec_mat(21,i,s) .LE. DCGT) .AND. (OHvec_mat(21,i,s) .GT. DCLE) ) .AND.&
+                                ( (OHvec_mat(20,i,s) .LE. ACGT ) .AND. (OHvec_mat(20,i,s) .GT. ACLE) ) ) THEN
+                                    keep=1
+                                ELSE IF ( ( (OHvec_mat(21,i,s) .LE. DCGT2) .AND. (OHvec_mat(21,i,s) .GT. DCLE2) ) .AND.&
+                                ( (OHvec_mat(20,i,s) .LE. ACGT2 ) .AND. (OHvec_mat(20,i,s) .GT. ACLE2) ) ) THEN
+                                    keep=1
+                                ELSE
+                                    keep=0
+                                END IF
+                                IF (keep .EQ. 0) CYCLE H1
                             END IF
                             v(i,s) = t
                         ELSE
@@ -684,6 +718,7 @@ DO t = mcsb, mcs+1
         END IF
     END DO ! Time
     DEALLOCATE(v)
+
     vvcf_xxz(t) = vvcf_xxz(t) * 1.0 / (nb_step - (t-1))
 
     finish_i = OMP_get_wtime()
@@ -697,6 +732,9 @@ END DO ! Corr
 !$OMP END PARALLEL DO
 
 avg_timigs = (SUM(timings(:)) / (mcs+1-mcsb) )
+
+DEALLOCATE(timings)
+
 finish = OMP_get_wtime()
 
 PRINT'(A40,F14.2,A20,A20,F14.2)', "Done with VVCF_xxz:", finish-start, "seconds elapsed", "avg per step:", avg_timigs
@@ -713,7 +751,7 @@ CLOSE(UNIT=51)
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Done with VVCF_xxz output:", finish-start, "seconds elapsed"
 
-DEALLOCATE(vvcf_xxz, timings)
+DEALLOCATE(vvcf_xxz)
 
 !   ----------------------------------------------- End
 PRINT'(A100)', '--------------------------------------------------'&
@@ -721,7 +759,5 @@ PRINT'(A100)', '--------------------------------------------------'&
 PRINT'(A100)', 'The END'
 
 !   ----------------------------------------------- Deallocate and exit
-IF (IS_c .EQ. 'Y') DEALLOCATE(is_mat, nb_is)
 
-DEALLOCATE(OHvec_mat, atm_mat, atm_el, nb_max_OHvec)
 END PROGRAM vvcf
