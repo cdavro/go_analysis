@@ -49,7 +49,7 @@ REAL(dp)                    :: vvcf_oHpO_rcut, vvcf_OpH_rcut
 REAL(dp)                    :: vvcf_X1Oh_rcut, vvcf_X2Oh_rcut
 REAL(dp)                    :: vvcf_rcut
 REAL(dp)                    :: timestep_fs=0.5_dp, mct, mctb
-CHARACTER(LEN=1)            :: hbonds_s, hbonds_c, layers_s, layers_c
+CHARACTER(LEN=1)            :: hbonds_s, layers_s
 CHARACTER(LEN=1)            :: hbonds_double="N"
 CHARACTER(LEN=1)            :: intra_only, water_only, close_c_only
 CHARACTER(LEN=1)            :: close_gl_only, close_gol_only, close_ol_only
@@ -210,15 +210,9 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('hbonds')
                     READ(value, * , IOSTAT=iostatus) hbonds_s
                     PRINT'(A50,A64)', 'hbonds: ', hbonds_s
-                CASE ('hbonds_c')
-                    READ(value, * , IOSTAT=iostatus) hbonds_c
-                    PRINT'(A50,A64)', 'hbonds_c: ', hbonds_c
                 CASE ('layers')
                     READ(value, * , IOSTAT=iostatus) layers_s
                     PRINT'(A50,A64)', 'layers: ', layers_s
-                CASE ('layers_c')
-                    READ(value, * , IOSTAT=iostatus) layers_c
-                    PRINT'(A50,A64)', 'layers_c: ', layers_c
                 CASE ('intra_only')
                     READ(value, * , IOSTAT=iostatus) intra_only
                     PRINT'(A50,A64)', 'intra_only: ', intra_only

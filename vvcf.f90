@@ -42,7 +42,7 @@ INTEGER, ALLOCATABLE            :: v(:,:)
 INTEGER                         :: nb_o, Udonnor_count, Udonnor_count2
 
 !   ----------------------------------------------- Counters
-INTEGER                         :: i, s, k, j, o, l, t, u
+INTEGER                         :: i, s, k, j, o, l, t
 INTEGER                         :: CAC, keep
 
 !   -----------------------------------------------
@@ -458,7 +458,7 @@ ALLOCATE(timings(mcs+1))
 timings(:) = 0.0_dp
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vvcf_xxz, mcsb, mcs, OHvec_mat, nb_o, box, timings, nb_step)&
-!$OMP SHARED(layers_s, layers_c, hbonds_s, hbonds_c, intra_only, IS_c, layer_up, layer_down, timestep_fs, vvcf_rcut)&
+!$OMP SHARED(layers_s, hbonds_s, intra_only, IS_c, layer_up, layer_down, timestep_fs, vvcf_rcut)&
 !$OMP SHARED(water_only, close_c_only, up_down_only, close_gl_only, close_gol_only, close_ol_only, hbonds_double)&
 !$OMP SHARED(dcle, dcgt, acle, acgt, dcle2, dcgt2, acle2, acgt2,keep)&
 !$OMP PRIVATE(t, s, i, j, l, v, u)&
@@ -479,7 +479,7 @@ DO t = mcsb, mcs+1
                 IF ( (water_only .EQ. "Y") .AND.& ! Select water only
                 (OHvec_mat(3,i,s) .NE. 13) ) THEN
                     CYCLE H1
-                ELSE IF ( (water_only .EQ. "E") .AND.& ! NOT WATER
+                ELSE IF ( (water_only .EQ. "E") .AND.& ! Exclude water
                 (OHvec_mat(3,i,s) .EQ. 13) ) THEN
                     CYCLE H1
                 END IF
@@ -528,43 +528,6 @@ DO t = mcsb, mcs+1
                         CYCLE H1
                     END IF
 
-                    IF (layers_c .EQ. "Y" ) THEN
-
-                        IF (s .EQ. 1) THEN ! init
-                            DO u = s, s+t-1
-                                IF ( (OHvec_mat(28,i,u)*OHvec_mat(29,i,u) .GT. layer_up) .OR.&
-                                (OHvec_mat(28,i,u)*OHvec_mat(29,i,u) .LE.  layer_down)) THEN
-                                    CYCLE H1
-                                END IF
-                                v(i,s) = v(i,s) + 1
-                            END DO
-                            IF (v(i,s) .NE. t) THEN
-                                PRINT*, "Very incorrect"
-                                CYCLE H1
-                            END IF
-                        ELSE IF (v(i,s-1) .LE. 1) THEN
-                            DO u = s, s+t-1
-                                IF ( (OHvec_mat(28,i,u)*OHvec_mat(29,i,u) .GT. layer_up) .OR.&
-                                (OHvec_mat(28,i,u)*OHvec_mat(29,i,u) .LE.  layer_down)) THEN
-                                    CYCLE H1
-                                END IF
-                                v(i,s) = v(i,s) + 1
-                            END DO
-                            IF (v(i,s) .NE. t) THEN
-                                PRINT*, "Very incorrect"
-                                CYCLE H1
-                            END IF
-                        ELSE IF (v(i,s-1) .EQ. t) THEN
-                            IF ( (OHvec_mat(28,i,s+t-1)*OHvec_mat(29,i,s+t-1) .GT. layer_up) .OR.&
-                            (OHvec_mat(28,i,s+t-1)*OHvec_mat(29,i,s+t-1) .LE.  layer_down)) THEN
-                                CYCLE H1
-                            END IF
-                            v(i,s) = t
-                        ELSE
-                            CYCLE H1
-                        END IF
-
-                    END IF
                 END IF
 
                 IF (hbonds_s .EQ. "Y") THEN
@@ -574,6 +537,7 @@ DO t = mcsb, mcs+1
                         ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
                             CYCLE H1
                         END IF
+
                     ELSE IF (hbonds_double .EQ. "Y") THEN
                         keep=0
                         IF ( ( (OHvec_mat(21,i,s) .LE. DCGT) .AND. (OHvec_mat(21,i,s) .GT. DCLE) ) .AND.&
@@ -586,87 +550,9 @@ DO t = mcsb, mcs+1
                             keep=0
                         END IF
                         IF (keep .EQ. 0) CYCLE H1
-                    END IF
-
-                    IF (hbonds_c .EQ. "Y") THEN
-
-                        IF (s .EQ. 1) THEN ! init
-                            DO u = s, s+t-1
-                                IF (hbonds_double .EQ. "N") THEN
-                                    IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
-                                    ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
-                                        CYCLE H1
-                                    END IF
-                                ELSE IF (hbonds_double .EQ. "Y") THEN
-                                    keep=0
-                                    IF ( ( (OHvec_mat(21,i,s) .LE. DCGT) .AND. (OHvec_mat(21,i,s) .GT. DCLE) ) .AND.&
-                                    ( (OHvec_mat(20,i,s) .LE. ACGT ) .AND. (OHvec_mat(20,i,s) .GT. ACLE) ) ) THEN
-                                        keep=1
-                                    ELSE IF ( ( (OHvec_mat(21,i,s) .LE. DCGT2) .AND. (OHvec_mat(21,i,s) .GT. DCLE2) ) .AND.&
-                                    ( (OHvec_mat(20,i,s) .LE. ACGT2 ) .AND. (OHvec_mat(20,i,s) .GT. ACLE2) ) ) THEN
-                                        keep=1
-                                    ELSE
-                                        keep=0
-                                    END IF
-                                    IF (keep .EQ. 0) CYCLE H1
-                                END IF
-                                v(i,s) = v(i,s) + 1
-                            END DO
-                            IF (v(i,s) .NE. t) THEN
-                                PRINT*, "Very incorrect"
-                                CYCLE H1
-                            END IF
-                        ELSE IF (v(i,s-1) .LE. 1) THEN
-                            DO u = s, s+t-1
-                                IF (hbonds_double .EQ. "N") THEN
-                                    IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
-                                    ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
-                                        CYCLE H1
-                                    END IF
-                                ELSE IF (hbonds_double .EQ. "Y") THEN
-                                    keep=0
-                                    IF ( ( (OHvec_mat(21,i,s) .LE. DCGT) .AND. (OHvec_mat(21,i,s) .GT. DCLE) ) .AND.&
-                                    ( (OHvec_mat(20,i,s) .LE. ACGT ) .AND. (OHvec_mat(20,i,s) .GT. ACLE) ) ) THEN
-                                        keep=1
-                                    ELSE IF ( ( (OHvec_mat(21,i,s) .LE. DCGT2) .AND. (OHvec_mat(21,i,s) .GT. DCLE2) ) .AND.&
-                                    ( (OHvec_mat(20,i,s) .LE. ACGT2 ) .AND. (OHvec_mat(20,i,s) .GT. ACLE2) ) ) THEN
-                                        keep=1
-                                    ELSE
-                                        keep=0
-                                    END IF
-                                    IF (keep .EQ. 0) CYCLE H1
-                                END IF
-                                v(i,s) = v(i,s) + 1
-                            END DO
-                            IF (v(i,s) .NE. t) THEN
-                                PRINT*, "Very incorrect"
-                                CYCLE H1
-                            END IF
-                        ELSE IF (v(i,s-1) .EQ. t) THEN
-                            IF (hbonds_double .EQ. "N") THEN
-                                IF ( ( (OHvec_mat(21,i,s) .GT. DCGT) .OR. (OHvec_mat(21,i,s) .LE. DCLE) ) .OR.&
-                                ( (OHvec_mat(20,i,s) .GT. ACGT ) .OR. (OHvec_mat(20,i,s) .LE. ACLE) ) ) THEN
-                                    CYCLE H1
-                                END IF
-                            ELSE IF (hbonds_double .EQ. "Y") THEN
-                                keep=0
-                                IF ( ( (OHvec_mat(21,i,s) .LE. DCGT) .AND. (OHvec_mat(21,i,s) .GT. DCLE) ) .AND.&
-                                ( (OHvec_mat(20,i,s) .LE. ACGT ) .AND. (OHvec_mat(20,i,s) .GT. ACLE) ) ) THEN
-                                    keep=1
-                                ELSE IF ( ( (OHvec_mat(21,i,s) .LE. DCGT2) .AND. (OHvec_mat(21,i,s) .GT. DCLE2) ) .AND.&
-                                ( (OHvec_mat(20,i,s) .LE. ACGT2 ) .AND. (OHvec_mat(20,i,s) .GT. ACLE2) ) ) THEN
-                                    keep=1
-                                ELSE
-                                    keep=0
-                                END IF
-                                IF (keep .EQ. 0) CYCLE H1
-                            END IF
-                            v(i,s) = t
-                        ELSE
-                            CYCLE H1
-                        END IF
 
                     END IF
+
                 END IF
 
              H2:DO j = 1, nb_o * 3
@@ -691,6 +577,7 @@ DO t = mcsb, mcs+1
                     IF ( trij .LT. vvcf_rcut ) THEN
 
                      H3:DO l = 1, nb_o *3
+
                             IF ( (OHvec_mat(1,j,s) .NE. OHvec_mat(1,l,s+t-1)) .OR.&
                              (OHvec_mat(2,j,s) .NE. OHvec_mat(2,l,s+t-1)) ) THEN
                                 CYCLE H3
@@ -716,7 +603,9 @@ DO t = mcsb, mcs+1
             END DO H1 ! i at 0
 
         END IF
+
     END DO ! Time
+
     DEALLOCATE(v)
 
     vvcf_xxz(t) = vvcf_xxz(t) * 1.0 / (nb_step - (t-1))
