@@ -464,7 +464,7 @@ vvcf_xxz(:) = 0.0_dp
 !$OMP SHARED(layers_s, hbonds_s, intra_only, IS_c, layer_up, layer_down, timestep_fs, vvcf_rcut)&
 !$OMP SHARED(water_only, close_c_only, up_down_only, close_gl_only, close_gol_only, close_ol_only, hbonds_double)&
 !$OMP SHARED(dcle, dcgt, acle, acgt, dcle2, dcgt2, acle2, acgt2)&
-!$OMP PRIVATE(t, s, i, j, l, v, u)&
+!$OMP PRIVATE(t, s, i, j, l, v)&
 !$OMP PRIVATE(tij_vec, trij, OH_vel_vec, OH_disp_vec, start_i, finish_i, keep, vvcf_xxz_t, timings_t)
 DO t = mcsb, mcs+1
     start_i = OMP_get_wtime()
