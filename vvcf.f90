@@ -12,7 +12,8 @@ IMPLICIT NONE
 INTEGER, PARAMETER              :: dp=KIND(0.0d0)
 
 !   ----------------------------------------------- Timings
-REAL(dp)                        :: start, finish, start_i, finish_i, avg_timigs
+REAL(dp)                        :: start, finish, start_i, finish_i, avg_timigs, timings_t
+REAL(dp)                        :: start_tot, finish_tot
 REAL(dp), ALLOCATABLE           :: timings(:)
 
 !   ----------------------------------------------- Input files
@@ -35,7 +36,7 @@ CHARACTER(LEN=2)                :: dummy_char
 INTEGER                         :: mcs, mcsb
 REAL(dp)                        :: OH_vel_vec(3), OH_disp_vec(3)
 REAL(dp), ALLOCATABLE           :: vvcf_xxz(:)
-REAL(dp)                        :: tij_vec(3), trij
+REAL(dp)                        :: tij_vec(3), trij, vvcf_xxz_t
 INTEGER, ALLOCATABLE            :: v(:,:)
 
 !   ----------------------------------------------- Count variables
@@ -51,6 +52,7 @@ PRINT'(A100)','--------------------------------------------------'&
 PRINT'(A100)', 'Launching VVCF'
 PRINT'(A100)','--------------------------------------------------'&
 ,'--------------------------------------------------'
+start_tot = OMP_get_wtime()
 
 !   ----------------------------------------------- Get arguments (filenames, choices)
 CAC = COMMAND_ARGUMENT_COUNT()
@@ -456,18 +458,20 @@ END IF
 ALLOCATE(vvcf_xxz(mcs+1))
 ALLOCATE(timings(mcs+1))
 timings(:) = 0.0_dp
+vvcf_xxz(:) = 0.0_dp
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vvcf_xxz, mcsb, mcs, OHvec_mat, nb_o, box, timings, nb_step)&
 !$OMP SHARED(layers_s, hbonds_s, intra_only, IS_c, layer_up, layer_down, timestep_fs, vvcf_rcut)&
 !$OMP SHARED(water_only, close_c_only, up_down_only, close_gl_only, close_gol_only, close_ol_only, hbonds_double)&
-!$OMP SHARED(dcle, dcgt, acle, acgt, dcle2, dcgt2, acle2, acgt2,keep)&
+!$OMP SHARED(dcle, dcgt, acle, acgt, dcle2, dcgt2, acle2, acgt2)&
 !$OMP PRIVATE(t, s, i, j, l, v, u)&
-!$OMP PRIVATE(tij_vec, trij, OH_vel_vec, OH_disp_vec, start_i, finish_i)
+!$OMP PRIVATE(tij_vec, trij, OH_vel_vec, OH_disp_vec, start_i, finish_i, keep, vvcf_xxz_t, timings_t)
 DO t = mcsb, mcs+1
     start_i = OMP_get_wtime()
-    vvcf_xxz(t) = 0.0_dp
     ALLOCATE(v(nb_o*3,nb_step))
-    v(:,:) = 0
+    v(:,:) = 0.0_dp
+    vvcf_xxz_t = 0.0_dp
+
     DO s = 1, nb_step
         IF (s-1+t-1 .LT. nb_step) THEN
          H1:DO i = 1, nb_o*3
@@ -549,6 +553,7 @@ DO t = mcsb, mcs+1
                         ELSE
                             keep=0
                         END IF
+
                         IF (keep .EQ. 0) CYCLE H1
 
                     END IF
@@ -588,7 +593,7 @@ DO t = mcsb, mcs+1
                                 OH_disp_vec(k) = OHvec_mat(k+4,l,s+t-1)
                             END DO
 
-                            vvcf_xxz(t) = vvcf_xxz(t) + (OHvec_mat(10,i,s) &
+                            vvcf_xxz_t = vvcf_xxz_t + (OHvec_mat(10,i,s) &
                             * &
                             (DOT_PRODUCT(OH_vel_vec(:),OH_disp_vec(:)) &
                             / &
@@ -608,14 +613,16 @@ DO t = mcsb, mcs+1
 
     DEALLOCATE(v)
 
-    vvcf_xxz(t) = vvcf_xxz(t) * 1.0 / (nb_step - (t-1))
+    vvcf_xxz_t = vvcf_xxz_t * 1.0 / (nb_step - (t-1))
 
     finish_i = OMP_get_wtime()
-    timings(t)=finish_i-start_i
+    timings_t = finish_i-start_i
 
     IF (MODULO(t,25) .EQ. 0) THEN
-        PRINT('(I10,A1,I10,E24.14,E24.14,E24.14)'), t, "/", mcs+1, (t-1)*timestep_fs, vvcf_xxz(t), timings(t)
+        PRINT('(I10,A1,I10,E24.14,E24.14,E24.14)'), t, "/", mcs+1, (t-1)*timestep_fs, vvcf_xxz_t, timings_t
     END IF
+    vvcf_xxz(t) = vvcf_xxz_t
+    timings(t) = timings_t
 
 END DO ! Corr
 !$OMP END PARALLEL DO
@@ -642,7 +649,10 @@ PRINT'(A40,F14.2,A20)', "Done with VVCF_xxz output:", finish-start, "seconds ela
 
 DEALLOCATE(vvcf_xxz)
 
+finish_tot = OMP_get_wtime()
 !   ----------------------------------------------- End
+
+PRINT'(A40,F14.2,A20)', "Total time:", finish_tot-start_tot, "seconds elapsed"
 PRINT'(A100)', '--------------------------------------------------'&
 , '--------------------------------------------------'
 PRINT'(A100)', 'The END'
