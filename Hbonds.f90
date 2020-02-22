@@ -548,13 +548,13 @@ start = OMP_get_wtime()
 
 OPEN(UNIT=31, FILE=suffix//"_O_Hbonds.txt")
 WRITE(31, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24,A24)')&
- "O_id", "Step","O_type", "Acc", "Don", "UDon"&
-, "C", "OE", "OH", "OA", "CX", "dist_IS_down", "dist_IS_up", "dist_AS"
+"Step", "Oid", "OType", "TA_O", "TD_O", "TDU_O"&
+, "cC", "cOE", "cOH", "cOA", "cCX", "dist_ISD", "dist_ISU", "dist_AS"
 DO s = 1, nb_step
     DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. 16) THEN
             WRITE(31,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14,E24.14)')&
-            INT(atm_mat(1,i,s)), s, INT(atm_mat(3,i,s)), INT(atm_mat(7,i,s))&
+            s, INT(atm_mat(1,i,s)), INT(atm_mat(3,i,s)), INT(atm_mat(7,i,s))&
             , INT(atm_mat(8,i,s)), INT(atm_mat(9,i,s)), INT(atm_mat(10,i,s)), INT(atm_mat(11,i,s))&
             , INT(atm_mat(12,i,s)), INT(atm_mat(13,i,s)), INT(atm_mat(14,i,s))&
             , (atm_mat(15,i,s)*atm_mat(16,i,s)),(atm_mat(18,i,s)*atm_mat(19,i,s))&
@@ -566,16 +566,16 @@ CLOSE(UNIT=31)
 
 OPEN(UNIT=32, FILE = suffix//"_OH_Hbonds.txt")
 WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24,A24)')&
-    "O_id", "O_type", "H_id", "step"&
-    , "TAcc", "Don", "UDon"&
-    , "C", "OE", "OH", "OA", "CX"&
-    , "TAcc", "TDon", "TUDon", "dist_IS_down", "dist_IS_up"&
+    "Step","Oid", "Hid", "OType"&
+    , "TA_OH", "TD_OH", "TDU_OH"&
+    , "cC", "cOE", "cOH", "cOA", "cCX"&
+    , "TA_O", "TD_O", "TDU_O", "dist_ISD", "dist_ISU"&
     , "dist_AS"
 DO s = 1, nb_step
     DO i = 1, nb_max_OHvec(s)
         WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14,E24.14)')&
-        INT(OHvec_mat(1,i,s)), INT(OHvec_mat(3,i,s)), INT(OHvec_mat(2,i,s)), s&
-        , INT(OHvec_mat(14,i,s)) , INT(OHvec_mat(15,i,s)), INT(OHvec_mat(16,i,s))&
+        s, INT(OHvec_mat(1,i,s)), INT(OHvec_mat(2,i,s)), INT(OHvec_mat(3,i,s)) &
+        , INT(OHvec_mat(14,i,s)), INT(OHvec_mat(15,i,s)), INT(OHvec_mat(16,i,s))&
         , INT(OHvec_mat(20,i,s)), INT(OHvec_mat(21,i,s)), INT(OHvec_mat(22,i,s)), INT(OHvec_mat(23,i,s)) , INT(OHvec_mat(24,i,s))&
         , INT(OHvec_mat(17,i,s)), INT(OHvec_mat(18,i,s)), INT(OHvec_mat(19,i,s))&
         , (OHvec_mat(25,i,s)*OHvec_mat(26,i,s)), (OHvec_mat(28,i,s)*OHvec_mat(29,i,s))&
@@ -585,14 +585,17 @@ END DO
 CLOSE(UNIT=32)
 
 OPEN(UNIT=33, FILE = suffix//"_OH_Hbonds_dist.txt")
-WRITE(33, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10)')&
-    "OH_id","H_id", "O_type", "O_id", "O_Type", "Dist", "O_id", "O_Type", "Dist"&
-    , "O_id", "O_Type", "Dist", "O_id", "O_Type", "Dist"
+WRITE(33, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10)')&
+    "Step","OHid","Hid", "OType"&
+    , "Oid", "OType", "Dist"&
+    , "Oid", "OType", "Dist"&
+    , "Oid", "OType", "Dist"&
+    , "Oid", "OType", "Dist"
 
 DO s = 1, nb_step
     DO i = 1, nb_max_OHvec(s)
-        WRITE(33, '(I10,I10,I10)', ADVANCE = "no")&
-            INT(OHvec_hbond_mat(1,i,s)), INT(OHvec_hbond_mat(3,i,s)), INT(OHvec_hbond_mat(2,i,s))
+        WRITE(33, '(I10,I10,I10,I10)', ADVANCE = "no")&
+            s, INT(OHvec_hbond_mat(1,i,s)), INT(OHvec_hbond_mat(3,i,s)), INT(OHvec_hbond_mat(2,i,s))
         DO j = 4, 15, 3
             WRITE(33, '(I10,I10,F10.3)', ADVANCE = "no")&
             INT(OHvec_hbond_mat(j,i,s)),INT(OHvec_hbond_mat(j+1,i,s)), OHvec_hbond_mat(j+2,i,s)

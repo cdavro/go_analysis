@@ -599,21 +599,19 @@ IF (IS_c .EQ. 'Y' ) THEN
     start = OMP_get_wtime()
 
     OPEN(UNIT=32, FILE = suffix//"_IS_water_angle.txt")
-    WRITE(32, '(A10,A10,A10,A10,A10,A10,A20,A20,A20,A20,A20,A20,A10)')&
-        "O_id", "cOE", "cOH", "cOA", "cC", "cCX"&
-        , "dist_IS_down", "dist_IS_up"&
-        , "Angle OH/NIS_down", "Angle OH/NIS_up"&
-        , "Angle HH/NIS_down", "Angle HH/NIS_up"&
-        , "step"
+    WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A20,A20,A20,A20,A20,A20)')&
+        "Step","Oid", "cOE", "cOH", "cOA", "cC", "cCX"&
+        , "dist_ISD", "dist_ISU"&
+        , "DW/NISD", "DW/NISU"&
+        , "HH/NISD", "HH/NISU"
     DO s = 1, nb_step
         DO i = 1, nb_max_WAT(s)
-            WRITE(32, '(I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7,I10)')&
-            INT(WAT_mat(1,i,s)), INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
+            WRITE(32, '(I10,I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7)')&
+            s, INT(WAT_mat(1,i,s)), INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
             , INT(WAT_mat(26,i,s)), INT(WAT_mat(27,i,s)), INT(WAT_mat(28,i,s))&
             , (WAT_mat(29,i,s)*WAT_mat(30,i,s)), (WAT_mat(32,i,s)*WAT_mat(33,i,s))&
             , WAT_mat(35,i,s), WAT_mat(37,i,s)&
-            , WAT_mat(36,i,s), WAT_mat(38,i,s)&
-            , s
+            , WAT_mat(36,i,s), WAT_mat(38,i,s)
         END DO
     END DO
     CLOSE(UNIT=32)
@@ -772,16 +770,15 @@ IF (AS_c .EQ. 'Y' ) THEN
     start = OMP_get_wtime()
 
     OPEN(UNIT=33, FILE = suffix//"_AS_water_angle.txt")
-    WRITE(33, '(A10,A10,A10,A10,A10,A10,A20,A20,A20,A10)')&
-        "O_id", "cOE", "cOH", "cOA", "cC", "cCX"&
-        , "dist_AS_down", "Angle OH/NAS", "Angle HH/NAS", "step"
+    WRITE(33, '(A10,A10,A10,A10,A10,A10,A10,A20,A20,A20)')&
+        "Step","Oid", "cOE", "cOH", "cOA", "cC", "cCX"&
+        , "dist_AS", "DW/NAS", "HH/NAS"
     DO s = 1, nb_step
         DO i = 1, nb_max_WAT(s)
-            WRITE(33, '(I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7, I10)')&
-            INT(WAT_mat(1,i,s)), INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
+            WRITE(33, '(I10,I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7)')&
+            s, INT(WAT_mat(1,i,s)), INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
             , INT(WAT_mat(26,i,s)), INT(WAT_mat(27,i,s)), INT(WAT_mat(28,i,s))&
-            , (WAT_mat(39,i,s)*WAT_mat(40,i,s)), WAT_mat(42,i,s), WAT_mat(43,i,s)&
-            , s
+            , (WAT_mat(39,i,s)*WAT_mat(40,i,s)), WAT_mat(42,i,s), WAT_mat(43,i,s)
         END DO
     END DO
     CLOSE(UNIT=33)
