@@ -600,7 +600,7 @@ IF (IS_c .EQ. 'Y' ) THEN
 
     OPEN(UNIT=32, FILE = suffix//"_IS_water_angle.txt")
     WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A20,A20,A20,A20,A20,A20)')&
-        "Step","Oid", "cOE", "cOH", "cOA", "cC", "cCX"&
+        "Step", "Oid", "cOE", "cOH", "cOA", "cC", "cCX"&
         , "dist_ISD", "dist_ISU"&
         , "DW/NISD", "DW/NISU"&
         , "HH/NISD", "HH/NISU"
@@ -771,7 +771,7 @@ IF (AS_c .EQ. 'Y' ) THEN
 
     OPEN(UNIT=33, FILE = suffix//"_AS_water_angle.txt")
     WRITE(33, '(A10,A10,A10,A10,A10,A10,A10,A20,A20,A20)')&
-        "Step","Oid", "cOE", "cOH", "cOA", "cC", "cCX"&
+        "Step", "Oid", "cOE", "cOH", "cOA", "cC", "cCX"&
         , "dist_AS", "DW/NAS", "HH/NAS"
     DO s = 1, nb_step
         DO i = 1, nb_max_WAT(s)
