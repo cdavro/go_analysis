@@ -267,8 +267,8 @@ PRINT'(A40,F14.2,A20)', "Oxygen groups topologies output:", finish-start, "secon
 !   ----------------------------------------------- Print the xyz and velocities files
 start = OMP_get_wtime()
 
-IF (file_vel .NE. '0') OPEN(UNIT=40, FILE = suffix//"_wrapped_"//file_pos)
-OPEN(UNIT=41, FILE = suffix//"_wrapped_"//file_vel)
+OPEN(UNIT=40, FILE = suffix//"_wrapped_"//file_pos)
+IF (file_vel .NE. '0') OPEN(UNIT=41, FILE = suffix//"_wrapped_"//file_vel)
 DO s = 1, nb_step
     WRITE(40,'(I10)') nb_atm
     IF (file_vel .NE. '0') WRITE(41,'(I10)') nb_atm
