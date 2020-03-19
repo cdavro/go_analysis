@@ -31,6 +31,7 @@ REAL(dp)                        :: SpS1_disp_vec(3), SpS1_disp_norm, SpS2_disp_v
 REAL(dp)                        :: tPSvec_down(3), tPSvec_up(3)
 REAL(dp)                        :: tPSuvec_down(3), tPSuvec_up(3)
 REAL(dp)                        :: WD_vec(3), HpH_disp_vec(3),WD_uvec(3), HpH_disp_uvec(3)
+REAL(dp)                        :: OH1_disp_vec(3), OH1_disp_uvec(3), OH2_disp_vec(3), OH2_disp_uvec(3)
 REAL(dp)                        :: tO_pos_iPS_down(3), tO_pos_iPS_up(3), tS_pos_PS_down(3), tS_pos_PS_up(3)
 REAL(dp)                        :: tOS_disp_oPS_down(3), tOS_disp_oPS_up(3)
 CHARACTER(LEN=2)                :: dummy_char
@@ -225,7 +226,7 @@ END IF
 
 ! B ----------------------------------------------- Water
 start = OMP_get_wtime()
-ALLOCATE(WAT_mat(46,nb_o*3,nb_step))
+ALLOCATE(WAT_mat(52,nb_o*3,nb_step))
 ALLOCATE(nb_max_WAT(nb_step))
 
 nb_max_WAT(:) = 0.0
@@ -320,12 +321,12 @@ DO s = 1, nb_step
             END DO
             XOwat_disp_norm = NORM2(XOwat_disp_vec)
 
-            IF ( ( (XOwat_disp_norm .LE. WAT_mat(45,i,s)) .OR.&
-            (WAT_mat(45,i,s) .EQ. 0.0) ) .AND.&
+            IF ( ( (XOwat_disp_norm .LE. WAT_mat(51,i,s)) .OR.&
+            (WAT_mat(51,i,s) .EQ. 0.0) ) .AND.&
             (atm_mat(3,j,s) .EQ. 1.) ) THEN
-                WAT_mat(44,i,s) = atm_mat(1,j,s)
-                WAT_mat(45,i,s) = XOwat_disp_norm
-                WAT_mat(46,i,s) = atm_mat(6,j,s)
+                WAT_mat(50,i,s) = atm_mat(1,j,s)
+                WAT_mat(51,i,s) = XOwat_disp_norm
+                WAT_mat(52,i,s) = atm_mat(6,j,s)
             END IF
             IF (XOwat_disp_norm .LE. wa_X1Owat_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C or SiF
@@ -360,6 +361,7 @@ IF (IS_c .EQ. 'Y' ) THEN
     !$OMP PRIVATE(s, i, j, k)&
     !$OMP PRIVATE(SpOwat_disp_vec, SpOwat_disp_norm, SpS1_disp_vec, SpS1_disp_norm, SpS2_disp_vec, SpS2_disp_norm)&
     !$OMP PRIVATE(tPSuvec_down, tPSuvec_up, tPSvec_down, tPSvec_up, WD_vec, HpH_disp_vec, WD_uvec, HpH_disp_uvec)&
+    !$OMP PRIVATE(OH1_disp_vec, OH2_disp_vec, OH1_disp_uvec, OH2_disp_uvec)&
     !$OMP PRIVATE(tO_pos_iPS_down, tO_pos_iPS_up, tS_pos_PS_down, tS_pos_PS_up)&
     !$OMP PRIVATE(tOS_disp_oPS_down, tOS_disp_oPS_up)
     DO s = 1, nb_step
@@ -540,17 +542,25 @@ IF (IS_c .EQ. 'Y' ) THEN
                 is_mat(19,INT(WAT_mat(34,i,s)),s) = 1
 
             END IF
+
             DO k = 1, 3
                 tPSvec_down(k) = is_mat(k+15,INT(WAT_mat(31,i,s)),s)
                 tPSvec_up(k) = is_mat(k+15,INT(WAT_mat(34,i,s)),s)
                 WD_vec(k) = WAT_mat(k+17,i,s)
                 HpH_disp_vec(k) = WAT_mat(k+20,i,s)
+                OH1_disp_vec(k) = WAT_mat(k+6,i,s) - WAT_mat(k+1,i,s)
+                OH1_disp_vec(k) = OH1_disp_vec(k) - box(k) * ANINT(OH1_disp_vec(k) / box(k))
+                OH2_disp_vec(k) = WAT_mat(k+11,i,s) - WAT_mat(k+1,i,s)
+                OH2_disp_vec(k) = OH2_disp_vec(k) - box(k) * ANINT(OH2_disp_vec(k) / box(k))
             END DO
 
             tPSuvec_down(:) = tPSvec_down(:) / NORM2(tPSvec_down(:))
             tPSuvec_up(:) = tPSvec_up(:) / NORM2(tPSvec_up(:))
             WD_uvec(:) = WD_vec(:) / NORM2(WD_vec(:))
             HpH_disp_uvec(:) = HpH_disp_vec(:) / NORM2(HpH_disp_vec(:))
+            OH1_disp_uvec(:) = OH1_disp_vec(:) / NORM2(OH1_disp_vec(:))
+            OH2_disp_uvec(:) = OH2_disp_vec(:) / NORM2(OH2_disp_vec(:))
+
             DO k = 1, 3
                 ! To check orientation of the normal isace vector
                 tO_pos_iPS_down(k) = WAT_mat(k+1,i,s) - 0.01*tPSuvec_down(k)
@@ -580,13 +590,17 @@ IF (IS_c .EQ. 'Y' ) THEN
 
             WAT_mat(35,i,s) = ACOS(DOT_PRODUCT(tPSuvec_down(:), WD_uvec(:)))
             WAT_mat(36,i,s) = ACOS(DOT_PRODUCT(tPSuvec_down(:), HpH_disp_uvec(:)))
+            WAT_mat(37,i,s) = ACOS(DOT_PRODUCT(tPSuvec_down(:), OH1_disp_uvec(:) ))
+            WAT_mat(38,i,s) = ACOS(DOT_PRODUCT(tPSuvec_down(:), OH2_disp_uvec(:) ))
 
             IF (ACOS(DOT_PRODUCT(tPSuvec_up(:), HpH_disp_uvec(:))) .LT. c_pi/2.0) THEN
                 HpH_disp_uvec(:) = -1.0 * HpH_disp_uvec(:)
             END IF
 
-            WAT_mat(37,i,s) = ACOS(DOT_PRODUCT(tPSuvec_up(:), WD_uvec(:)))
-            WAT_mat(38,i,s) = ACOS(DOT_PRODUCT(tPSuvec_up(:), HpH_disp_uvec(:)))
+            WAT_mat(39,i,s) = ACOS(DOT_PRODUCT(tPSuvec_up(:), WD_uvec(:)))
+            WAT_mat(40,i,s) = ACOS(DOT_PRODUCT(tPSuvec_up(:), HpH_disp_uvec(:)))
+            WAT_mat(41,i,s) = ACOS(DOT_PRODUCT(tPSuvec_up(:),  OH1_disp_uvec(:)))
+            WAT_mat(42,i,s) = ACOS(DOT_PRODUCT(tPSuvec_up(:),  OH1_disp_uvec(:)))
 
         END DO D2
     END DO
@@ -599,19 +613,26 @@ IF (IS_c .EQ. 'Y' ) THEN
     start = OMP_get_wtime()
 
     OPEN(UNIT=32, FILE = suffix//"_IS_water_angle.txt")
-    WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A20,A20,A20,A20,A20,A20)')&
-        "Step", "Oid", "cOE", "cOH", "cOA", "cC", "cCX"&
+    WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,&
+        &A20,A20,A20,A20,A20,A20,A20,A20,A20,A20)')&
+        "Step", "Oid", "H1id", "H2id", "cOE", "cOH", "cOA", "cC", "cCX"&
         , "dist_ISD", "dist_ISU"&
         , "DW/NISD", "DW/NISU"&
-        , "HH/NISD", "HH/NISU"
+        , "HH/NISD", "HH/NISU"&
+        , "OH1/NISD", "OH1/NISU"&
+        , "OH2/NISD", "OH2/NISD"
     DO s = 1, nb_step
         DO i = 1, nb_max_WAT(s)
-            WRITE(32, '(I10,I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7)')&
-            s, INT(WAT_mat(1,i,s)), INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
+            WRITE(32, '(I10,I10,I10,I10,I10,I10,I10,I10,I10,&
+            &E20.7,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7)')&
+            s, INT(WAT_mat(1,i,s)), INT(WAT_mat(5,i,s)), INT(WAT_mat(10,i,s))&
+            , INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
             , INT(WAT_mat(26,i,s)), INT(WAT_mat(27,i,s)), INT(WAT_mat(28,i,s))&
             , (WAT_mat(29,i,s)*WAT_mat(30,i,s)), (WAT_mat(32,i,s)*WAT_mat(33,i,s))&
-            , WAT_mat(35,i,s), WAT_mat(37,i,s)&
-            , WAT_mat(36,i,s), WAT_mat(38,i,s)
+            , WAT_mat(35,i,s), WAT_mat(39,i,s)&
+            , WAT_mat(36,i,s), WAT_mat(40,i,s)&
+            , WAT_mat(37,i,s), WAT_mat(41,i,s)&
+            , WAT_mat(38,i,s), WAT_mat(42,i,s)
         END DO
     END DO
     CLOSE(UNIT=32)
@@ -629,7 +650,8 @@ IF (AS_c .EQ. 'Y' ) THEN
     !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, WAT_mat, nb_o, as_mat, nb_as, nb_step)&
     !$OMP PRIVATE(s, i, j, k)&
     !$OMP PRIVATE(SpOwat_disp_vec, SpOwat_disp_norm, SpS1_disp_vec, SpS1_disp_norm, SpS2_disp_vec, SpS2_disp_norm)&
-    !$OMP PRIVATE(tPSuvec_down, tPSvec_down, WD_vec, HpH_disp_vec ,WD_uvec, HpH_disp_uvec)&
+    !$OMP PRIVATE(tPSuvec_down, tPSvec_down, WD_vec, HpH_disp_vec , WD_uvec, HpH_disp_uvec)&
+    !$OMP PRIVATE(OH1_disp_vec, OH2_disp_vec, OH1_disp_uvec, OH2_disp_uvec)&
     !$OMP PRIVATE(tO_pos_iPS_down, tS_pos_PS_down)&
     !$OMP PRIVATE(tOS_disp_oPS_down)
     DO s = 1, nb_step
@@ -643,37 +665,37 @@ IF (AS_c .EQ. 'Y' ) THEN
                     SpOwat_disp_vec(k) = SpOwat_disp_vec(k) - box(k) * ANINT(SpOwat_disp_vec(k) / box(k))
                 END DO
                 SpOwat_disp_norm = NORM2(SpOwat_disp_vec)
-                IF ( (SpOwat_disp_norm .LT. WAT_mat(39,i,s)) .OR. (WAT_mat(39,i,s) .EQ. 0.0) ) THEN
-                    WAT_mat(39,i,s) = SpOwat_disp_norm
+                IF ( (SpOwat_disp_norm .LT. WAT_mat(43,i,s)) .OR. (WAT_mat(43,i,s) .EQ. 0.0) ) THEN
+                    WAT_mat(43,i,s) = SpOwat_disp_norm
                     IF (WAT_mat(4,i,s) .LT. as_mat(3,j,s)) THEN
-                        WAT_mat(40,i,s) = -1
+                        WAT_mat(44,i,s) = -1
                     ELSE
-                        WAT_mat(40,i,s) = 1
+                        WAT_mat(44,i,s) = 1
                     END IF
-                    WAT_mat(41,i,s) = as_mat(5,j,s)
+                    WAT_mat(45,i,s) = as_mat(5,j,s)
                 END IF
             END DO
 
-            IF ((as_mat(19,INT(WAT_mat(41,i,s)),s) .NE. 1)) THEN
+            IF ((as_mat(19,INT(WAT_mat(45,i,s)),s) .NE. 1)) THEN
 
                 E3:DO j = 1, nb_as(s) ! First one
-                    IF ( (as_mat(5,j,s) .EQ. as_mat(5,INT(WAT_mat(41,i,s)),s))) THEN
+                    IF ( (as_mat(5,j,s) .EQ. as_mat(5,INT(WAT_mat(45,i,s)),s))) THEN
                         CYCLE E3
                     END IF
 
                     DO k = 1, 3
-                        SpS1_disp_vec(k) = as_mat(k,j,s) - as_mat(k,INT(WAT_mat(41,i,s)),s)
+                        SpS1_disp_vec(k) = as_mat(k,j,s) - as_mat(k,INT(WAT_mat(45,i,s)),s)
                         SpS1_disp_vec(k) = SpS1_disp_vec(k) - box(k) * ANINT(SpS1_disp_vec(k) / box(k))
                     END DO
                     SpS1_disp_norm = NORM2(SpS1_disp_vec)
 
-                    IF ( ( (SpS1_disp_norm .LT. as_mat(7,INT(WAT_mat(41,i,s)),s)) .OR.&
-                    (as_mat(7,INT(WAT_mat(41,i,s)),s) .EQ. 0.0 ) ) .AND.&
-                    (as_mat(5,j,s) .NE. as_mat(6,INT(WAT_mat(41,i,s)),s)) ) THEN
-                        as_mat(6,INT(WAT_mat(41,i,s)),s) = as_mat(5,j,s)
-                        as_mat(7,INT(WAT_mat(41,i,s)),s) = SpS1_disp_norm
+                    IF ( ( (SpS1_disp_norm .LT. as_mat(7,INT(WAT_mat(45,i,s)),s)) .OR.&
+                    (as_mat(7,INT(WAT_mat(45,i,s)),s) .EQ. 0.0 ) ) .AND.&
+                    (as_mat(5,j,s) .NE. as_mat(6,INT(WAT_mat(45,i,s)),s)) ) THEN
+                        as_mat(6,INT(WAT_mat(45,i,s)),s) = as_mat(5,j,s)
+                        as_mat(7,INT(WAT_mat(45,i,s)),s) = SpS1_disp_norm
                         DO k = 1, 3
-                            as_mat(k+7,INT(WAT_mat(41,i,s)),s) = SpS1_disp_vec(k) / SpS1_disp_norm !8,9,10
+                            as_mat(k+7,INT(WAT_mat(45,i,s)),s) = SpS1_disp_vec(k) / SpS1_disp_norm !8,9,10
                         END DO
                     END IF
 
@@ -681,15 +703,15 @@ IF (AS_c .EQ. 'Y' ) THEN
 
                 E4:DO j = 1, nb_as(s)
 
-                    IF ( (as_mat(5,j,s) .EQ. as_mat(5,INT(WAT_mat(41,i,s)),s)) .OR.&
-                    (as_mat(5,j,s) .EQ. as_mat(6,INT(WAT_mat(41,i,s)),s)) ) THEN
+                    IF ( (as_mat(5,j,s) .EQ. as_mat(5,INT(WAT_mat(45,i,s)),s)) .OR.&
+                    (as_mat(5,j,s) .EQ. as_mat(6,INT(WAT_mat(45,i,s)),s)) ) THEN
                         CYCLE E4
                     END IF
 
                         DO k = 1, 3
-                            SpS1_disp_vec(k) = as_mat(k,j,s) - as_mat(k,INT(WAT_mat(41,i,s)),s)
+                            SpS1_disp_vec(k) = as_mat(k,j,s) - as_mat(k,INT(WAT_mat(45,i,s)),s)
                             SpS1_disp_vec(k) = SpS1_disp_vec(k) - box(k) * ANINT(SpS1_disp_vec(k) / box(k))
-                            SpS2_disp_vec(k) = as_mat(k+7,INT(WAT_mat(41,i,s)),s)
+                            SpS2_disp_vec(k) = as_mat(k+7,INT(WAT_mat(45,i,s)),s)
                             SpS2_disp_vec(k) = SpS2_disp_vec(k) - box(k) * ANINT(SpS2_disp_vec(k) / box(k))
                         END DO
 
@@ -701,54 +723,62 @@ IF (AS_c .EQ. 'Y' ) THEN
                             CYCLE E4
                         END IF
 
-                        IF ( ( (SpS1_disp_norm .LT. as_mat(12,INT(WAT_mat(41,i,s)),s)) .OR.&
-                        (as_mat(12,INT(WAT_mat(41,i,s)),s) .EQ. 0.0 ) ) .AND.&
-                        (as_mat(5,j,s) .NE. as_mat(11,INT(WAT_mat(41,i,s)),s)) ) THEN
+                        IF ( ( (SpS1_disp_norm .LT. as_mat(12,INT(WAT_mat(45,i,s)),s)) .OR.&
+                        (as_mat(12,INT(WAT_mat(45,i,s)),s) .EQ. 0.0 ) ) .AND.&
+                        (as_mat(5,j,s) .NE. as_mat(11,INT(WAT_mat(45,i,s)),s)) ) THEN
 
-                            as_mat(11,INT(WAT_mat(41,i,s)),s) = as_mat(5,j,s)
-                            as_mat(12,INT(WAT_mat(41,i,s)),s) = SpS1_disp_norm
+                            as_mat(11,INT(WAT_mat(45,i,s)),s) = as_mat(5,j,s)
+                            as_mat(12,INT(WAT_mat(45,i,s)),s) = SpS1_disp_norm
                             DO k = 1, 3
-                                as_mat(k+12,INT(WAT_mat(41,i,s)),s) = SpS1_disp_vec(k) / SpS1_disp_norm !8,9,10
+                                as_mat(k+12,INT(WAT_mat(45,i,s)),s) = SpS1_disp_vec(k) / SpS1_disp_norm !8,9,10
                             END DO
 
                         END IF
 
                 END DO E4
 
-                as_mat(16,INT(WAT_mat(41,i,s)),s) =&
-                    as_mat(9,INT(WAT_mat(41,i,s)),s) * as_mat(15,INT(WAT_mat(41,i,s)),s) -&
-                    as_mat(10,INT(WAT_mat(41,i,s)),s) * as_mat(14,INT(WAT_mat(41,i,s)),s)
-                as_mat(17,INT(WAT_mat(41,i,s)),s) =&
-                    as_mat(10,INT(WAT_mat(41,i,s)),s) * as_mat(13,INT(WAT_mat(41,i,s)),s) -&
-                    as_mat(8,INT(WAT_mat(41,i,s)),s) * as_mat(15,INT(WAT_mat(41,i,s)),s)
-                as_mat(18,INT(WAT_mat(41,i,s)),s) =&
-                    as_mat(8,INT(WAT_mat(41,i,s)),s) * as_mat(14,INT(WAT_mat(41,i,s)),s) -&
-                    as_mat(9,INT(WAT_mat(41,i,s)),s) * as_mat(13,INT(WAT_mat(41,i,s)),s)
+                as_mat(16,INT(WAT_mat(45,i,s)),s) =&
+                    as_mat(9,INT(WAT_mat(45,i,s)),s) * as_mat(15,INT(WAT_mat(45,i,s)),s) -&
+                    as_mat(10,INT(WAT_mat(45,i,s)),s) * as_mat(14,INT(WAT_mat(45,i,s)),s)
+                as_mat(17,INT(WAT_mat(45,i,s)),s) =&
+                    as_mat(10,INT(WAT_mat(45,i,s)),s) * as_mat(13,INT(WAT_mat(45,i,s)),s) -&
+                    as_mat(8,INT(WAT_mat(45,i,s)),s) * as_mat(15,INT(WAT_mat(45,i,s)),s)
+                as_mat(18,INT(WAT_mat(45,i,s)),s) =&
+                    as_mat(8,INT(WAT_mat(45,i,s)),s) * as_mat(14,INT(WAT_mat(45,i,s)),s) -&
+                    as_mat(9,INT(WAT_mat(45,i,s)),s) * as_mat(13,INT(WAT_mat(45,i,s)),s)
 
-                as_mat(19,INT(WAT_mat(41,i,s)),s) = 1
+                as_mat(19,INT(WAT_mat(45,i,s)),s) = 1
 
             END IF
 
             DO k = 1, 3
-                tPSvec_down(k) = as_mat(k+15,INT(WAT_mat(41,i,s)),s)
+                tPSvec_down(k) = as_mat(k+15,INT(WAT_mat(45,i,s)),s)
                 WD_vec(k) = WAT_mat(k+17,i,s)
                 HpH_disp_vec(k) = WAT_mat(k+20,i,s)
+                OH1_disp_vec(k) = WAT_mat(k+6,i,s) - WAT_mat(k+1,i,s)
+                OH1_disp_vec(k) = OH1_disp_vec(k) - box(k) * ANINT(OH1_disp_vec(k) / box(k))
+                OH2_disp_vec(k) = WAT_mat(k+11,i,s) - WAT_mat(k+1,i,s)
+                OH2_disp_vec(k) = OH2_disp_vec(k) - box(k) * ANINT(OH2_disp_vec(k) / box(k))
             END DO
+
             tPSuvec_down(:) = tPSvec_down(:) / NORM2(tPSvec_down(:))
             WD_uvec(:) = WD_vec(:) / NORM2(WD_vec(:))
             HpH_disp_uvec(:) = HpH_disp_vec(:) / NORM2(HpH_disp_vec(:))
+            HpH_disp_uvec(:) = HpH_disp_vec(:) / NORM2(HpH_disp_vec(:))
+            OH1_disp_uvec(:) = OH1_disp_vec(:) / NORM2(OH1_disp_vec(:))
+            OH2_disp_uvec(:) = OH2_disp_vec(:) / NORM2(OH2_disp_vec(:))
 
             DO k = 1, 3
                 ! To check orientation of the normal isace vector
                 tO_pos_iPS_down(k) = WAT_mat(k+1,i,s) - 0.01*tPSuvec_down(k)
                 tO_pos_iPS_down(k) = tO_pos_iPS_down(k) - box(k) * ANINT(tO_pos_iPS_down(k) / box(k))
-                tS_pos_PS_down(k) = as_mat(k,INT(WAT_mat(41,i,s)),s) + 0.01*tPSuvec_down(k)
+                tS_pos_PS_down(k) = as_mat(k,INT(WAT_mat(45,i,s)),s) + 0.01*tPSuvec_down(k)
                 tS_pos_PS_down(k) = tS_pos_PS_down(k) - box(k) * ANINT(tS_pos_PS_down(k) / box(k))
                 tOS_disp_oPS_down(k) = tS_pos_PS_down(k) - tO_pos_iPS_down(k)
                 tOS_disp_oPS_down(k) = tOS_disp_oPS_down(k) - box(k) * ANINT(tOS_disp_oPS_down(k) / box(k))
             END DO
 
-            IF (NORM2(tOS_disp_oPS_down(:)) .GT. WAT_mat(39,i,s)) THEN
+            IF (NORM2(tOS_disp_oPS_down(:)) .GT. WAT_mat(43,i,s)) THEN
                 tPSuvec_down(:) = -1.0 * tPSuvec_down(:)
             END IF
 
@@ -756,8 +786,10 @@ IF (AS_c .EQ. 'Y' ) THEN
                 HpH_disp_uvec(:) = -1.0 * HpH_disp_uvec(:)
             END IF
 
-            WAT_mat(42,i,s) = ACOS(DOT_PRODUCT(tPSuvec_down(:), WD_uvec(:)))
-            WAT_mat(43,i,s) = ACOS(DOT_PRODUCT(tPSuvec_down(:), HpH_disp_uvec(:)))
+            WAT_mat(46,i,s) = ACOS(DOT_PRODUCT(tPSuvec_down(:), WD_uvec(:)))
+            WAT_mat(47,i,s) = ACOS(DOT_PRODUCT(tPSuvec_down(:), HpH_disp_uvec(:)))
+            WAT_mat(48,i,s) = ACOS(DOT_PRODUCT(tPSuvec_down(:), OH1_disp_uvec(:)))
+            WAT_mat(49,i,s) = ACOS(DOT_PRODUCT(tPSuvec_down(:), OH2_disp_uvec(:)))
 
         END DO E2
     END DO
@@ -770,15 +802,19 @@ IF (AS_c .EQ. 'Y' ) THEN
     start = OMP_get_wtime()
 
     OPEN(UNIT=33, FILE = suffix//"_AS_water_angle.txt")
-    WRITE(33, '(A10,A10,A10,A10,A10,A10,A10,A20,A20,A20)')&
-        "Step", "Oid", "cOE", "cOH", "cOA", "cC", "cCX"&
-        , "dist_AS", "DW/NAS", "HH/NAS"
+    WRITE(33, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,&
+        &A20,A20,A20,A20,A20)')&
+        "Step", "Oid", "H1id", "H2id", "cOE", "cOH", "cOA", "cC", "cCX"&
+        , "dist_AS", "DW/NAS", "HH/NAS", "OH1/NAS", "OH2/NAS"
     DO s = 1, nb_step
         DO i = 1, nb_max_WAT(s)
-            WRITE(33, '(I10,I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7)')&
-            s, INT(WAT_mat(1,i,s)), INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
+            WRITE(33, '(I10,I10,I10,I10,I10,I10,I10,I10,I10,&
+            &E20.7,E20.7,E20.7,E20.7,E20.7)')&
+            s, INT(WAT_mat(1,i,s)), INT(WAT_mat(5,i,s)), INT(WAT_mat(10,i,s))&
+            , INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
             , INT(WAT_mat(26,i,s)), INT(WAT_mat(27,i,s)), INT(WAT_mat(28,i,s))&
-            , (WAT_mat(39,i,s)*WAT_mat(40,i,s)), WAT_mat(42,i,s), WAT_mat(43,i,s)
+            , (WAT_mat(43,i,s)*WAT_mat(44,i,s)), WAT_mat(46,i,s), WAT_mat(47,i,s)&
+            , WAT_mat(48,i,s), WAT_mat(49,i,s)
         END DO
     END DO
     CLOSE(UNIT=33)

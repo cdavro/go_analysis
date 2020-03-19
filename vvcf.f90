@@ -220,7 +220,7 @@ END IF
 
 ! B ----------------------------------------------- OH groups and corresponding values
 start = OMP_get_wtime()
-ALLOCATE(OHvec_mat(36,nb_o*3,nb_step))
+ALLOCATE(OHvec_mat(39,nb_o*3,nb_step))
 
 OHvec_mat(:,:,:) = 0.0_dp
 
@@ -251,6 +251,7 @@ DO s = 1, nb_step
                             OHvec_mat(k+7,o,s) = atm_mat(k+6,j,s) - atm_mat(k+6,i,s)
                             OHvec_mat(k+10,o,s) = atm_mat(k+3,i,s) ! O pos
                             OHvec_mat(k+13,o,s) = atm_mat(k+3,j,s) ! H pos
+                            OHvec_mat(k+36,o,s) = OHvec_mat(k+10,o,s) + (1.00784/(15.999+1.00784)) * OHvec_mat(k+4,o,s)
                         END DO
                     END IF
                 END IF
@@ -446,7 +447,7 @@ END IF
 
 IF (IS_c .EQ. 'Y') DEALLOCATE(is_mat, nb_is)
 
-! H ----------------------------------------------- VVCF
+! H ----------------------------------------------- VVAF/VVCF
 start = OMP_get_wtime()
 mcs = INT(mct / timestep_fs)
 mcsb = INT(mctb / timestep_fs) + 1
@@ -461,7 +462,7 @@ timings(:) = 0.0_dp
 vvcf_xxz(:) = 0.0_dp
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vvcf_xxz, mcsb, mcs, OHvec_mat, nb_o, box, timings, nb_step)&
-!$OMP SHARED(layers_s, hbonds_s, intra_only, IS_c, layer_up, layer_down, timestep_fs, vvcf_rcut)&
+!$OMP SHARED(layers_s, hbonds_s, intracorr, autocorr, IS_c, layer_up, layer_down, timestep_fs, vvcf_rcut)&
 !$OMP SHARED(water_only, close_c_only, up_down_only, close_gl_only, close_gol_only, close_ol_only, hbonds_double)&
 !$OMP SHARED(dcle, dcgt, acle, acgt, dcle2, dcgt2, acle2, acgt2)&
 !$OMP PRIVATE(t, s, i, j, l, v)&
@@ -567,14 +568,23 @@ DO t = mcsb, mcs+1
                     END IF
 
                     ! Trick for intra cross-correlation only
-                    IF (intra_only .EQ. "Y") THEN
+                    IF (intracorr .EQ. "Y") THEN
                         IF (OHvec_mat(1,i,s) .NE. OHvec_mat(1,j,s)) THEN
                             CYCLE H2
                         END IF
                     END IF
 
+                    ! Trick for autocorrelation
+                    IF (autocorr .EQ. "Y") THEN
+                        IF (OHvec_mat(1,i,s) .NE. OHvec_mat(1,j,s)) THEN
+                            CYCLE H2
+                        ELSE IF (OHvec_mat(2,i,s) .NE. OHvec_mat(2,j,s)) THEN
+                            CYCLE H2
+                        END IF
+                    END IF
+
                     DO k = 1, 3
-                        tij_vec(k) = OHvec_mat(k+10,j,s) - OHvec_mat(k+10,i,s)
+                        tij_vec(k) = OHvec_mat(k+36,j,s) - OHvec_mat(k+36,i,s)
                         tij_vec(k) = tij_vec(k) - box(k) * ANINT(tij_vec(k)/box(k))
                     END DO
                     trij = NORM2(tij_vec(:))
@@ -633,19 +643,33 @@ DEALLOCATE(timings)
 
 finish = OMP_get_wtime()
 
-PRINT'(A40,F14.2,A20,A20,F14.2)', "Done with VVCF_xxz:", finish-start, "seconds elapsed", "avg per step:", avg_timigs
+IF (autocorr .EQ. "Y") THEN
+    PRINT'(A40,F14.2,A20,A20,F14.2)', "Done with VVAF_xxz:", finish-start, "seconds elapsed", "avg per step:", avg_timigs
+ELSE
+    PRINT'(A40,F14.2,A20,A20,F14.2)', "Done with VVCF_xxz:", finish-start, "seconds elapsed", "avg per step:", avg_timigs
+END IF
 
 start = OMP_get_wtime()
 
-open(UNIT=51, FILE=suffix//"_vvcf_xxz.txt")
-WRITE(51,'(A20,A20)') "Time (fs)", "VVCF_xxz (Å2.fs2)"
-DO t = mcsb, mcs+1
-    WRITE(51,'(E24.14,E24.14)') (t-1)*timestep_fs, vvcf_xxz(t)
-END DO
+IF (autocorr .EQ. "Y") THEN
+    OPEN(UNIT=51, FILE=suffix//"_vvaf_xxz.txt")
+    WRITE(51,'(A20,A20)') "Time (fs)", "VVAF_xxz (Å2.fs2)"
+ELSE
+    OPEN(UNIT=51, FILE=suffix//"_vvcf_xxz.txt")
+    WRITE(51,'(A20,A20)') "Time (fs)", "VVCF_xxz (Å2.fs2)"
+END IF
+    DO t = mcsb, mcs+1
+        WRITE(51,'(E24.14,E24.14)') (t-1)*timestep_fs, vvcf_xxz(t)
+    END DO
 CLOSE(UNIT=51)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Done with VVCF_xxz output:", finish-start, "seconds elapsed"
+
+IF (autocorr .EQ. "Y") THEN
+    PRINT'(A40,F14.2,A20)', "Done with VVAF_xxz output:", finish-start, "seconds elapsed"
+ELSE
+    PRINT'(A40,F14.2,A20)', "Done with VVCF_xxz output:", finish-start, "seconds elapsed"
+END IF
 
 DEALLOCATE(vvcf_xxz)
 

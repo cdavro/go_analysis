@@ -27,6 +27,7 @@ INTEGER, ALLOCATABLE            :: nb_is(:)
 REAL(dp)                        :: OpH_disp_vec(3), OpH_disp_norm
 REAL(dp)                        :: oHpO_disp_vec(3), oHpO_disp_norm
 REAL(dp)                        :: XOh_disp_vec(3), XOh_disp_norm
+REAL(dp)                        :: XHo_disp_vec(3), XHo_disp_norm
 REAL(dp)                        :: XO_disp_vec(3), XO_disp_norm
 REAL(dp)                        :: SpOh_disp_vec(3), SpOh_disp_norm
 REAL(dp)                        :: SpO_disp_vec(3), SpO_disp_norm
@@ -189,7 +190,7 @@ END IF
 
 ! B ----------------------------------------------- OH groups and corresponding values
 start = OMP_get_wtime()
-ALLOCATE(OHvec_mat(34,nb_o*3,nb_step))
+ALLOCATE(OHvec_mat(38,nb_o*3,nb_step))
 ALLOCATE(nb_max_OHvec(nb_step))
 
 nb_max_OHvec(:) = 0.0
@@ -320,7 +321,7 @@ start = OMP_get_wtime()
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, nb_step, nb_atm)&
 !$OMP SHARED(hb_X1Oh_rcut, hb_X2Oh_rcut)&
 !$OMP PRIVATE(s, i, j, k)&
-!$OMP PRIVATE(XOh_disp_vec, XOh_disp_norm)
+!$OMP PRIVATE(XOh_disp_vec, XOh_disp_norm, XHo_disp_vec, XHo_disp_norm)
 DO s = 1, nb_step
  D1:DO i = 1, nb_o*3
         IF (OHvec_mat(1,i,s) .EQ. 0) THEN
@@ -336,8 +337,11 @@ DO s = 1, nb_step
             DO k = 1, 3
                 XOh_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+7,i,s)
                 XOh_disp_vec(k) = XOh_disp_vec(k) - box(k) * ANINT(XOh_disp_vec(k)/box(k))
+                XHo_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+10,i,s)
+                XHo_disp_vec(k) = XHo_disp_vec(k) - box(k) * ANINT(XHo_disp_vec(k)/box(k))
             END DO
             XOh_disp_norm = NORM2(XOh_disp_vec)
+            XHo_disp_norm = NORM2(XHo_disp_vec)
 
             IF ( ( (XOh_disp_norm .LE. OHvec_mat(32,i,s)) .OR.&
             (OHvec_mat(32,i,s) .EQ. 0.0) ) .AND.&
@@ -346,6 +350,15 @@ DO s = 1, nb_step
                 OHvec_mat(32,i,s) = XOh_disp_norm
                 OHvec_mat(33,i,s) = atm_mat(6,j,s)
             END IF
+
+            IF ( ( (XHo_disp_norm .LE. OHvec_mat(36,i,s)) .OR.&
+            (OHvec_mat(36,i,s) .EQ. 0.0) ) .AND.&
+            (atm_mat(3,j,s) .EQ. 1.) ) THEN
+                OHvec_mat(35,i,s) = atm_mat(1,j,s)
+                OHvec_mat(36,i,s) = XHo_disp_norm
+                OHvec_mat(37,i,s) = atm_mat(6,j,s)
+            END IF
+
             IF (XOh_disp_norm .LE. hb_X1Oh_rcut) THEN
                 IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
                     OHvec_mat(20,i,s) = 1
@@ -367,6 +380,11 @@ DO s = 1, nb_step
             OHvec_mat(34,i,s) = -1.0
         ELSE
             OHvec_mat(34,i,s) = 1.0
+        END IF
+        IF (OHvec_mat(37,i,s) .GT. OHvec_mat(13,i,s) ) THEN
+            OHvec_mat(38,i,s) = -1.0
+        ELSE
+            OHvec_mat(38,i,s) = 1.0
         END IF
     END DO D1
 END DO
@@ -565,21 +583,21 @@ END DO
 CLOSE(UNIT=31)
 
 OPEN(UNIT=32, FILE = suffix//"_OH_Hbonds.txt")
-WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24,A24)')&
+WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24,A24,A24)')&
     "Step","Oid", "Hid", "OType"&
     , "TA_OH", "TD_OH", "TDU_OH"&
     , "cC", "cOE", "cOH", "cOA", "cCX"&
     , "TA_O", "TD_O", "TDU_O", "dist_ISD", "dist_ISU"&
-    , "dist_AS"
+    , "dist_AS", "dist_HAS"
 DO s = 1, nb_step
     DO i = 1, nb_max_OHvec(s)
-        WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14,E24.14)')&
+        WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14,E24.14,E24.14)')&
         s, INT(OHvec_mat(1,i,s)), INT(OHvec_mat(2,i,s)), INT(OHvec_mat(3,i,s)) &
         , INT(OHvec_mat(14,i,s)), INT(OHvec_mat(15,i,s)), INT(OHvec_mat(16,i,s))&
         , INT(OHvec_mat(20,i,s)), INT(OHvec_mat(21,i,s)), INT(OHvec_mat(22,i,s)), INT(OHvec_mat(23,i,s)) , INT(OHvec_mat(24,i,s))&
         , INT(OHvec_mat(17,i,s)), INT(OHvec_mat(18,i,s)), INT(OHvec_mat(19,i,s))&
         , (OHvec_mat(25,i,s)*OHvec_mat(26,i,s)), (OHvec_mat(28,i,s)*OHvec_mat(29,i,s))&
-        , (OHvec_mat(32,i,s)*OHvec_mat(34,i,s))
+        , (OHvec_mat(32,i,s)*OHvec_mat(34,i,s)), (OHvec_mat(36,i,s)*OHvec_mat(38,i,s))
     END DO
 END DO
 CLOSE(UNIT=32)
@@ -603,7 +621,7 @@ DO s = 1, nb_step
         WRITE(33,'()')
     END DO
 END DO
-CLOSE(UNIT=33) 
+CLOSE(UNIT=33)
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "O/OH Hbonds output:" ,finish-start, "seconds elapsed"

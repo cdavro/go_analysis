@@ -51,7 +51,7 @@ REAL(dp)                    :: vvcf_rcut
 REAL(dp)                    :: timestep_fs=0.5_dp, mct, mctb
 CHARACTER(LEN=1)            :: hbonds_s, layers_s
 CHARACTER(LEN=1)            :: hbonds_double="N"
-CHARACTER(LEN=1)            :: intra_only, water_only, close_c_only
+CHARACTER(LEN=1)            :: intracorr, autocorr, water_only, close_c_only
 CHARACTER(LEN=1)            :: close_gl_only, close_gol_only, close_ol_only
 CHARACTER(LEN=1)            :: up_down_only="U"
 INTEGER                     :: ACLE, ACGT, DCLE, DCGT
@@ -213,9 +213,12 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('layers')
                     READ(value, * , IOSTAT=iostatus) layers_s
                     PRINT'(A50,A64)', 'layers: ', layers_s
-                CASE ('intra_only')
-                    READ(value, * , IOSTAT=iostatus) intra_only
-                    PRINT'(A50,A64)', 'intra_only: ', intra_only
+                CASE ('intracorr')
+                    READ(value, * , IOSTAT=iostatus) intracorr
+                    PRINT'(A50,A64)', 'intracorr: ', intracorr
+                CASE ('autocorr')
+                    READ(value, * , IOSTAT=iostatus) autocorr
+                    PRINT'(A50,A64)', 'autocorr: ', autocorr
                 CASE ('water_only')
                     READ(value, * , IOSTAT=iostatus) water_only
                     PRINT'(A50,A64)', 'water_only: ', water_only
