@@ -285,7 +285,7 @@ DO s = 1, nb_step
             WAT_mat(k+20,i,s) = WAT_mat(k+20,i,s) - box(k) * ANINT(WAT_mat(k+20,i,s) / box(k)) ! HH Vector
             WAT_mat(k+14,i,s) = WAT_mat(k+6,i,s) + WAT_mat(k+20,i,s)/2.0 ! Center of HH
             WAT_mat(k+17,i,s) = WAT_mat(k+14,i,s) - WAT_mat(k+1,i,s)
-            WAT_mat(k+17,i,s) = WAT_mat(k+17,i,s) - box(k) * ANINT(WAT_mat(k+17,i,s) / box(k)) ! (O to center HH) vector (Inverse of of the Dipole Moment)
+            WAT_mat(k+17,i,s) = WAT_mat(k+17,i,s) - box(k) * ANINT(WAT_mat(k+17,i,s) / box(k)) ! HOH Bisector
         END DO
     END DO
     nb_max_WAT(s) = COUNT(WAT_mat(1,:,s) .NE. 0, DIM=1)
