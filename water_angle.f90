@@ -599,8 +599,8 @@ IF (IS_c .EQ. 'Y' ) THEN
 
             WAT_mat(39,i,s) = ACOS(DOT_PRODUCT(tPSuvec_up(:), WD_uvec(:)))
             WAT_mat(40,i,s) = ACOS(DOT_PRODUCT(tPSuvec_up(:), HpH_disp_uvec(:)))
-            WAT_mat(41,i,s) = ACOS(DOT_PRODUCT(tPSuvec_up(:),  OH1_disp_uvec(:)))
-            WAT_mat(42,i,s) = ACOS(DOT_PRODUCT(tPSuvec_up(:),  OH1_disp_uvec(:)))
+            WAT_mat(41,i,s) = ACOS(DOT_PRODUCT(tPSuvec_up(:), OH1_disp_uvec(:)))
+            WAT_mat(42,i,s) = ACOS(DOT_PRODUCT(tPSuvec_up(:), OH2_disp_uvec(:)))
 
         END DO D2
     END DO
