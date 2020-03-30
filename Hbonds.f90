@@ -24,7 +24,7 @@ INTEGER                         :: nb_line_is, nb_max_is
 INTEGER, ALLOCATABLE            :: nb_is(:)
 
 !   ----------------------------------------------- Temp variables
-REAL(dp)                        :: OpH_disp_vec(3), OpH_disp_norm
+REAL(dp)                        :: OpH_disp_vec(3), OpH_disp_norm, OH_disp_vec(3), OH_disp_norm, alpha
 REAL(dp)                        :: oHpO_disp_vec(3), oHpO_disp_norm
 REAL(dp)                        :: XOh_disp_vec(3), XOh_disp_norm
 REAL(dp)                        :: XHo_disp_vec(3), XHo_disp_norm
@@ -237,13 +237,14 @@ PRINT'(A40,F14.2,A20)', "OH groups:", finish-start, "seconds elapsed"
 
 ! C ----------------------------------------------- OH/O Hbonds
 start = OMP_get_wtime()
-ALLOCATE(OHvec_hbond_mat(16,nb_o*3,nb_step))
+ALLOCATE(OHvec_hbond_mat(20,nb_o*3,nb_step))
 OHvec_hbond_mat(:,:,:) = 0.0_dp
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, nb_atm, nb_step, OHvec_hbond_mat)&
 !$OMP SHARED(hb_oHpO_rcut)&
 !$OMP PRIVATE(s, i, j, k, l, n)&
-!$OMP PRIVATE(oHpO_disp_vec, oHpO_disp_norm, Udonnor_count, Udonnor_count2)
+!$OMP PRIVATE(oHpO_disp_vec, oHpO_disp_norm, Udonnor_count, Udonnor_count2, OH_disp_norm, OH_disp_vec)&
+!$OMP PRIVATE(alpha)
 DO s = 1, nb_step
  C1:DO i = 1, nb_o*3
         IF (OHvec_mat(1,i,s) .EQ. 0) THEN
@@ -258,20 +259,28 @@ DO s = 1, nb_step
         DO j = 1, nb_atm
             IF (atm_mat(2,j,s) .EQ. 16) THEN
                 DO k = 1, 3
-                    oHpO_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+10,i,s)
-                    oHpO_disp_vec(k) = oHpO_disp_vec(k) - box(k) * ANINT(oHpO_disp_vec(k)/box(k))
+                    oHpO_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+10,i,s) 
+                    oHpO_disp_vec(k) = oHpO_disp_vec(k) - box(k) * ANINT(oHpO_disp_vec(k)/box(k)) ! HO Hbonds vector
+                    OH_disp_vec(k) = OHvec_mat(k+10,i,s) - OHvec_mat(k+7,i,s) 
+                    OH_disp_vec(k) = OH_disp_vec(k) - box(k) * ANINT(OH_disp_vec(k)/box(k)) ! OH vector
                 END DO
-                oHpO_disp_norm = NORM2(oHpO_disp_vec)
+
+                oHpO_disp_norm = NORM2(oHpO_disp_vec) ! r
+                OH_disp_norm = NORM2(OH_disp_vec)
+
                 IF( (oHpO_disp_norm .LE. hb_oHpO_rcut) .AND. (atm_mat(1,j,s) .NE. OHvec_mat(1,i,s))) THEN
                     atm_mat(7,j,s) = atm_mat(7,j,s) + 1 ! Acceptor count (O)
                     OHvec_mat(15,i,s) = OHvec_mat(15,i,s) + 1 ! Donnor count (OH)
-                    IF (n .GT. 15) THEN
+                    IF (n .GT. 23) THEN
                         PRINT*, "HBONDS OVERFLOW", OHvec_mat(1,i,s)
                     END IF
+
+                    alpha = ACOS(DOT_PRODUCT(oHpO_disp_vec(:), OH_disp_vec(:)) / (oHpO_disp_norm * OH_disp_norm) ) ! alpha
                     OHvec_hbond_mat(n,i,s) = atm_mat(1,j,s)
                     OHvec_hbond_mat(n+1,i,s) = atm_mat(3,j,s)
                     OHvec_hbond_mat(n+2,i,s) = oHpO_disp_norm
-                    n = n + 3
+                    OHvec_hbond_mat(n+3,i,s) = alpha
+                    n = n + 4
                     IF (Udonnor_count .EQ. 0) THEN
                         OHvec_mat(16,i,s) = OHvec_mat(16,i,s) + 1 ! Unique donnor count (OH)
                         Udonnor_count = 1
@@ -603,20 +612,20 @@ END DO
 CLOSE(UNIT=32)
 
 OPEN(UNIT=33, FILE = suffix//"_OH_Hbonds_dist.txt")
-WRITE(33, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10)')&
+WRITE(33, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10)')&
     "Step","OHid","Hid", "OType"&
-    , "Oid", "OType", "Dist"&
-    , "Oid", "OType", "Dist"&
-    , "Oid", "OType", "Dist"&
-    , "Oid", "OType", "Dist"
+    , "Oid", "OType", "r", "alpha"&
+    , "Oid", "OType", "r", "alpha"&
+    , "Oid", "OType", "r", "alpha"&
+    , "Oid", "OType", "r", "alpha"
 
 DO s = 1, nb_step
     DO i = 1, nb_max_OHvec(s)
         WRITE(33, '(I10,I10,I10,I10)', ADVANCE = "no")&
             s, INT(OHvec_hbond_mat(1,i,s)), INT(OHvec_hbond_mat(3,i,s)), INT(OHvec_hbond_mat(2,i,s))
-        DO j = 4, 15, 3
-            WRITE(33, '(I10,I10,F10.3)', ADVANCE = "no")&
-            INT(OHvec_hbond_mat(j,i,s)),INT(OHvec_hbond_mat(j+1,i,s)), OHvec_hbond_mat(j+2,i,s)
+        DO j = 4, 19, 4
+            WRITE(33, '(I10,I10,F10.3,F10.3)', ADVANCE = "no")&
+            INT(OHvec_hbond_mat(j,i,s)),INT(OHvec_hbond_mat(j+1,i,s)), OHvec_hbond_mat(j+2,i,s), OHvec_hbond_mat(j+3,i,s)
         END DO
         WRITE(33,'()')
     END DO
