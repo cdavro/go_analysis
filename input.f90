@@ -37,6 +37,8 @@ INTEGER                     :: waterlist
 REAL(dp)                    :: dens_dr=0.0_dp, dens_rstart=0.0_dp
 INTEGER                     :: dens_step=75
 INTEGER                     :: dens_center_atmnb
+! Fluctuation
+INTEGER                     :: fluct_center_atmnb
 ! Water Angle
 REAL(dp)                    :: wa_X1Owat_rcut, wa_X2Owat_rcut
 INTEGER                     :: wa_AS_center_atmnb
@@ -153,6 +155,10 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('dens_rstart')
                     READ(value, * , IOSTAT=iostatus) dens_rstart
                     PRINT'(A50,E64.2)', 'dens_rstart: ', dens_rstart
+! Density
+                CASE ('fluct_center_atmnb')
+                    READ(value, * , IOSTAT=iostatus) fluct_center_atmnb
+                    PRINT'(A50,I64)', 'fluct_center_atmnb: ', fluct_center_atmnb
 ! Water Angle
                 CASE ('wa_AS_center_atmnb')
                     READ(value, * , IOSTAT=iostatus) wa_AS_center_atmnb
