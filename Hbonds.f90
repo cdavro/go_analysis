@@ -259,9 +259,9 @@ DO s = 1, nb_step
         DO j = 1, nb_atm
             IF (atm_mat(2,j,s) .EQ. 16) THEN
                 DO k = 1, 3
-                    oHpO_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+10,i,s) 
+                    oHpO_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+10,i,s)
                     oHpO_disp_vec(k) = oHpO_disp_vec(k) - box(k) * ANINT(oHpO_disp_vec(k)/box(k)) ! HO Hbonds vector
-                    OH_disp_vec(k) = OHvec_mat(k+10,i,s) - OHvec_mat(k+7,i,s) 
+                    OH_disp_vec(k) = OHvec_mat(k+10,i,s) - OHvec_mat(k+7,i,s)
                     OH_disp_vec(k) = OH_disp_vec(k) - box(k) * ANINT(OH_disp_vec(k)/box(k)) ! OH vector
                 END DO
 
@@ -574,13 +574,13 @@ END IF
 start = OMP_get_wtime()
 
 OPEN(UNIT=31, FILE=suffix//"_O_Hbonds.txt")
-WRITE(31, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24,A24)')&
+WRITE(31, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A20,A20,A20)')&
 "Step", "Oid", "OType", "TA_O", "TD_O", "TDU_O"&
 , "cC", "cOE", "cOH", "cOA", "cCX", "dist_ISD", "dist_ISU", "dist_AS"
 DO s = 1, nb_step
     DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. 16) THEN
-            WRITE(31,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14,E24.14)')&
+            WRITE(31,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7)')&
             s, INT(atm_mat(1,i,s)), INT(atm_mat(3,i,s)), INT(atm_mat(7,i,s))&
             , INT(atm_mat(8,i,s)), INT(atm_mat(9,i,s)), INT(atm_mat(10,i,s)), INT(atm_mat(11,i,s))&
             , INT(atm_mat(12,i,s)), INT(atm_mat(13,i,s)), INT(atm_mat(14,i,s))&
@@ -592,7 +592,7 @@ END DO
 CLOSE(UNIT=31)
 
 OPEN(UNIT=32, FILE = suffix//"_OH_Hbonds.txt")
-WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24,A24,A24)')&
+WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A20,A20,A20,A20)')&
     "Step","Oid", "Hid", "OType"&
     , "TA_OH", "TD_OH", "TDU_OH"&
     , "cC", "cOE", "cOH", "cOA", "cCX"&
@@ -600,7 +600,7 @@ WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A24,A24,
     , "dist_AS", "dist_HAS"
 DO s = 1, nb_step
     DO i = 1, nb_max_OHvec(s)
-        WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E24.14,E24.14,E24.14,E24.14)')&
+        WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7,E20.7)')&
         s, INT(OHvec_mat(1,i,s)), INT(OHvec_mat(2,i,s)), INT(OHvec_mat(3,i,s)) &
         , INT(OHvec_mat(14,i,s)), INT(OHvec_mat(15,i,s)), INT(OHvec_mat(16,i,s))&
         , INT(OHvec_mat(20,i,s)), INT(OHvec_mat(21,i,s)), INT(OHvec_mat(22,i,s)), INT(OHvec_mat(23,i,s)) , INT(OHvec_mat(24,i,s))&

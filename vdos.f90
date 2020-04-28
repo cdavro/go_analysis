@@ -393,7 +393,7 @@ DO t = mcsb, mcs+1
     timings(t)=finish_i-start_i
 
     IF (MODULO(t,25) .EQ. 0) THEN
-        PRINT('(I10,A1,I10,E24.14,E24.14,E24.14)'),t,"/",mcs+1, (t-1)*timestep_fs, vdos_atm(t), timings(t)
+        PRINT('(I10,A1,I10,E20.7,E20.7,E20.7)'),t,"/",mcs+1, (t-1)*timestep_fs, vdos_atm(t), timings(t)
     END IF
 
 END DO ! Corr
@@ -409,7 +409,7 @@ start = OMP_get_wtime()
 open(UNIT=51, FILE = suffix//"_vdos_xxz.txt")
 WRITE(51,'(A20,A20,A20)') "Time (fs)","VDOS","VDOS_cnt"
 DO t = mcsb, mcs+1
-    WRITE(51,'(E24.14,E24.14,E24.14)') (t-1)*timestep_fs, vdos_atm(t), vdos_cnt(t)
+    WRITE(51,'(E20.7,E20.7,E20.7)') (t-1)*timestep_fs, vdos_atm(t), vdos_cnt(t)
 END DO
 CLOSE(UNIT=51)
 

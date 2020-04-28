@@ -277,8 +277,8 @@ WRITE(41, '(A24,A24,A24,A24)') "step", "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
 WRITE(42, '(A24,A24,A24,A24)') "step", "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
 DO s = 1, nb_step
     DO j = 1, dens_step
-        WRITE(41, '(I24,E24.14,E24.14,E24.14)') s, (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), dens_down(j,s)
-        WRITE(42, '(I24,E24.14,E24.14,E24.14)') s, (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), dens_up(j,s)
+        WRITE(41, '(I24,E20.7,E20.7,E20.7)') s, (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), dens_down(j,s)
+        WRITE(42, '(I24,E20.7,E20.7,E20.7)') s, (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), dens_up(j,s)
     END DO
 END DO
 CLOSE(UNIT=41)
@@ -291,8 +291,8 @@ OPEN(UNIT=44, FILE = suffix//"_avg_density_profile_up.txt")
 WRITE(43, '(A24,A24,A24)') "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
 WRITE(44, '(A24,A24,A24)') "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
 DO j = 1, dens_step
-    WRITE(43, '(E24.14,E24.14,E24.14)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_down(j)
-    WRITE(44, '(E24.14,E24.14,E24.14)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_up(j)
+    WRITE(43, '(E20.7,E20.7,E20.7)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_down(j)
+    WRITE(44, '(E20.7,E20.7,E20.7)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_up(j)
 END DO
 CLOSE(UNIT=43)
 CLOSE(UNIT=44)
@@ -356,7 +356,7 @@ OPEN(UNIT=41, FILE = suffix//"_density_profile_down_avgz_c.txt")
 WRITE(41, '(A10,A24,A24,A24)') "step", "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
 DO s = 1, nb_step
     DO j = 1, dens_step
-        WRITE(41, '(I10,E24.14,E24.14,E24.14)') s, (dens_rstart + (j-1) * dens_dr)&
+        WRITE(41, '(I10,E20.7,E20.7,E20.7)') s, (dens_rstart + (j-1) * dens_dr)&
         , (dens_rstart + j * dens_dr), dens_down_avgz_c(j,s)
     END DO
 END DO
@@ -367,7 +367,7 @@ DEALLOCATE(dens_down_avgz_c)
 OPEN(UNIT=43, FILE = suffix//"_avg_density_profile_down_avgz_c.txt")
 WRITE(43, '(A24,A24,A24)') "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
 DO j = 1, dens_step
-    WRITE(43, '(E24.14,E24.14,E24.14)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_down_avgz_c(j)
+    WRITE(43, '(E20.7,E20.7,E20.7)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_down_avgz_c(j)
 END DO
 CLOSE(UNIT=43)
 

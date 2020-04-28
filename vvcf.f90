@@ -629,7 +629,7 @@ DO t = mcsb, mcs+1
     timings_t = finish_i-start_i
 
     IF (MODULO(t,25) .EQ. 0) THEN
-        PRINT('(I10,A1,I10,E24.14,E24.14,E24.14)'), t, "/", mcs+1, (t-1)*timestep_fs, vvcf_xxz_t, timings_t
+        PRINT('(I10,A1,I10,E20.7,E20.7,E20.7)'), t, "/", mcs+1, (t-1)*timestep_fs, vvcf_xxz_t, timings_t
     END IF
     vvcf_xxz(t) = vvcf_xxz_t
     timings(t) = timings_t
@@ -659,7 +659,7 @@ ELSE
     WRITE(51,'(A20,A20)') "Time (fs)", "VVCF_xxz (Å2.fs2)"
 END IF
     DO t = mcsb, mcs+1
-        WRITE(51,'(E24.14,E24.14)') (t-1)*timestep_fs, vvcf_xxz(t)
+        WRITE(51,'(E20.7,E20.7)') (t-1)*timestep_fs, vvcf_xxz(t)
     END DO
 CLOSE(UNIT=51)
 

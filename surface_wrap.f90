@@ -114,7 +114,7 @@ DO s = 1, nb_step
     WRITE(40,'(I10)') nb_pt_is(s)
     WRITE(40,'(A10,I10)') "Step nb:", s
     DO i = 1, nb_pt_is(s)
-        WRITE(40, '(A10,E24.14,E24.14,E24.14)') "X", is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
+        WRITE(40, '(A10,E20.7,E20.7,E20.7)') "X", is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
     END DO
 END DO
 CLOSE(UNIT=40)

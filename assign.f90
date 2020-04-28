@@ -296,8 +296,8 @@ DO s = 1, nb_step
         ELSE
             type = "O"
         END IF
-        WRITE(40,'(A10,E24.14,E24.14,E24.14)') ADJUSTL(type), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
-        IF (file_vel .NE. '0') WRITE(41,'(A10,E24.14,E24.14,E24.14)') ADJUSTL(type), atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
+        WRITE(40,'(A10,E20.7,E20.7,E20.7)') ADJUSTL(type), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
+        IF (file_vel .NE. '0') WRITE(41,'(A10,E20.7,E20.7,E20.7)') ADJUSTL(type), atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
     END DO
 END DO
 CLOSE(UNIT=40)
