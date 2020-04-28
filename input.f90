@@ -39,9 +39,13 @@ INTEGER                     :: dens_step=75
 INTEGER                     :: dens_center_atmnb
 ! Fluctuation
 INTEGER                     :: fluct_center_atmnb
+REAL(dp)                    :: fluct_OpC_rcut
 ! Water Angle
 REAL(dp)                    :: wa_X1Owat_rcut, wa_X2Owat_rcut
 INTEGER                     :: wa_AS_center_atmnb
+! Order Layer
+REAL(dp)                    :: L0_down=0.0_dp, L0_up, L1_down, L1_up
+REAL(dp)                    :: L2_down, L2_up, L3_down, L3_up
 ! Hbonds
 REAL(dp)                    :: hb_oHpO_rcut, hb_OpH_rcut
 REAL(dp)                    :: hb_X1Oh_rcut, hb_X2Oh_rcut
@@ -155,10 +159,13 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('dens_rstart')
                     READ(value, * , IOSTAT=iostatus) dens_rstart
                     PRINT'(A50,E64.2)', 'dens_rstart: ', dens_rstart
-! Density
+! Fluctuation
                 CASE ('fluct_center_atmnb')
                     READ(value, * , IOSTAT=iostatus) fluct_center_atmnb
                     PRINT'(A50,I64)', 'fluct_center_atmnb: ', fluct_center_atmnb
+                CASE ('fluct_OpC_rcut')
+                    READ(value, * , IOSTAT=iostatus) fluct_OpC_rcut
+                    PRINT'(A50,E64.2)', 'fluct_OpC_rcut: ', fluct_OpC_rcut
 ! Water Angle
                 CASE ('wa_AS_center_atmnb')
                     READ(value, * , IOSTAT=iostatus) wa_AS_center_atmnb
@@ -169,6 +176,31 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('wa_X2Owat_rcut')
                     READ(value, * , IOSTAT=iostatus) wa_X2Owat_rcut
                     PRINT'(A50,E64.2)', 'wa_X2Owat_rcut: ', wa_X2Owat_rcut
+! Order Layer
+                CASE ('L0_down')
+                    READ(value, * , IOSTAT=iostatus) L0_down
+                    PRINT'(A50,E64.2)', 'L0_down: ', L0_down
+                CASE ('L0_up')
+                    READ(value, * , IOSTAT=iostatus) L0_up
+                    PRINT'(A50,E64.2)', 'L0_up: ', L0_up
+                CASE ('L1_down')
+                    READ(value, * , IOSTAT=iostatus) L1_down
+                    PRINT'(A50,E64.2)', 'L1_down: ', L1_down
+                CASE ('L1_up')
+                    READ(value, * , IOSTAT=iostatus) L1_up
+                    PRINT'(A50,E64.2)', 'L1_up: ', L1_up
+                CASE ('L2_down')
+                    READ(value, * , IOSTAT=iostatus) L2_down
+                    PRINT'(A50,E64.2)', 'L2_down: ', L2_down
+                CASE ('L2_up')
+                    READ(value, * , IOSTAT=iostatus) L2_up
+                    PRINT'(A50,E64.2)', 'L2_up: ', L2_up
+                CASE ('L3_down')
+                    READ(value, * , IOSTAT=iostatus) L3_down
+                    PRINT'(A50,E64.2)', 'L3_down: ', L3_down
+                CASE ('L3_up')
+                    READ(value, * , IOSTAT=iostatus) L3_up
+                    PRINT'(A50,E64.2)', 'L3_up: ', L3_up
 ! HBonds
                 CASE ('hb_oHpO_rcut')
                     READ(value, * , IOSTAT=iostatus) hb_oHpO_rcut
