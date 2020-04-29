@@ -22,8 +22,8 @@ surface_wrap.o: surface_wrap.f90
 water_angle.o: water_angle.f90
 	$(FC) $(FCFLAGS) -c water_angle.f90
 
-Hbonds.o: Hbonds.f90
-	$(FC) $(FCFLAGS) -c Hbonds.f90
+hbonds.o: hbonds.f90
+	$(FC) $(FCFLAGS) -c hbonds.f90
 
 vvcf.o: vvcf.f90
 	$(FC) $(FCFLAGS) -c vvcf.f90
@@ -49,8 +49,8 @@ surface_wrap: input.o surface_wrap.o
 water_angle: input.o water_angle.o
 	$(FC) $(FCFLAGS) input.o water_angle.o -o water_angle
 
-Hbonds: input.o Hbonds.o
-	$(FC) $(FCFLAGS) input.o Hbonds.o -o Hbonds
+hbonds: input.o hbonds.o
+	$(FC) $(FCFLAGS) input.o hbonds.o -o hbonds
 
 vvcf: input.o vvcf.o
 	$(FC) $(FCFLAGS) input.o vvcf.o -o vvcf
@@ -58,14 +58,14 @@ vvcf: input.o vvcf.o
 vdos: input.o vdos.o
 	$(FC) $(FCFLAGS) input.o vdos.o -o vdos
 
-all: input.o density.o order_layer.o fluctuation.o assign.o surface_wrap.o water_angle.o Hbonds.o vvcf.o vdos.o
+all: input.o density.o order_layer.o fluctuation.o assign.o surface_wrap.o water_angle.o hbonds.o vvcf.o vdos.o
 	$(FC) $(FCFLAGS) input.o density.o -o density
 	$(FC) $(FCFLAGS) input.o order_layer.o -o order_layer
 	$(FC) $(FCFLAGS) input.o fluctuation.o -o fluctuation
 	$(FC) $(FCFLAGS) input.o assign.o -o assign
 	$(FC) $(FCFLAGS) input.o surface_wrap.o -o surface_wrap
 	$(FC) $(FCFLAGS) input.o water_angle.o -o water_angle
-	$(FC) $(FCFLAGS) input.o Hbonds.o -o Hbonds
+	$(FC) $(FCFLAGS) input.o hbonds.o -o hbonds
 	$(FC) $(FCFLAGS) input.o vvcf.o -o vvcf
 	$(FC) $(FCFLAGS) input.o vdos.o -o vdos
 
@@ -73,4 +73,4 @@ clean:
 	rm -f *.o 
 
 realclean:
-	rm -f *.o *.mod assign density order_layer fluctuation surface_wrap water_angle Hbonds vvcf vdos
+	rm -f *.o *.mod assign density order_layer fluctuation surface_wrap water_angle hbonds vvcf vdos
