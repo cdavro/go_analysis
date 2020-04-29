@@ -19,7 +19,7 @@ CHARACTER(LEN=100)              :: input_file
 
 !   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:), WAT_mat(:,:,:), is_mat(:,:,:), as_mat(:,:,:)
-CHARACTER(LEN=2), ALLOCATABLE   :: atm_el(:)
+CHARACTER(LEN=3), ALLOCATABLE   :: atm_name(:)
 INTEGER                         :: nb_line_is, nb_max_is, nb_max_as
 INTEGER, ALLOCATABLE            :: nb_is(:), nb_as(:)
 
@@ -81,7 +81,7 @@ atm_mat(:,:,:) = 0.0_dp
 
 ! A ----------------------------------------------- Read positions
 start = OMP_get_wtime()
-ALLOCATE(atm_el(nb_atm))
+ALLOCATE(atm_name(nb_atm))
 
 OPEN(UNIT=20, FILE=file_pos, STATUS='old', FORM='formatted', ACTION='READ')
 DO s = 1, nb_step
@@ -89,45 +89,45 @@ DO s = 1, nb_step
     READ(20, *)
     DO i=1,nb_atm
         atm_mat(2,i,s) = -1
-        READ(20, *) atm_el(i), atm_mat(4,i,s), atm_mat(5,i,s), atm_mat(6,i,s)
+        READ(20, *) atm_name(i), atm_mat(4,i,s), atm_mat(5,i,s), atm_mat(6,i,s)
         atm_mat(1,i,s) = i
-        IF (atm_el(i) .EQ. "C") THEN
+        IF (atm_name(i) .EQ. "C") THEN
             atm_mat(2,i,s) = 12
             atm_mat(3,i,s) = 1
-        ELSE IF (atm_el(i) .EQ. "Si") THEN
+        ELSE IF (atm_name(i) .EQ. "Si") THEN
             atm_mat(2,i,s) = 28
             atm_mat(3,i,s) = 2
-        ELSE IF (atm_el(i) .EQ. "SiF") THEN
+        ELSE IF (atm_name(i) .EQ. "SiF") THEN
             atm_mat(2,i,s) = 28
             atm_mat(3,i,s) = 1
-        ELSE IF (atm_el(i) .EQ. "OE") THEN
+        ELSE IF (atm_name(i) .EQ. "OE") THEN
             atm_mat(2,i,s) = 16
             atm_mat(3,i,s) = 10
-        ELSE IF (atm_el(i) .EQ. "OH") THEN
+        ELSE IF (atm_name(i) .EQ. "OH") THEN
             atm_mat(2,i,s) = 16
             atm_mat(3,i,s) = 11
-        ELSE IF (atm_el(i) .EQ. "OA") THEN
+        ELSE IF (atm_name(i) .EQ. "OA") THEN
             atm_mat(2,i,s) = 16
             atm_mat(3,i,s) = 12
-        ELSE IF (atm_el(i) .EQ. "OW") THEN
+        ELSE IF (atm_name(i) .EQ. "OW") THEN
             atm_mat(2,i,s) = 16
             atm_mat(3,i,s) = 13
-        ELSE IF (atm_el(i) .EQ. "OM") THEN
+        ELSE IF (atm_name(i) .EQ. "OM") THEN
             atm_mat(2,i,s) = 16
             atm_mat(3,i,s) = 14
-        ELSE IF (atm_el(i) .EQ. "OP") THEN
+        ELSE IF (atm_name(i) .EQ. "OP") THEN
             atm_mat(2,i,s) = 16
             atm_mat(3,i,s) = 15
-        ELSE IF (atm_el(i) .EQ. "O") THEN
+        ELSE IF (atm_name(i) .EQ. "O") THEN
             atm_mat(2,i,s) = 16
             atm_mat(3,i,s) = -1
-        ELSE IF (atm_el(i) .EQ. "HW") THEN
+        ELSE IF (atm_name(i) .EQ. "HW") THEN
             atm_mat(2,i,s) = 1
             atm_mat(3,i,s) = 23
-        ELSE IF (atm_el(i) .EQ. "HO") THEN
+        ELSE IF (atm_name(i) .EQ. "HO") THEN
             atm_mat(2,i,s) = 1
             atm_mat(3,i,s) = 21
-        ELSE IF (atm_el(i) .EQ. "H") THEN
+        ELSE IF (atm_name(i) .EQ. "H") THEN
             atm_mat(2,i,s) = 1
             atm_mat(3,i,s) = -1
         END IF
@@ -832,5 +832,5 @@ PRINT'(A100)', 'The END'
 IF (IS_c .EQ. 'Y') DEALLOCATE(is_mat,nb_is)
 IF (AS_c .EQ. 'Y') DEALLOCATE(as_mat,nb_as)
 
-DEALLOCATE(WAT_mat,atm_mat,atm_el,nb_max_WAT)
+DEALLOCATE(WAT_mat,atm_mat,atm_name,nb_max_WAT)
 END PROGRAM water_angle

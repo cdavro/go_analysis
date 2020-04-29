@@ -30,22 +30,22 @@ REAL(dp)                    :: box(3)
 CHARACTER(LEN=1)            :: IS_c
 CHARACTER(LEN=1)            :: AS_c
 ! Assign
-CHARACTER(LEN=3)            :: assign_center_el
+CHARACTER(LEN=3)            :: assign_center_name
 REAL(dp)                    :: assign_OpH_rcut, assign_OpC_rcut, assign_OpSi_rcut
 INTEGER                     :: waterlist
 ! Density
-REAL(dp)                    :: dens_dr=0.0_dp, dens_rstart=0.0_dp
-INTEGER                     :: dens_step=75
+REAL(dp)                    :: dens_dr, dens_rstart
+INTEGER                     :: dens_step
 INTEGER                     :: dens_center_atmnb
+! Order Layer
+REAL(dp)                    :: L0_down, L0_up, L1_down, L1_up
+REAL(dp)                    :: L2_down, L2_up, L3_down, L3_up
 ! Fluctuation
 INTEGER                     :: fluct_center_atmnb
 REAL(dp)                    :: fluct_OpC_rcut
 ! Water Angle
 REAL(dp)                    :: wa_X1Owat_rcut, wa_X2Owat_rcut
 INTEGER                     :: wa_AS_center_atmnb
-! Order Layer
-REAL(dp)                    :: L0_down=0.0_dp, L0_up, L1_down, L1_up
-REAL(dp)                    :: L2_down, L2_up, L3_down, L3_up
 ! Hbonds
 REAL(dp)                    :: hb_oHpO_rcut, hb_OpH_rcut
 REAL(dp)                    :: hb_X1Oh_rcut, hb_X2Oh_rcut
@@ -54,12 +54,12 @@ REAL(dp)                    :: hb_X1O_rcut, hb_X2O_rcut
 REAL(dp)                    :: vvcf_oHpO_rcut, vvcf_OpH_rcut
 REAL(dp)                    :: vvcf_X1Oh_rcut, vvcf_X2Oh_rcut
 REAL(dp)                    :: vvcf_rcut
-REAL(dp)                    :: timestep_fs=0.5_dp, mct, mctb
-CHARACTER(LEN=1)            :: hbonds_s, layers_s
+REAL(dp)                    :: timestep_fs, mct, mctb
+CHARACTER(LEN=1)            :: hbonds_s="N", layers_s="N"
 CHARACTER(LEN=1)            :: hbonds_double="N"
-CHARACTER(LEN=1)            :: intracorr, autocorr, water_only, close_c_only
-CHARACTER(LEN=1)            :: close_gl_only, close_gol_only, close_ol_only
-CHARACTER(LEN=1)            :: up_down_only="U"
+CHARACTER(LEN=1)            :: intracorr="N", autocorr="N", water_only="N", close_c_only="N"
+CHARACTER(LEN=1)            :: close_gl_only="N", close_gol_only="N", close_ol_only="N"
+CHARACTER(LEN=1)            :: up_down_only="N"
 INTEGER                     :: ACLE, ACGT, DCLE, DCGT
 INTEGER                     :: ACLE2, ACGT2, DCLE2, DCGT2
 REAL(dp)                    :: layer_down, layer_up
@@ -131,9 +131,9 @@ SUBROUTINE READINPUTSUB(input_file)
                     READ(value, * , IOSTAT=iostatus) zhi
                     PRINT'(A50,E64.10)', 'Box_Z_high: ', zhi
 ! Assign
-                CASE('assign_center_el')
-                    READ(value, * , IOSTAT=iostatus) assign_center_el
-                    PRINT'(A50,A64)', 'assign_center_el:', ADJUSTR(assign_center_el)
+                CASE('assign_center_name')
+                    READ(value, * , IOSTAT=iostatus) assign_center_name
+                    PRINT'(A50,A64)', 'assign_center_name:', ADJUSTR(assign_center_name)
                 CASE ('assign_OpH_rcut')
                     READ(value, * , IOSTAT=iostatus) assign_OpH_rcut
                     PRINT'(A50,E64.10)', 'assign_OpH_rcut: ', assign_OpH_rcut

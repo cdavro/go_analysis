@@ -19,7 +19,7 @@ CHARACTER(LEN=100)              :: input_file
 
 !   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:)
-CHARACTER(LEN=3), ALLOCATABLE   :: atm_el(:)
+CHARACTER(LEN=3), ALLOCATABLE   :: atm_name(:)
 REAL(dp), ALLOCATABLE           :: center_avgpos(:,:)
 
 !   ----------------------------------------------- Temporary variables
@@ -75,25 +75,25 @@ atm_mat(:,:,:) = 0.0_dp
 
 !   ----------------------------------------------- Read positions
 start = OMP_get_wtime()
-ALLOCATE(atm_el(nb_atm))
+ALLOCATE(atm_name(nb_atm))
 
 OPEN(UNIT=20, FILE=file_pos, STATUS='old', FORM='formatted', ACTION='READ')
 DO s = 1, nb_step
     READ(20, *)
     READ(20, *)
     DO i = 1, nb_atm
-        READ(20, *) atm_el(i), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
+        READ(20, *) atm_name(i), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
         atm_mat(1,i,s) = i
-        IF (atm_el(i)(1:1) .EQ. "C") THEN
+        IF (atm_name(i)(1:1) .EQ. "C") THEN
             atm_mat(2,i,s) = 12
-        ELSE IF (atm_el(i)(1:1) .EQ. "O") THEN
+        ELSE IF (atm_name(i)(1:1) .EQ. "O") THEN
             atm_mat(2,i,s) = 16
-        ELSE IF (atm_el(i)(1:1) .EQ. "H") THEN
+        ELSE IF (atm_name(i)(1:1) .EQ. "H") THEN
             atm_mat(2,i,s) = 1
-        ELSE IF (atm_el(i)(1:2) .EQ. "Si") THEN
+        ELSE IF (atm_name(i)(1:2) .EQ. "Si") THEN
             atm_mat(2,i,s) = 28
         END IF
-        IF (atm_el(i) .EQ. assign_center_el) THEN
+        IF (atm_name(i) .EQ. assign_center_name) THEN
             atm_mat(13,i,s) = 1
         END IF
     END DO
@@ -121,7 +121,7 @@ IF (file_vel .NE. '0') THEN
         READ(21, *)
         READ(21, *)
         DO i = 1, nb_atm
-            READ(21, *) atm_el(i), atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
+            READ(21, *) atm_name(i), atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
         END DO
     END DO
     CLOSE(UNIT=21)
@@ -292,7 +292,7 @@ DO s = 1, nb_step
         ELSE IF ((atm_mat(10,i,s) .EQ. -1) .AND. (atm_mat(12,i,s) .EQ. 1)) THEN
             type = "HO"
         ELSE IF ((atm_mat(10,i,s) .EQ. -1) .AND. (atm_mat(9,i,s) .EQ. -1)) THEN
-            type = atm_el(i)
+            type = atm_name(i)
         ELSE
             type = "O"
         END IF
@@ -332,5 +332,5 @@ PRINT'(A100)', '--------------------------------------------------'&
 PRINT'(A100)', 'The END'
 
 !   ----------------------------------------------- Deallocate and exit
-DEALLOCATE(atm_el,atm_mat)
+DEALLOCATE(atm_name,atm_mat)
 END PROGRAM assign
