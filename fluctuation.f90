@@ -58,7 +58,7 @@ PRINT'(A100)', '--------------------------------------------------'&
 , '--------------------------------------------------'
 
 !   ----------------------------------------------- Allocate function for reading files
-ALLOCATE(atm_mat(9,nb_atm,nb_step))
+ALLOCATE(atm_mat(8,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
 ! A ----------------------------------------------- Read positions
@@ -117,9 +117,11 @@ PRINT'(A40,F14.2,A20)', "Positions:", finish-start, "seconds elapsed"
 ! D -----------------------------------------------
 start = OMP_get_wtime()
 ALLOCATE(error_c(nb_step))
+error_t = 0
+error_c(:) = 0
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, nb_step, nb_atm)&
-!$OMP SHARED(fluct_center_atmnb, error_c)&
+!$OMP SHARED(fluct_center_atmnb, error_c, fluct_OpC_rcut)&
 !$OMP PRIVATE(CO_disp_norm, CO_disp_vec, avg_z)&
 !$OMP PRIVATE(s, i, o, j)
 DO s = 1, nb_step
@@ -133,47 +135,46 @@ DO s = 1, nb_step
     END DO
     avg_z = avg_z / o
     D1:DO i = 1, nb_atm
-        atm_mat(7,i,s) = avg_z
         IF (atm_mat(2,i,s) .EQ. fluct_center_atmnb) THEN
-            atm_mat(8,i,s) = atm_mat(6,i,s) - avg_z
+            atm_mat(7,i,s) = atm_mat(6,i,s) - avg_z
          D2:DO j = 1, nb_atm
-            IF (atm_mat(2,j,s) .EQ. 10) THEN
-                DO k=1,3
-                    CO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
-                    CO_disp_vec(k) = CO_disp_vec(k) - box(k) * ANINT(CO_disp_vec(k)/box(k))
-                END DO
-                CO_disp_norm = NORM2(CO_disp_vec)
-                IF (CO_disp_norm .LT. fluct_OpC_rcut) THEN
-                    IF (atm_mat(9,i,s) .NE. 0.0) THEN
-                        error_c = error_c + 1
+                IF (atm_mat(3,j,s) .EQ. 10) THEN
+                    DO k=1,3
+                        CO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
+                        CO_disp_vec(k) = CO_disp_vec(k) - box(k) * ANINT(CO_disp_vec(k)/box(k))
+                    END DO
+                    CO_disp_norm = NORM2(CO_disp_vec)
+                    IF (CO_disp_norm .LT. fluct_OpC_rcut) THEN
+                        IF (atm_mat(8,i,s) .NE. 0.0) THEN
+                            error_c(s) = error_c(s) + 1
+                        END IF
+                        atm_mat(8,i,s) = 10
                     END IF
-                    atm_mat(9,i,s) = 10
-                END IF
-            ELSE IF (atm_mat(2,j,s) .EQ. 11) THEN
-                DO k=1,3
-                    CO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
-                    CO_disp_vec(k) = CO_disp_vec(k) - box(k) * ANINT(CO_disp_vec(k)/box(k))
-                END DO
-                CO_disp_norm = NORM2(CO_disp_vec)
-                IF (CO_disp_norm .LT. fluct_OpC_rcut) THEN
-                    IF (atm_mat(9,i,s) .NE. 0.0) THEN
-                        error_c = error_c + 1
+                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN
+                    DO k=1,3
+                        CO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
+                        CO_disp_vec(k) = CO_disp_vec(k) - box(k) * ANINT(CO_disp_vec(k)/box(k))
+                    END DO
+                    CO_disp_norm = NORM2(CO_disp_vec)
+                    IF (CO_disp_norm .LT. fluct_OpC_rcut) THEN
+                        IF (atm_mat(8,i,s) .NE. 0.0) THEN
+                            error_c(s) = error_c(s) + 1
+                        END IF
+                        atm_mat(8,i,s) = 11
                     END IF
-                    atm_mat(9,i,s) = 11
-                END IF
-            ELSE IF (atm_mat(2,j,s) .EQ. 12) THEN
-                DO k=1,3
-                    CO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
-                    CO_disp_vec(k) = CO_disp_vec(k) - box(k) * ANINT(CO_disp_vec(k)/box(k))
-                END DO
-                CO_disp_norm = NORM2(CO_disp_vec)
-                IF (CO_disp_norm .LT. fluct_OpC_rcut) THEN
-                    IF (atm_mat(9,i,s) .NE. 0.0) THEN
-                        error_c = error_c + 1
+                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN
+                    DO k=1,3
+                        CO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
+                        CO_disp_vec(k) = CO_disp_vec(k) - box(k) * ANINT(CO_disp_vec(k)/box(k))
+                    END DO
+                    CO_disp_norm = NORM2(CO_disp_vec)
+                    IF (CO_disp_norm .LT. fluct_OpC_rcut) THEN
+                        IF (atm_mat(8,i,s) .NE. 0.0) THEN
+                            error_c(s) = error_c(s) + 1
+                        END IF
+                        atm_mat(8,i,s) = 12
                     END IF
-                    atm_mat(9,i,s) = 12
                 END IF
-            END IF
             END DO D2
         END IF
     END DO D1
@@ -183,12 +184,12 @@ END DO
 error_t = SUM(error_c(:))
 
 OPEN(UNIT=41, FILE = suffix//"_fluct_avgz_c.txt")
-WRITE(41, '(A10,A10,A24,A24,A10)') "Step", "id", "avg_z", "z_fluct", "type"
+WRITE(41, '(A10,A10,A20,A10)') "Step", "id", "z_fluct", "type"
 DO s = 1, nb_step
     DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. fluct_center_atmnb) THEN
-            WRITE(41, '(I10,I10,E20.7,E20.7,I10)') s, INT(atm_mat(1,i,s))&
-            , atm_mat(7,i,s), atm_mat(8,i,s), INT(atm_mat(9,i,s))
+            WRITE(41, '(I10,I10,E20.7,I10)') s, INT(atm_mat(1,i,s))&
+            , atm_mat(7,i,s), INT(atm_mat(8,i,s))
         END IF
     END DO
 END DO

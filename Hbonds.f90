@@ -2,7 +2,7 @@
 !License: MIT
 !UTF-8, CRLF, Fortran2003, OpenMP
 
-PROGRAM Hbonds
+PROGRAM hbonds
 USE OMP_LIB
 USE INPUT
 
@@ -235,7 +235,7 @@ END DO
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "OH groups:", finish-start, "seconds elapsed"
 
-! C ----------------------------------------------- OH/O Hbonds
+! C ----------------------------------------------- OH/O hbonds
 start = OMP_get_wtime()
 ALLOCATE(OHvec_hbond_mat(20,nb_o*3,nb_step))
 OHvec_hbond_mat(:,:,:) = 0.0_dp
@@ -260,7 +260,7 @@ DO s = 1, nb_step
             IF (atm_mat(2,j,s) .EQ. 16) THEN
                 DO k = 1, 3
                     oHpO_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+10,i,s)
-                    oHpO_disp_vec(k) = oHpO_disp_vec(k) - box(k) * ANINT(oHpO_disp_vec(k)/box(k)) ! HO Hbonds vector
+                    oHpO_disp_vec(k) = oHpO_disp_vec(k) - box(k) * ANINT(oHpO_disp_vec(k)/box(k)) ! HO hbonds vector
                     OH_disp_vec(k) = OHvec_mat(k+10,i,s) - OHvec_mat(k+7,i,s)
                     OH_disp_vec(k) = OH_disp_vec(k) - box(k) * ANINT(OH_disp_vec(k)/box(k)) ! OH vector
                 END DO
@@ -322,7 +322,7 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "OH/O Hbonds:", finish-start, "seconds elapsed"
+PRINT'(A40,F14.2,A20)', "OH/O hbonds:", finish-start, "seconds elapsed"
 
 ! D ----------------------------------------------- Proximity between functionnal groups and any OH group
 start = OMP_get_wtime()
@@ -573,7 +573,7 @@ END IF
 ! X ----------------------------------------------- Write OH BOND
 start = OMP_get_wtime()
 
-OPEN(UNIT=31, FILE=suffix//"_O_Hbonds.txt")
+OPEN(UNIT=31, FILE=suffix//"_O_hbonds.txt")
 WRITE(31, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A20,A20,A20)')&
 "Step", "Oid", "OType", "TA_O", "TD_O", "TDU_O"&
 , "cC", "cOE", "cOH", "cOA", "cCX", "dist_ISD", "dist_ISU", "dist_AS"
@@ -591,7 +591,7 @@ DO s = 1, nb_step
 END DO
 CLOSE(UNIT=31)
 
-OPEN(UNIT=32, FILE = suffix//"_OH_Hbonds.txt")
+OPEN(UNIT=32, FILE = suffix//"_OH_hbonds.txt")
 WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A20,A20,A20,A20)')&
     "Step","Oid", "Hid", "OType"&
     , "TA_OH", "TD_OH", "TDU_OH"&
@@ -611,7 +611,7 @@ DO s = 1, nb_step
 END DO
 CLOSE(UNIT=32)
 
-OPEN(UNIT=33, FILE = suffix//"_OH_Hbonds_dist.txt")
+OPEN(UNIT=33, FILE = suffix//"_OH_hbonds_dist.txt")
 WRITE(33, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10)')&
     "Step","OHid","Hid", "OType"&
     , "Oid", "OType", "r", "alpha"&
@@ -644,4 +644,4 @@ PRINT'(A100)', 'The END'
 IF (IS_c .EQ. 'Y') DEALLOCATE(is_mat, nb_is)
 
 DEALLOCATE(OHvec_mat, atm_mat, atm_el, nb_max_OHvec)
-END PROGRAM Hbonds
+END PROGRAM hbonds

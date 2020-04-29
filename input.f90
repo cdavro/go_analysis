@@ -136,13 +136,13 @@ SUBROUTINE READINPUTSUB(input_file)
                     PRINT'(A50,A64)', 'assign_center_el:', ADJUSTR(assign_center_el)
                 CASE ('assign_OpH_rcut')
                     READ(value, * , IOSTAT=iostatus) assign_OpH_rcut
-                    PRINT'(A50,E64.2)', 'assign_OpH_rcut: ', assign_OpH_rcut
+                    PRINT'(A50,E64.10)', 'assign_OpH_rcut: ', assign_OpH_rcut
                 CASE ('assign_OpC_rcut')
                     READ(value, * , IOSTAT=iostatus) assign_OpC_rcut
-                    PRINT'(A50,E64.2)', 'assign_OpC_rcut: ', assign_OpC_rcut
+                    PRINT'(A50,E64.10)', 'assign_OpC_rcut: ', assign_OpC_rcut
                 CASE ('assign_OpSi_rcut')
                     READ(value, * , IOSTAT=iostatus) assign_OpSi_rcut
-                    PRINT'(A50,E64.2)', 'assign_OpSi_rcut: ', assign_OpSi_rcut
+                    PRINT'(A50,E64.10)', 'assign_OpSi_rcut: ', assign_OpSi_rcut
                 CASE ('waterlist')
                     READ(value, * , IOSTAT=iostatus) waterlist
                     PRINT'(A50,I64)', 'waterlist: ', waterlist
@@ -152,99 +152,99 @@ SUBROUTINE READINPUTSUB(input_file)
                     PRINT'(A50,I64)', 'dens_center_atmnb: ', dens_center_atmnb
                 CASE ('dens_dr')
                     READ(value, * , IOSTAT=iostatus) dens_dr
-                    PRINT'(A50,E64.2)', 'dens_dr: ', dens_dr
+                    PRINT'(A50,E64.10)', 'dens_dr: ', dens_dr
                 CASE ('dens_step')
                     READ(value, * , IOSTAT=iostatus) dens_step
                     PRINT'(A50,I64)', 'dens_step: ', dens_step
                 CASE ('dens_rstart')
                     READ(value, * , IOSTAT=iostatus) dens_rstart
-                    PRINT'(A50,E64.2)', 'dens_rstart: ', dens_rstart
+                    PRINT'(A50,E64.10)', 'dens_rstart: ', dens_rstart
 ! Fluctuation
                 CASE ('fluct_center_atmnb')
                     READ(value, * , IOSTAT=iostatus) fluct_center_atmnb
                     PRINT'(A50,I64)', 'fluct_center_atmnb: ', fluct_center_atmnb
                 CASE ('fluct_OpC_rcut')
                     READ(value, * , IOSTAT=iostatus) fluct_OpC_rcut
-                    PRINT'(A50,E64.2)', 'fluct_OpC_rcut: ', fluct_OpC_rcut
+                    PRINT'(A50,E64.10)', 'fluct_OpC_rcut: ', fluct_OpC_rcut
 ! Water Angle
                 CASE ('wa_AS_center_atmnb')
                     READ(value, * , IOSTAT=iostatus) wa_AS_center_atmnb
                     PRINT'(A50,I64)', 'wa_AS_center_atmnb: ', wa_AS_center_atmnb
                 CASE ('wa_X1Owat_rcut')
                     READ(value, * , IOSTAT=iostatus) wa_X1Owat_rcut
-                    PRINT'(A50,E64.2)', 'wa_X1Owat_rcut: ', wa_X1Owat_rcut
+                    PRINT'(A50,E64.10)', 'wa_X1Owat_rcut: ', wa_X1Owat_rcut
                 CASE ('wa_X2Owat_rcut')
                     READ(value, * , IOSTAT=iostatus) wa_X2Owat_rcut
-                    PRINT'(A50,E64.2)', 'wa_X2Owat_rcut: ', wa_X2Owat_rcut
+                    PRINT'(A50,E64.10)', 'wa_X2Owat_rcut: ', wa_X2Owat_rcut
 ! Order Layer
                 CASE ('L0_down')
                     READ(value, * , IOSTAT=iostatus) L0_down
-                    PRINT'(A50,E64.2)', 'L0_down: ', L0_down
+                    PRINT'(A50,E64.10)', 'L0_down: ', L0_down
                 CASE ('L0_up')
                     READ(value, * , IOSTAT=iostatus) L0_up
-                    PRINT'(A50,E64.2)', 'L0_up: ', L0_up
+                    PRINT'(A50,E64.10)', 'L0_up: ', L0_up
                 CASE ('L1_down')
                     READ(value, * , IOSTAT=iostatus) L1_down
-                    PRINT'(A50,E64.2)', 'L1_down: ', L1_down
+                    PRINT'(A50,E64.10)', 'L1_down: ', L1_down
                 CASE ('L1_up')
                     READ(value, * , IOSTAT=iostatus) L1_up
-                    PRINT'(A50,E64.2)', 'L1_up: ', L1_up
+                    PRINT'(A50,E64.10)', 'L1_up: ', L1_up
                 CASE ('L2_down')
                     READ(value, * , IOSTAT=iostatus) L2_down
-                    PRINT'(A50,E64.2)', 'L2_down: ', L2_down
+                    PRINT'(A50,E64.10)', 'L2_down: ', L2_down
                 CASE ('L2_up')
                     READ(value, * , IOSTAT=iostatus) L2_up
-                    PRINT'(A50,E64.2)', 'L2_up: ', L2_up
+                    PRINT'(A50,E64.10)', 'L2_up: ', L2_up
                 CASE ('L3_down')
                     READ(value, * , IOSTAT=iostatus) L3_down
-                    PRINT'(A50,E64.2)', 'L3_down: ', L3_down
+                    PRINT'(A50,E64.10)', 'L3_down: ', L3_down
                 CASE ('L3_up')
                     READ(value, * , IOSTAT=iostatus) L3_up
-                    PRINT'(A50,E64.2)', 'L3_up: ', L3_up
+                    PRINT'(A50,E64.10)', 'L3_up: ', L3_up
 ! HBonds
                 CASE ('hb_oHpO_rcut')
                     READ(value, * , IOSTAT=iostatus) hb_oHpO_rcut
-                    PRINT'(A50,E64.2)', 'hb_oHpO_rcut: ', hb_oHpO_rcut
+                    PRINT'(A50,E64.10)', 'hb_oHpO_rcut: ', hb_oHpO_rcut
                 CASE ('hb_OpH_rcut')
                     READ(value, * , IOSTAT=iostatus) hb_OpH_rcut
-                    PRINT'(A50,E64.2)', 'hb_OpH_rcut: ', hb_OpH_rcut
+                    PRINT'(A50,E64.10)', 'hb_OpH_rcut: ', hb_OpH_rcut
                 CASE ('hb_X1Oh_rcut')
                     READ(value, * , IOSTAT=iostatus) hb_X1Oh_rcut
-                    PRINT'(A50,E64.2)', 'hb_X1Oh_rcut: ', hb_X1Oh_rcut
+                    PRINT'(A50,E64.10)', 'hb_X1Oh_rcut: ', hb_X1Oh_rcut
                 CASE ('hb_X2Oh_rcut')
                     READ(value, * , IOSTAT=iostatus) hb_X2Oh_rcut
-                    PRINT'(A50,E64.2)', 'hb_X2Oh_rcut: ', hb_X2Oh_rcut
+                    PRINT'(A50,E64.10)', 'hb_X2Oh_rcut: ', hb_X2Oh_rcut
                 CASE ('hb_X1O_rcut')
                     READ(value, * , IOSTAT=iostatus) hb_X1O_rcut
-                    PRINT'(A50,E64.2)', 'hb_X1O_rcut: ', hb_X1O_rcut
+                    PRINT'(A50,E64.10)', 'hb_X1O_rcut: ', hb_X1O_rcut
                 CASE ('hb_X2O_rcut')
                     READ(value, * , IOSTAT=iostatus) hb_X2O_rcut
-                    PRINT'(A50,E64.2)', 'hb_X2O_rcut: ', hb_X2O_rcut
+                    PRINT'(A50,E64.10)', 'hb_X2O_rcut: ', hb_X2O_rcut
 ! VVCF
                 CASE ('vvcf_oHpO_rcut')
                     READ(value, * , IOSTAT=iostatus) vvcf_oHpO_rcut
-                    PRINT'(A50,E64.2)', 'vvcf_oHpO_rcut: ', vvcf_oHpO_rcut
+                    PRINT'(A50,E64.10)', 'vvcf_oHpO_rcut: ', vvcf_oHpO_rcut
                 CASE ('vvcf_OpH_rcut')
                     READ(value, * , IOSTAT=iostatus) vvcf_OpH_rcut
-                    PRINT'(A50,E64.2)', 'vvcf_OpH_rcut: ', vvcf_OpH_rcut
+                    PRINT'(A50,E64.10)', 'vvcf_OpH_rcut: ', vvcf_OpH_rcut
                 CASE ('vvcf_X1Oh_rcut')
                     READ(value, * , IOSTAT=iostatus) vvcf_X1Oh_rcut
-                    PRINT'(A50,E64.2)', 'vvcf_X1Oh_rcut: ', vvcf_X1Oh_rcut
+                    PRINT'(A50,E64.10)', 'vvcf_X1Oh_rcut: ', vvcf_X1Oh_rcut
                 CASE ('vvcf_X2Oh_rcut')
                     READ(value, * , IOSTAT=iostatus) vvcf_X2Oh_rcut
-                    PRINT'(A50,E64.2)', 'vvcf_X2Oh_rcut: ', vvcf_X2Oh_rcut
+                    PRINT'(A50,E64.10)', 'vvcf_X2Oh_rcut: ', vvcf_X2Oh_rcut
                 CASE ('vvcf_rcut')
                     READ(value, * , IOSTAT=iostatus) vvcf_rcut
-                    PRINT'(A50,E64.2)', 'vvcf_rcut: ', vvcf_rcut
+                    PRINT'(A50,E64.10)', 'vvcf_rcut: ', vvcf_rcut
                 CASE ('mct')
                     READ(value, * , IOSTAT=iostatus) mct
-                    PRINT'(A50,E64.2)', 'mct: ', mct
+                    PRINT'(A50,E64.10)', 'mct: ', mct
                 CASE ('mctb')
                     READ(value, * , IOSTAT=iostatus) mctb
-                    PRINT'(A50,E64.2)', 'mctb: ', mctb
+                    PRINT'(A50,E64.10)', 'mctb: ', mctb
                 CASE ('timestep_fs')
                     READ(value, * , IOSTAT=iostatus) timestep_fs
-                    PRINT'(A50,E64.2)', 'timestep_fs: ', timestep_fs
+                    PRINT'(A50,E64.10)', 'timestep_fs: ', timestep_fs
                 CASE ('hbonds')
                     READ(value, * , IOSTAT=iostatus) hbonds_s
                     PRINT'(A50,A64)', 'hbonds: ', hbonds_s
@@ -304,10 +304,10 @@ SUBROUTINE READINPUTSUB(input_file)
                     PRINT'(A50,I64)', 'ACGT2: ', ACGT2
                 CASE ('layer_down')
                     READ(value, * , IOSTAT=iostatus) layer_down
-                    PRINT'(A50,E64.2)', 'layer_down: ', layer_down
+                    PRINT'(A50,E64.10)', 'layer_down: ', layer_down
                 CASE ('layer_up')
                     READ(value, * , IOSTAT=iostatus) layer_up
-                    PRINT'(A50,E64.2)', 'layer_up: ', layer_up
+                    PRINT'(A50,E64.10)', 'layer_up: ', layer_up
                 CASE DEFAULT
                     PRINT'(A50,I64)', 'Invalid label, line:', line_c
             END SELECT

@@ -246,6 +246,10 @@ DO s = 1, nb_step
     WRITE(40,'(I10)') nb_atm-nb_h
     WRITE(40,'(F5.2,A1,F5.2,A1,F5.2)') box(1)," ", box(2)," ", box(3)
     WRITE(41,'(F5.2,A1,F5.2,A1,F5.2)') box(1)," ", box(2)," ", box(3)
+    count_L0 = 0
+    count_L1 = 0
+    count_L2 = 0
+    count_L3 = 0
     Z1:DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. 1) CYCLE Z1
         IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 1) ) THEN
@@ -272,19 +276,19 @@ DO s = 1, nb_step
         IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 13) &
             .AND. (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L0_down) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L0_up) ) THEN
             type = "O0"
-            count_L0 = count_L0 +1 
+            count_L0 = count_L0 + 1
         ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 13) &
             .AND. (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L1_down) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L1_up) ) THEN
             type = "O1"
-            count_L1 = count_L1 +1 
+            count_L1 = count_L1 + 1
         ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 13) &
             .AND. (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L2_down) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L2_up) ) THEN
             type = "O2"
-            count_L2 = count_L2 +1 
+            count_L2 = count_L2 + 1
         ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 13) &
             .AND. (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L3_down) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L3_up) ) THEN
             type = "O3"
-            count_L3 = count_L3 +1 
+            count_L3 = count_L3 + 1
         END IF
         WRITE(40,'(A10,E20.7,E20.7,E20.7)') ADJUSTL(type), atm_mat(4,i,s), atm_mat(5,i,s), atm_mat(6,i,s)
     END DO Z1
