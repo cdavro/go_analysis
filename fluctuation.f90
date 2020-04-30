@@ -5,6 +5,7 @@
 PROGRAM fluctuation
 USE OMP_LIB
 USE INPUT
+USE SB_GO
 
 IMPLICIT NONE
 
@@ -20,8 +21,7 @@ INTEGER                         :: CAC
 
 !   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:)
-CHARACTER(LEN=3), ALLOCATABLE   :: atm_name(:)
-REAL(dp)                        :: avg_z, CO_disp_vec(3),CO_disp_norm
+REAL(dp)                        :: avg_z, CO_disp_vec(3), CO_disp_norm
 
 !   ----------------------------------------------- Counters
 INTEGER                         :: i, s, o ,j, k
@@ -57,59 +57,14 @@ PRINT'(A100)', 'Run, Fluctuation, Run!'
 PRINT'(A100)', '--------------------------------------------------'&
 , '--------------------------------------------------'
 
-!   ----------------------------------------------- Allocate function for reading files
+!   ----------------------------------------------- Allocate the atm_mat array
 ALLOCATE(atm_mat(8,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
 ! A ----------------------------------------------- Read positions
 start = OMP_get_wtime()
-ALLOCATE(atm_name(nb_atm))
 
-OPEN(UNIT=20,FILE=file_pos,STATUS='old',FORM='formatted',ACTION='READ')
-DO s = 1, nb_step
-    READ(20, *)
-    READ(20, *)
-    DO i=1,nb_atm
-        atm_mat(2,i,s) = -1
-        READ(20, *) atm_name(i), atm_mat(4,i,s), atm_mat(5,i,s), atm_mat(6,i,s)
-        atm_mat(1,i,s) = i
-        IF (atm_name(i) .EQ. "C") THEN
-            atm_mat(2,i,s) = 12
-            atm_mat(3,i,s) = 1
-        ELSE IF (atm_name(i) .EQ. "OE") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = 10
-        ELSE IF (atm_name(i) .EQ. "OH") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = 11
-        ELSE IF (atm_name(i) .EQ. "OA") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = 12
-        ELSE IF (atm_name(i) .EQ. "OW") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = 13
-        ELSE IF (atm_name(i) .EQ. "OM") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = 14
-        ELSE IF (atm_name(i) .EQ. "OP") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = 15
-        ELSE IF (atm_name(i) .EQ. "O") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = -1
-        ELSE IF (atm_name(i) .EQ. "HW") THEN
-            atm_mat(2,i,s) = 1
-            atm_mat(3,i,s) = 23
-        ELSE IF (atm_name(i) .EQ. "HO") THEN
-            atm_mat(2,i,s) = 1
-            atm_mat(3,i,s) = 21
-        ELSE IF (atm_name(i) .EQ. "H") THEN
-            atm_mat(2,i,s) = 1
-            atm_mat(3,i,s) = -1
-        END IF
-    END DO
-END DO
-CLOSE(UNIT=20)
+CALL sb_read_pos_xyz(file_pos,nb_atm,nb_step,atm_mat(1:6,:,:))
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Positions:", finish-start, "seconds elapsed"

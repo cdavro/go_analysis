@@ -5,6 +5,7 @@
 PROGRAM density
 USE OMP_LIB
 USE INPUT
+USE SB_GO
 
 IMPLICIT NONE
 
@@ -17,13 +18,11 @@ REAL(dp)                        :: start,finish
 !   ----------------------------------------------- Input files
 CHARACTER(LEN=100)              :: input_file
 INTEGER                         :: CAC
-CHARACTER(LEN=2)                :: dummy_char
 
 !   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:), is_mat(:,:,:)
-CHARACTER(LEN=3), ALLOCATABLE   :: atm_name(:)
-INTEGER                         :: nb_line_is, nb_max_is
 INTEGER, ALLOCATABLE            :: nb_is(:)
+INTEGER                         :: nb_max_is
 REAL(dp), ALLOCATABLE           :: avg_z(:)
 REAL(dp), ALLOCATABLE           :: dens_down(:,:), dens_up(:,:), avg_dens_down(:), avg_dens_up(:)
 REAL(dp), ALLOCATABLE           :: dens_down_avgz_c(:,:), avg_dens_down_avgz_c(:)
@@ -64,59 +63,14 @@ PRINT'(A100)', 'Run, Density, Run!'
 PRINT'(A100)', '--------------------------------------------------'&
 , '--------------------------------------------------'
 
-!   ----------------------------------------------- Allocate function for reading files
+!   ----------------------------------------------- Allocate the atm_mat array
 ALLOCATE(atm_mat(12,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
 ! A ----------------------------------------------- Read positions
 start = OMP_get_wtime()
-ALLOCATE(atm_name(nb_atm))
 
-OPEN(UNIT=20,FILE=file_pos,STATUS='old',FORM='formatted',ACTION='READ')
-DO s = 1, nb_step
-    READ(20, *)
-    READ(20, *)
-    DO i=1,nb_atm
-        atm_mat(2,i,s) = -1
-        READ(20, *) atm_name(i), atm_mat(4,i,s), atm_mat(5,i,s), atm_mat(6,i,s)
-        atm_mat(1,i,s) = i
-        IF (atm_name(i) .EQ. "C") THEN
-            atm_mat(2,i,s) = 12
-            atm_mat(3,i,s) = 1
-        ELSE IF (atm_name(i) .EQ. "OE") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = 10
-        ELSE IF (atm_name(i) .EQ. "OH") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = 11
-        ELSE IF (atm_name(i) .EQ. "OA") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = 12
-        ELSE IF (atm_name(i) .EQ. "OW") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = 13
-        ELSE IF (atm_name(i) .EQ. "OM") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = 14
-        ELSE IF (atm_name(i) .EQ. "OP") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = 15
-        ELSE IF (atm_name(i) .EQ. "O") THEN
-            atm_mat(2,i,s) = 16
-            atm_mat(3,i,s) = -1
-        ELSE IF (atm_name(i) .EQ. "HW") THEN
-            atm_mat(2,i,s) = 1
-            atm_mat(3,i,s) = 23
-        ELSE IF (atm_name(i) .EQ. "HO") THEN
-            atm_mat(2,i,s) = 1
-            atm_mat(3,i,s) = 21
-        ELSE IF (atm_name(i) .EQ. "H") THEN
-            atm_mat(2,i,s) = 1
-            atm_mat(3,i,s) = -1
-        END IF
-    END DO
-END DO
-CLOSE(UNIT=20)
+CALL sb_read_pos_xyz(file_pos,nb_atm,nb_step,atm_mat(1:6,:,:))
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Positions:", finish-start, "seconds elapsed"
@@ -124,50 +78,20 @@ PRINT'(A40,F14.2,A20)', "Positions:", finish-start, "seconds elapsed"
 ! A ----------------------------------------------- Since the number of points for the IS isn't constant, count it.
 start = OMP_get_wtime()
 
-OPEN(UNIT=21, FILE=file_is, STATUS='old', FORM='formatted', ACTION='READ')
-nb_line_is=0
-DO
-    READ(21, *, IOSTAT=iostatus)
-    IF (iostatus .NE. 0) THEN
-        EXIT
-    ELSE
-        nb_line_is = nb_line_is + 1
-    END IF
-END DO
-REWIND(21)
-nb_max_is = CEILING(1.0 * nb_line_is / nb_step) * 2
+CALL sb_count_is(file_is,nb_step,nb_max_is)
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "IS grid:", finish-start, "seconds elapsed"
 
-! A ----------------------------------------------- Read surface
+! A ----------------------------------------------- Read IS
 start = OMP_get_wtime()
 
-ALLOCATE(is_mat(4,nb_max_is,nb_step))
+ALLOCATE(is_mat(5,nb_max_is,nb_step))
 ALLOCATE(nb_is(nb_step))
 is_mat(:,:,:) = 0.0_dp
 nb_is(:) = 0
 
-OPEN(UNIT=21, FILE=file_is, STATUS='old', FORM='formatted', ACTION='READ')
-DO s = 1, nb_step
-    READ(21, *) nb_is(s)
-    READ(21, *)
-    j = 0
-    DO i=1,nb_is(s)
-        READ(21, *) dummy_char, is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
-        j = j + 1
-        is_mat(5,i,s) = j
-        IF (is_mat(3,i,s) .LT. 10.0) THEN
-            is_mat(4,i,s) = 1
-        ELSE
-            is_mat(4,i,s) = 2
-        END IF
-        DO k = 1, 3
-            is_mat(k,i,s) = is_mat(k,i,s) - box(k) * ANINT(is_mat(k,i,s) / box(k))
-        END DO
-    END DO
-END DO
-CLOSE(UNIT=21)
+CALL sb_read_is(file_is,nb_step,box(:),is_mat(:,:,:),nb_is(:))
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "IS:", finish-start, "seconds elapsed"
@@ -233,8 +157,8 @@ dens_down(:,:) = 0.0_dp
 ALLOCATE(dens_up(dens_step,nb_step))
 dens_up(:,:) = 0.0_dp
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, is_mat, nb_is, nb_step, nb_atm)&
-!$OMP SHARED(dens_rstart, dens_dr,dens_step)&
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, nb_step, nb_atm)&
+!$OMP SHARED(dens_rstart, dens_dr, dens_step)&
 !$OMP SHARED(dens_down, dens_up)&
 !$OMP PRIVATE(s, r, j, i)&
 !$OMP PRIVATE(count_dens_down, count_dens_up)
@@ -312,7 +236,7 @@ ALLOCATE(avg_z(nb_step))
 dens_down_avgz_c(:,:) = 0.0_dp
 avg_z(:) = 0.0_dp
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, is_mat, nb_is, nb_step, nb_atm)&
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, nb_step, nb_atm)&
 !$OMP SHARED(dens_rstart, dens_dr, dens_step, dens_center_atmnb)&
 !$OMP SHARED(avg_z, dens_down_avgz_c)&
 !$OMP PRIVATE(s, r, j, i, o)&
@@ -382,6 +306,6 @@ PRINT'(A100)', '--------------------------------------------------'&
 PRINT'(A100)', 'The END'
 
 !   ----------------------------------------------- Deallocate and exit
-DEALLOCATE(atm_mat,is_mat)
+DEALLOCATE(atm_mat,is_mat,nb_is)
 
 END PROGRAM density
