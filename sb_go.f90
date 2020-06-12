@@ -22,16 +22,29 @@ MODULE SB_GO
                 sb_atm_mat(2,i,s) = -1
                 READ(20, *) sb_atm_name(i), sb_atm_mat(4,i,s), sb_atm_mat(5,i,s), sb_atm_mat(6,i,s)
                 sb_atm_mat(1,i,s) = i
-                IF (sb_atm_name(i) .EQ. "C") THEN
+                IF ((sb_atm_name(i) .EQ. "CC") .OR. &
+                (sb_atm_name(i) .EQ. "C3O") .OR. &
+                (sb_atm_name(i) .EQ. "C3A") .OR. &
+                (sb_atm_name(i) .EQ. "C3E") .OR. &
+                (sb_atm_name(i) .EQ. "C2") .OR. &
+                (sb_atm_name(i) .EQ. "C2O") .OR. &
+                (sb_atm_name(i) .EQ. "C2A") .OR. &
+                (sb_atm_name(i) .EQ. "C2E")) THEN
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 1
-                ELSE IF (sb_atm_name(i) .EQ. "OE") THEN
+                ELSE IF ((sb_atm_name(i) .EQ. "OE") .OR. &
+                    (sb_atm_name(i) .EQ. "OEP") .OR. &
+                    (sb_atm_name(i) .EQ. "OET")) THEN
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 10
-                ELSE IF (sb_atm_name(i) .EQ. "OH") THEN
+                ELSE IF ((sb_atm_name(i) .EQ. "OH") .OR. &
+                    (sb_atm_name(i) .EQ. "O2H") .OR. &
+                    (sb_atm_name(i) .EQ. "O3H")) THEN
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 11
-                ELSE IF (sb_atm_name(i) .EQ. "OA") THEN
+                ELSE IF ((sb_atm_name(i) .EQ. "OA") .OR. &
+                    (sb_atm_name(i) .EQ. "O2A") .OR. &
+                    (sb_atm_name(i) .EQ. "O3A")) THEN
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 12
                 ELSE IF (sb_atm_name(i) .EQ. "OW") THEN
@@ -43,16 +56,30 @@ MODULE SB_GO
                 ELSE IF (sb_atm_name(i) .EQ. "OP") THEN
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 15
-                ELSE IF (sb_atm_name(i) .EQ. "O") THEN
-                    sb_atm_mat(2,i,s) = 16
-                    sb_atm_mat(3,i,s) = -1
-                ELSE IF (sb_atm_name(i) .EQ. "HW") THEN
-                    sb_atm_mat(2,i,s) = 1
-                    sb_atm_mat(3,i,s) = 23
                 ELSE IF (sb_atm_name(i) .EQ. "HO") THEN
                     sb_atm_mat(2,i,s) = 1
                     sb_atm_mat(3,i,s) = 21
-                ELSE IF (sb_atm_name(i) .EQ. "H") THEN
+                ELSE IF (sb_atm_name(i) .EQ. "HW") THEN
+                    sb_atm_mat(2,i,s) = 1
+                    sb_atm_mat(3,i,s) = 23
+                ELSE IF (sb_atm_name(i) .EQ. "HM") THEN
+                    sb_atm_mat(2,i,s) = 1
+                    sb_atm_mat(3,i,s) = 24
+                ELSE IF (sb_atm_name(i) .EQ. "HP") THEN
+                    sb_atm_mat(2,i,s) = 1
+                    sb_atm_mat(3,i,s) = 25
+                ELSE IF ((sb_atm_name(i) .EQ. "C").OR.&
+                    (sb_atm_name(i) .EQ. "CX")) THEN
+                    sb_atm_mat(2,i,s) = 12
+                    sb_atm_mat(3,i,s) = -1
+                ELSE IF ((sb_atm_name(i) .EQ. "O") .OR.&
+                    (sb_atm_name(i) .EQ. "OX")) THEN
+                    sb_atm_mat(2,i,s) = 16
+                    sb_atm_mat(3,i,s) = -1
+                ELSE IF ((sb_atm_name(i) .EQ. "H") .OR.&
+                    (sb_atm_name(i) .EQ. "H1") .OR.&
+                    (sb_atm_name(i) .EQ. "H2") .OR.&
+                    (sb_atm_name(i) .EQ. "HX")) THEN
                     sb_atm_mat(2,i,s) = 1
                     sb_atm_mat(3,i,s) = -1
                 END IF
