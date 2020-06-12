@@ -19,25 +19,23 @@ CHARACTER(LEN=100)              :: input_file
 
 !   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:)
-CHARACTER(LEN=3), ALLOCATABLE   :: atm_name(:)
+CHARACTER(LEN=3), ALLOCATABLE   :: atm_name(:), atm_type(:,:)
 REAL(dp), ALLOCATABLE           :: center_avgpos(:,:)
 
 !   ----------------------------------------------- Temporary variables
-REAL(dp)                        :: z_shift
-REAL(dp)                        :: OaH_disp_vec(3), OaH_disp_norm
-REAL(dp)                        :: OaC_disp_vec(3), OaC_disp_norm
-REAL(dp)                        :: OaSi_disp_vec(3), OaSi_disp_norm
-CHARACTER(LEN=3)                :: type
+REAL(dp)                        :: z_shift, temp_dist2(4)
+REAL(dp)                        :: ij_disp_vec(3), ij_disp_norm
 
 !   ----------------------------------------------- Count variables
-INTEGER                         :: nb_o, nb_h, nb_c
+INTEGER                         :: nb_o, nb_h, nb_c, up, temp_id1, temp_id2(4)
 INTEGER, ALLOCATABLE            :: nb_center(:)
 INTEGER, ALLOCATABLE            :: nb_epoxide(:), nb_alcohol(:), nb_alkoxide(:)
 INTEGER, ALLOCATABLE            :: nb_water(:), nb_hydronium(:), nb_hydroxide(:)
-INTEGER, ALLOCATABLE            :: nb_oxygen_group(:)
+INTEGER, ALLOCATABLE            :: nb_oxygen_group(:), nb_ether(:)
+REAL(dp), ALLOCATABLE           :: conn_mat(:,:,:)
 
 !   ----------------------------------------------- Counters
-INTEGER                         :: i, s, k, j
+INTEGER                         :: i, s, k, j, l
 INTEGER                         :: CAC
 
 !   -----------------------------------------------
@@ -70,12 +68,13 @@ PRINT'(A100)', '--------------------------------------------------'&
 , '--------------------------------------------------'
 
 !   ----------------------------------------------- Allocate function for reading files
-ALLOCATE(atm_mat(13,nb_atm,nb_step))
+ALLOCATE(atm_mat(15,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
 !   ----------------------------------------------- Read positions
 start = OMP_get_wtime()
 ALLOCATE(atm_name(nb_atm))
+ALLOCATE(atm_type(nb_atm,nb_step))
 
 OPEN(UNIT=20, FILE=file_pos, STATUS='old', FORM='formatted', ACTION='READ')
 DO s = 1, nb_step
@@ -94,19 +93,19 @@ DO s = 1, nb_step
             atm_mat(2,i,s) = 28
         END IF
         IF (atm_name(i) .EQ. assign_center_name) THEN
-            atm_mat(13,i,s) = 1
+            atm_mat(15,i,s) = 1
         END IF
     END DO
 END DO
 CLOSE(UNIT=20)
 
+nb_c = COUNT(atm_mat(2,:,1) .EQ. 12, DIM=1)
 nb_o = COUNT(atm_mat(2,:,1) .EQ. 16, DIM=1)
 nb_h = COUNT(atm_mat(2,:,1) .EQ. 1, DIM=1)
-nb_c = COUNT(atm_mat(2,:,1) .EQ. 12, DIM=1)
 
 ALLOCATE(nb_center(nb_step))
 DO s = 1, nb_step
-    nb_center(s) = COUNT(atm_mat(13,:,s) .EQ. 1, DIM=1)
+    nb_center(s) = COUNT(atm_mat(15,:,s) .EQ. 1, DIM=1)
 END DO
 
 finish = OMP_get_wtime()
@@ -139,7 +138,7 @@ DO s = 1, nb_step
     center_avgpos(:,s) = 0.0_dp
 
     DO i = 1, nb_atm
-        IF (atm_mat(13,i,s) .EQ. 1) THEN
+        IF (atm_mat(15,i,s) .EQ. 1) THEN
             DO k = 1, 3
                 center_avgpos(k,s) = center_avgpos(k,s) + atm_mat(k+2,i,s)
             END DO
@@ -166,80 +165,380 @@ PRINT'(A40,F14.2,A20)', "Center/Wrap:", finish-start, "seconds elapsed"
 !   ----------------------------------------------- Search the topology, water and oxygen groups
 start = OMP_get_wtime()
 
+ALLOCATE(conn_mat(17,nb_atm,nb_step))
 ALLOCATE(nb_epoxide(nb_step))
 ALLOCATE(nb_alcohol(nb_step))
 ALLOCATE(nb_alkoxide(nb_step))
 ALLOCATE(nb_water(nb_step))
 ALLOCATE(nb_hydronium(nb_step))
 ALLOCATE(nb_hydroxide(nb_step))
+ALLOCATE(nb_ether(nb_step))
 ALLOCATE(nb_oxygen_group(nb_step))
 
-atm_mat(9,:,:) = -1 ! NbH => O
-atm_mat(10,:,:) = -1 ! NbHeavy => O
-atm_mat(11,:,:) = -1 ! O_id => H
-atm_mat(12,:,:) = -1 ! (NbH => O) => H
-
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, nb_atm, nb_step, box)&
-!$OMP SHARED(assign_OpH_rcut, assign_OpC_rcut, assign_OpSi_rcut)&
+atm_mat(9,:,:) = 0 ! NbH 
+atm_mat(10,:,:) = 0 ! NbC
+atm_mat(11,:,:) = 0 ! NbO
+atm_mat(12,:,:) = 0 ! NbC
+atm_mat(13,:,:) = 0 ! NbO
+atm_mat(14,:,:) = 0 ! NbH 
+conn_mat(:,:,:) = 0.0_dp
+!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, nb_atm, nb_step, box,conn_mat, atm_type)&
+!$OMP SHARED(assign_HO_rcut, assign_OC_rcut, assign_OO_rcut)&
+!$OMP SHARED(assign_HC_rcut, assign_CC_rcut, assign_HH_rcut)&
 !$OMP SHARED(nb_epoxide, nb_hydroxide, nb_alcohol, nb_water, nb_hydronium, nb_alkoxide, nb_oxygen_group)&
-!$OMP PRIVATE(s, i, j, k)&
-!$OMP PRIVATE(OaC_disp_vec, OaC_disp_norm, OaH_disp_vec, OaH_disp_norm, OaSi_disp_vec, OaSi_disp_norm)
+!$OMP SHARED(nb_ether)&
+!$OMP PRIVATE(s, i, j, k, l)&
+!$OMP PRIVATE(ij_disp_norm, ij_disp_vec, up, temp_id1, temp_id2, temp_dist2)
 DO s = 1, nb_step
-    DO i = 1, nb_atm
-        IF (atm_mat(2,i,s) .EQ. 16) THEN ! Select only Oxygens
-
-            atm_mat(9,i,s) = 0
-            atm_mat(10,i,s) = 0
-
-            DO j = 1, nb_atm
-                IF (atm_mat(2,j,s) .EQ. 1) THEN ! Compare with Hydrogens
-                    DO k = 1, 3
-                        OaH_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
-                        OaH_disp_vec(k) = OaH_disp_vec(k) - box(k) * ANINT(OaH_disp_vec(k) / box(k))
-                    END DO
-                    OaH_disp_norm = NORM2(OaH_disp_vec)
-                    IF(OaH_disp_norm .LE. assign_OpH_rcut) THEN
-                        atm_mat(9,i,s) = atm_mat(9,i,s) + 1
-                        atm_mat(11,j,s) = atm_mat(1,i,s)
-                    END IF
-
-                ELSE IF (atm_mat(2,j,s) .EQ. 12) THEN ! Compare with Carbons
-                    DO k = 1, 3
-                        OaC_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
-                        OaC_disp_vec(k) = OaC_disp_vec(k) - box(k) * ANINT(OaC_disp_vec(k) / box(k))
-                    END DO
-                    OaC_disp_norm = NORM2(OaC_disp_vec)
-                    IF(OaC_disp_norm .LE. assign_OpC_rcut) THEN
-                        atm_mat(10,i,s) = atm_mat(10,i,s) + 1
-                    END IF
-
-                ELSE IF (atm_mat(2,j,s) .EQ. 28) THEN ! Compare with Sulphurs
-                    DO k = 1, 3
-                        OaSi_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
-                        OaSi_disp_vec(k) = OaSi_disp_vec(k) - box(k) * ANINT(OaSi_disp_vec(k) / box(k))
-                    END DO
-                    OaSi_disp_norm = NORM2(OaSi_disp_vec)
-                    IF(OaSi_disp_norm .LE. assign_OpSi_rcut) THEN
-                        atm_mat(10,i,s) = atm_mat(10,i,s) + 1
-                    END IF
-
-                END IF
+    DO i = 1, nb_atm-1
+        DO j = i+1, nb_atm
+            DO k = 1, 3
+                ij_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
+                ij_disp_vec(k) = ij_disp_vec(k) - box(k) * ANINT(ij_disp_vec(k) / box(k))
             END DO
-            DO j = 1, nb_atm
-                IF (atm_mat(1,i,s) .EQ. atm_mat(11,j,s)) THEN
-                    atm_mat(12,j,s) = atm_mat(9,i,s)
+            ij_disp_norm = NORM2(ij_disp_vec)
+            IF ( ij_disp_norm .LT. 2.00 ) THEN
+                IF (atm_mat(2,i,s) .EQ. 16) THEN 
+                    IF (atm_mat(2,j,s) .EQ. 1) THEN
+                        IF(ij_disp_norm .LE. assign_HO_rcut) THEN
+                            atm_mat(9,i,s) = atm_mat(9,i,s) + 1
+                            atm_mat(11,j,s) = atm_mat(11,j,s) + 1
+                            up = 1
+                        END IF
+                    ELSE IF (atm_mat(2,j,s) .EQ. 12) THEN
+                        IF(ij_disp_norm .LE. assign_OC_rcut) THEN
+                            atm_mat(10,i,s) = atm_mat(10,i,s) + 1
+                            atm_mat(11,j,s) = atm_mat(11,j,s) + 1
+                            up = 1
+                        END IF
+                    ELSE IF (atm_mat(2,j,s) .EQ. 16) THEN
+                        IF(ij_disp_norm .LE. assign_OO_rcut) THEN
+                            atm_mat(11,i,s) = atm_mat(11,i,s) + 1
+                            atm_mat(11,j,s) = atm_mat(11,j,s) + 1
+                            up = 1
+                        END IF
+                    END IF
+                ELSE IF (atm_mat(2,i,s) .EQ. 12) THEN
+                    IF (atm_mat(2,j,s) .EQ. 1) THEN
+                        IF(ij_disp_norm .LE. assign_HC_rcut) THEN
+                            atm_mat(9,i,s) = atm_mat(9,i,s) + 1
+                            atm_mat(10,j,s) = atm_mat(10,j,s) + 1
+                            up = 1
+                        END IF
+                    ELSE IF (atm_mat(2,j,s) .EQ. 12) THEN
+                        IF(ij_disp_norm .LE. assign_CC_rcut) THEN
+                            atm_mat(10,i,s) = atm_mat(10,i,s) + 1
+                            atm_mat(10,j,s) = atm_mat(10,j,s) + 1
+                            up = 1
+                        END IF
+                    ELSE IF (atm_mat(2,j,s) .EQ. 16) THEN
+                        IF(ij_disp_norm .LE. assign_OC_rcut) THEN
+                            atm_mat(11,i,s) = atm_mat(11,i,s) + 1
+                            atm_mat(10,j,s) = atm_mat(10,j,s) + 1
+                            up = 1
+                        END IF
+                    END IF
+                ELSE IF (atm_mat(2,i,s) .EQ. 1) THEN
+                    IF (atm_mat(2,j,s) .EQ. 1) THEN
+                        IF(ij_disp_norm .LE. assign_HH_rcut) THEN
+                            atm_mat(9,i,s) = atm_mat(9,i,s) + 1
+                            atm_mat(9,j,s) = atm_mat(9,j,s) + 1
+                            up = 1
+                        END IF
+                    ELSE IF (atm_mat(2,j,s) .EQ. 12) THEN
+                        IF(ij_disp_norm .LE. assign_HC_rcut) THEN
+                            atm_mat(10,i,s) = atm_mat(10,i,s) + 1
+                            atm_mat(9,j,s) = atm_mat(9,j,s) + 1
+                            up = 1
+                        END IF
+                    ELSE IF (atm_mat(2,j,s) .EQ. 16) THEN
+                        IF(ij_disp_norm .LE. assign_HO_rcut) THEN
+                            atm_mat(11,i,s) = atm_mat(11,i,s) + 1
+                            atm_mat(10,j,s) = atm_mat(10,j,s) + 1
+                            up = 1
+                        END IF
+                    END IF
                 END IF
-            END DO
-        END IF
+            END IF
+            IF (up .EQ. 1) THEN
+                conn_mat(1,i,s) = atm_mat(1,i,s)
+                conn_mat(2,i,s) = atm_mat(2,i,s)
+                IF (conn_mat(3,i,s) .EQ. 0) THEN
+                    conn_mat(3,i,s) = atm_mat(1,j,s)
+                    conn_mat(4,i,s) = atm_mat(2,j,s)
+                    conn_mat(5,i,s) = ij_disp_norm
+                ELSE IF (conn_mat(6,i,s) .EQ. 0) THEN
+                    conn_mat(6,i,s) = atm_mat(1,j,s)
+                    conn_mat(7,i,s) = atm_mat(2,j,s)
+                    conn_mat(8,i,s) = ij_disp_norm
+                ELSE IF (conn_mat(9,i,s) .EQ. 0) THEN
+                    conn_mat(9,i,s) = atm_mat(1,j,s)
+                    conn_mat(10,i,s) = atm_mat(2,j,s)
+                    conn_mat(11,i,s) = ij_disp_norm
+                ELSE IF (conn_mat(12,i,s) .EQ. 0) THEN
+                    conn_mat(12,i,s) = atm_mat(1,j,s)
+                    conn_mat(13,i,s) = atm_mat(2,j,s)
+                    conn_mat(14,i,s) = ij_disp_norm
+                ELSE IF (conn_mat(15,i,s) .EQ. 0) THEN
+                    conn_mat(15,i,s) = atm_mat(1,j,s)
+                    conn_mat(16,i,s) = atm_mat(2,j,s)
+                    conn_mat(17,i,s) = ij_disp_norm
+                END IF
+                conn_mat(1,j,s) = atm_mat(1,j,s)
+                conn_mat(2,j,s) = atm_mat(2,j,s)
+                IF (conn_mat(3,j,s) .EQ. 0) THEN
+                    conn_mat(3,j,s) = atm_mat(1,i,s)
+                    conn_mat(4,j,s) = atm_mat(2,i,s)
+                    conn_mat(5,j,s) = ij_disp_norm
+                ELSE IF (conn_mat(6,j,s) .EQ. 0) THEN
+                    conn_mat(6,j,s) = atm_mat(1,i,s)
+                    conn_mat(7,j,s) = atm_mat(2,i,s)
+                    conn_mat(8,j,s) = ij_disp_norm
+                ELSE IF (conn_mat(9,j,s) .EQ. 0) THEN
+                    conn_mat(9,j,s) = atm_mat(1,i,s)
+                    conn_mat(10,j,s) = atm_mat(2,i,s)
+                    conn_mat(11,j,s) = ij_disp_norm
+                ELSE IF (conn_mat(12,j,s) .EQ. 0) THEN
+                    conn_mat(12,j,s) = atm_mat(1,i,s)
+                    conn_mat(13,j,s) = atm_mat(2,i,s)
+                    conn_mat(14,j,s) = ij_disp_norm
+                ELSE IF (conn_mat(15,j,s) .EQ. 0) THEN
+                    conn_mat(15,j,s) = atm_mat(1,i,s)
+                    conn_mat(16,j,s) = atm_mat(2,i,s)
+                    conn_mat(17,j,s) = ij_disp_norm
+                END IF
+            END IF
+            up = 0
+        END DO
     END DO
 
-    nb_epoxide(s) = COUNT((atm_mat(10,:,s) .EQ. 2) .AND. (atm_mat(9,:,s) .EQ. 0), DIM=1)
-    nb_alcohol(s) = COUNT((atm_mat(10,:,s) .EQ. 1) .AND. (atm_mat(9,:,s) .EQ. 1), DIM=1)
-    nb_alkoxide(s) = COUNT((atm_mat(10,:,s) .EQ. 1) .AND. (atm_mat(9,:,s) .EQ. 0), DIM=1)
-    nb_water(s) = COUNT((atm_mat(10,:,s) .EQ. 0) .AND. (atm_mat(9,:,s) .EQ. 2), DIM=1)
-    nb_hydroxide(s) = COUNT((atm_mat(10,:,s) .EQ. 0) .AND. (atm_mat(9,:,s) .EQ. 1), DIM=1)
-    nb_hydronium(s) = COUNT((atm_mat(10,:,s) .EQ. 0) .AND. (atm_mat(9,:,s) .EQ. 3), DIM=1)
-    nb_oxygen_group(s) = nb_epoxide(s) + nb_alcohol(s) + nb_alkoxide(s) + nb_hydroxide(s) + nb_hydronium(s) + nb_water(s)
+    DO i = 1, nb_atm
+        !IF (conn_mat(2,i,s) .EQ. 12) THEN
+            DO j = 4,18,3
+                IF (conn_mat(j,i,s) .EQ. 12) THEN
+                    atm_mat(12,i,s) = atm_mat(12,i,s) + 1
+                ELSE IF (conn_mat(j,i,s) .EQ. 16) THEN
+                    atm_mat(13,i,s) = atm_mat(13,i,s) + 1
+                ELSE IF (conn_mat(j,i,s) .EQ. 1) THEN
+                    atm_mat(14,i,s) = atm_mat(14,i,s) + 1
+                END IF
+            END DO
+        IF (atm_mat(2,i,s) .EQ. 16) THEN
+            IF ( (atm_mat(12,i,s) .EQ. 0) .AND. (atm_mat(13,i,s) .EQ. 0) .AND. (atm_mat(14,i,s) .EQ. 2)) THEN
+                atm_type(i,s) = "OW"
+            ELSE IF ( (atm_mat(12,i,s) .EQ. 0) .AND. (atm_mat(13,i,s) .EQ. 0) .AND. (atm_mat(14,i,s) .EQ. 3)) THEN
+                atm_type(i,s) = "OP"
+            ELSE IF ( (atm_mat(12,i,s) .EQ. 0) .AND. (atm_mat(13,i,s) .EQ. 0) .AND. (atm_mat(14,i,s) .EQ. 1)) THEN
+                atm_type(i,s) = "OM"
+            ELSE IF ( (atm_mat(12,i,s) .EQ. 1) .AND. (atm_mat(13,i,s) .EQ. 0) .AND. (atm_mat(14,i,s) .EQ. 1)) THEN
+                atm_type(i,s) = "OH"
+            ELSE IF ( (atm_mat(12,i,s) .EQ. 1) .AND. (atm_mat(13,i,s) .EQ. 0) .AND. (atm_mat(14,i,s) .EQ. 0)) THEN
+                atm_type(i,s) = "OA"
+            ELSE IF ( (atm_mat(12,i,s) .EQ. 2) .AND. (atm_mat(13,i,s) .EQ. 0) .AND. (atm_mat(14,i,s) .EQ. 0)) THEN
+                atm_type(i,s) = "OE"
+            ELSE 
+                atm_type(i,s) = "OX"
+            END IF
+        ELSE IF (atm_mat(2,i,s) .EQ. 12) THEN
+            IF ( (atm_mat(12,i,s) .EQ. 3) .AND. (atm_mat(13,i,s) .EQ. 0) .AND. (atm_mat(14,i,s) .EQ. 0)) THEN
+                atm_type(i,s) = "CC"
+            ELSE IF ( (atm_mat(12,i,s) .EQ. 3) .AND. (atm_mat(13,i,s) .EQ. 1) .AND. (atm_mat(14,i,s) .EQ. 0)) THEN
+                atm_type(i,s) = "C3"
+            ELSE IF ( (atm_mat(12,i,s) .EQ. 2) .AND. (atm_mat(13,i,s) .EQ. 1) .AND. (atm_mat(14,i,s) .EQ. 0)) THEN
+                atm_type(i,s) = "C2"
+            ELSE
+                atm_type(i,s) = "CX"
+            END IF
+        ELSE IF (atm_mat(2,i,s) .EQ. 1) THEN
+            IF ((atm_mat(12,i,s) .EQ. 0) .AND. (atm_mat(13,i,s) .EQ. 1) .AND. (atm_mat(14,i,s) .EQ.0)) THEN
+                atm_type(i,s) = "H1"
+            ELSE IF ((atm_mat(12,i,s) .EQ. 0) .AND. (atm_mat(13,i,s) .EQ. 2) .AND. (atm_mat(14,i,s) .EQ.0)) THEN
+                atm_type(i,s) = "H2"
+            ELSE
+                atm_type(i,s) = "HX"
+            END IF
+        END IF
+    END DO
+    DO l = 1,3
+     AS:DO i = 1, nb_atm
+            IF ( (atm_type(i,s) .EQ. "C3") .OR.&
+            (atm_type(i,s) .EQ. "C3O") .OR.&
+            (atm_type(i,s) .EQ. "C3A") .OR.&
+            (atm_type(i,s) .EQ. "C3E"))THEN
+                DO j = 4,18,3
+                    IF (conn_mat(j,i,s) .EQ. 16) THEN
+                        temp_id1 = INT(conn_mat(j-1,i,s))
+                        IF ((atm_type(temp_id1,s) .EQ. "OH") .OR.&
+                        (atm_type(temp_id1,s) .EQ. "OH3"))THEN
+                            atm_type(temp_id1,s) = "OH3"
+                            atm_type(i,s) = "C3O"
+                        ELSE IF ((atm_type(temp_id1,s) .EQ. "OA") .OR.&
+                            (atm_type(temp_id1,s) .EQ. "OA3")) THEN
+                            atm_type(temp_id1,s) = "OA3"
+                            atm_type(i,s) = "C3A"
+                        ELSE IF ((atm_type(temp_id1,s) .EQ. "OE") .OR.&
+                            (atm_type(temp_id1,s) .EQ. "OEP" )) THEN
+                            atm_type(temp_id1,s) = "OEP"
+                            atm_type(i,s) = "C3E"
+                        END IF
+                    END IF
+                END DO
+            ELSE IF ( (atm_type(i,s) .EQ. "C2") .OR.&
+                (atm_type(i,s) .EQ. "C2O") .OR.&
+                (atm_type(i,s) .EQ. "C2A") .OR.&
+                (atm_type(i,s) .EQ. "C2E"))THEN
+                DO j = 4,18,3
+                    IF (conn_mat(j,i,s) .EQ. 16) THEN
+                        temp_id1 = INT(conn_mat(j-1,i,s))
+                        IF ((atm_type(temp_id1,s) .EQ. "OH") .OR.&
+                            (atm_type(temp_id1,s) .EQ. "OH2")) THEN
+                            atm_type(temp_id1,s) = "OH2"
+                            atm_type(i,s) = "C2O"
+                        ELSE IF ((atm_type(temp_id1,s) .EQ. "OA") .OR.&
+                            (atm_type(temp_id1,s) .EQ. "OA2")) THEN
+                            atm_type(temp_id1,s) = "OA2"
+                            atm_type(i,s) = "C2A"
+                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OE") .OR.&
+                            (atm_type(temp_id1,s) .EQ. "OET" )) THEN
+                            atm_type(temp_id1,s) = "OET"
+                            atm_type(i,s) = "C2E"
+                        END IF
+                    END IF
+                END DO
+            ELSE IF ((atm_type(i,s) .EQ. "H1") .OR.&
+                (atm_type(i,s) .EQ. "HO") .OR.&
+                (atm_type(i,s) .EQ. "HW") .OR.&
+                (atm_type(i,s) .EQ. "HP") .OR.&
+                (atm_type(i,s) .EQ. "HM")) THEN
+                DO j = 4,18,3
+                    IF (conn_mat(j,i,s) .EQ. 16) THEN
+                        temp_id1 = INT(conn_mat(j-1,i,s))
+                        IF ((atm_type(temp_id1,s) .EQ. "OH") .OR.&
+                        (atm_type(temp_id1,s) .EQ. "OH2") .OR.&
+                        (atm_type(temp_id1,s) .EQ. "OH3")) THEN
+                            atm_type(i,s) = "HO"
+                        ELSE IF ((atm_type(temp_id1,s) .EQ. "OM")) THEN
+                            atm_type(i,s) = "HM"
+                        ELSE IF ((atm_type(temp_id1,s) .EQ. "OW")) THEN
+                            atm_type(i,s) = "HW"
+                        ELSE IF ((atm_type(temp_id1,s) .EQ. "OP")) THEN
+                            atm_type(i,s) = "HP"
+                        END IF
+                    END IF
+                END DO
+            
+            ELSE IF ((atm_type(i,s) .EQ. "H2")) THEN
+                print*,"HOLA"
+                ! .OR.&
+                !(atm_type(i,s) .EQ. "") .OR.&
+                !(atm_type(i,s) .EQ. "")) THEN
+                k=1
+                DO j = 4,18,3
+                    IF (conn_mat(j,i,s) .EQ. 16) THEN
+                        temp_id2(k) = INT(conn_mat(j-1,i,s))
+                        temp_dist2(k) = conn_mat(j+1,i,s)
+                        k=k+1
+                    END IF
+                END DO
+                IF ((temp_dist2(1) .EQ. 0) .OR.&
+                (temp_dist2(2) .EQ. 0)) THEN
+                    CYCLE AS
+                END IF
+                IF (temp_dist2(2) .LE. temp_dist2(1)) THEN
+                    IF (atm_type(temp_id2(2),s) .EQ. "OM") THEN
+                        atm_type(temp_id2(2),s) = "OW"
+                        atm_type(i,s) = "HW"
+                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OW") THEN
+                        atm_type(temp_id2(2),s) = "OP"
+                        atm_type(i,s) = "HP"
+                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OA") THEN
+                        atm_type(temp_id2(2),s) = "OH"
+                        atm_type(i,s) = "HO"
+                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OA2") THEN
+                        atm_type(temp_id2(2),s) = "OH2"
+                        atm_type(i,s) = "HO"
+                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OA3") THEN
+                        atm_type(temp_id2(2),s) = "OH3"
+                        atm_type(i,s) = "HO"
+                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OP") THEN
+                        atm_type(temp_id2(2),s) = "OP"
+                        atm_type(i,s) = "HP"
+                        print*, "NOT GOOD", atm_type(i,s)
+                    END IF
+                    IF (atm_type(temp_id2(1),s) .EQ. "OM") THEN
+                        atm_type(temp_id2(1),s) = "OM"
+                        atm_type(i,s) = "HM"
+                        print*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OW") THEN
+                        atm_type(temp_id2(1),s) = "OM"
+                        atm_type(i,s) = "HM"
+                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OA") THEN
+                        atm_type(temp_id2(1),s) = "OA"
+                        print*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OA2") THEN
+                        atm_type(temp_id2(1),s) = "OA2"
+                        print*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OA3") THEN
+                        atm_type(temp_id2(1),s) = "OA3"
+                        print*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OP") THEN
+                        atm_type(temp_id2(1),s) = "OW"
+                        atm_type(i,s) = "HW"
+                    END IF
+                ELSE
+                    IF (atm_type(temp_id2(1),s) .EQ. "OM") THEN
+                        atm_type(temp_id2(1),s) = "OW"
+                        atm_type(i,s) = "HW"
+                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OW") THEN
+                        atm_type(temp_id2(1),s) = "OP"
+                        atm_type(i,s) = "HP"
+                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OA") THEN
+                        atm_type(temp_id2(1),s) = "OH"
+                        atm_type(i,s) = "HO"
+                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OA2") THEN
+                        atm_type(temp_id2(1),s) = "OH2"
+                        atm_type(i,s) = "HO"
+                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OA3") THEN
+                        atm_type(temp_id2(1),s) = "OH3"
+                        atm_type(i,s) = "HO"
+                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OP") THEN
+                        atm_type(temp_id2(1),s) = "OP"
+                        atm_type(i,s) = "HP"
+                        print*, "NOT GOOD", atm_type(i,s)
+                    END IF
+                    IF (atm_type(temp_id2(2),s) .EQ. "OM") THEN
+                        atm_type(temp_id2(2),s) = "OM"
+                        atm_type(i,s) = "HM"
+                        print*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OW") THEN
+                        atm_type(temp_id2(2),s) = "OM"
+                        atm_type(i,s) = "HM"
+                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OA") THEN
+                        atm_type(temp_id2(2),s) = "OA"
+                        print*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OA2") THEN
+                        atm_type(temp_id2(2),s) = "OA2"
+                        print*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OA3") THEN
+                        atm_type(temp_id2(2),s) = "OA3"
+                        print*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OP") THEN
+                        atm_type(temp_id2(2),s) = "OW"
+                        atm_type(i,s) = "HW"
+                    END IF
+                END IF
+            END IF
+        END DO AS
+    END DO
+    nb_epoxide(s) = COUNT( (atm_type(:,s) .EQ. "OEP"), DIM=1)
+    nb_ether(s) = COUNT( (atm_type(:,s) .EQ. "OET"), DIM=1)
+    nb_alcohol(s) = COUNT( (atm_type(:,s) .EQ. "OH2"), DIM=1) + COUNT( (atm_type(:,s) .EQ. "OH3"), DIM=1)
+    nb_alkoxide(s) = COUNT( (atm_type(:,s) .EQ. "OA2"), DIM=1) + COUNT( (atm_type(:,s) .EQ. "OA3"), DIM=1)
+    nb_water(s) = COUNT( (atm_type(:,s) .EQ. "OW"), DIM=1)
+    nb_hydroxide(s) = COUNT( (atm_type(:,s) .EQ. "OP"), DIM=1)
+    nb_hydronium(s) = COUNT( (atm_type(:,s) .EQ. "OM"), DIM=1)
+    nb_oxygen_group(s) = nb_epoxide(s) + nb_alcohol(s) + nb_ether(s) + &
+        nb_alkoxide(s) + nb_hydroxide(s) + nb_hydronium(s) + nb_water(s)
 
 END DO
 !$OMP END PARALLEL DO
@@ -251,10 +550,10 @@ PRINT'(A40,F14.2,A20)', "Oxygen groups topologies:", finish-start, "seconds elap
 start = OMP_get_wtime()
 
 OPEN(UNIT=50, FILE = suffix//"_oxygen_groups_population.txt")
-WRITE(50, '(A10,A10,A10,A10,A10,A10,A10,A10,A10)') "Step", "Epoxide", "Alcohol", "Alkoxide", "Water"&
+WRITE(50, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10)') "Step", "Epoxide", "Ether", "Alcohol", "Alkoxide", "Water"&
 , "Hydroxide", "Hydronium", "Total", "Total_O"
 DO s = 1, nb_step
-    WRITE(50, '(I10,I10,I10,I10,I10,I10,I10,I10,I10)') s, nb_epoxide(s), nb_alcohol(s), nb_alkoxide(s)&
+    WRITE(50, '(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10)') s, nb_epoxide(s), nb_ether(s), nb_alcohol(s), nb_alkoxide(s)&
     , nb_water(s),nb_hydroxide(s), nb_hydronium(s), nb_oxygen_group(s), nb_o
 END DO
 CLOSE(UNIT=50)
@@ -275,29 +574,9 @@ DO s = 1, nb_step
     WRITE(40,'(A10,I10)') "Step nb:", s
     IF (file_vel .NE. '0') WRITE(41,'(A10,I10)') "Step nb:", s
     DO i = 1, nb_atm
-        IF ((atm_mat(10,i,s) .EQ. 2) .AND. (atm_mat(9,i,s) .EQ. 0)) THEN
-            type = "OE"
-        ELSE IF ((atm_mat(10,i,s) .EQ. 1) .AND. (atm_mat(9,i,s) .EQ. 1)) THEN
-            type = "OH"
-        ELSE IF ((atm_mat(10,i,s) .EQ. 1) .AND. (atm_mat(9,i,s) .EQ. 0)) THEN
-            type = "OA"
-        ELSE IF ((atm_mat(10,i,s) .EQ. 0) .AND. (atm_mat(9,i,s) .EQ. 2)) THEN
-            type = "OW"
-        ELSE IF ((atm_mat(10,i,s) .EQ. 0) .AND. (atm_mat(9,i,s) .EQ. 1)) THEN
-            type = "OM"
-        ELSE IF ((atm_mat(10,i,s) .EQ. 0) .AND. (atm_mat(9,i,s) .EQ. 3)) THEN
-            type = "OP"
-        ELSE IF ((atm_mat(10,i,s) .EQ. -1) .AND. (atm_mat(12,i,s) .EQ. 2)) THEN
-            type = "HW"
-        ELSE IF ((atm_mat(10,i,s) .EQ. -1) .AND. (atm_mat(12,i,s) .EQ. 1)) THEN
-            type = "HO"
-        ELSE IF ((atm_mat(10,i,s) .EQ. -1) .AND. (atm_mat(9,i,s) .EQ. -1)) THEN
-            type = atm_name(i)
-        ELSE
-            type = "O"
-        END IF
-        WRITE(40,'(A10,E20.7,E20.7,E20.7)') ADJUSTL(type), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
-        IF (file_vel .NE. '0') WRITE(41,'(A10,E20.7,E20.7,E20.7)') ADJUSTL(type), atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
+        WRITE(40,'(A10,E20.7,E20.7,E20.7)') ADJUSTL(atm_type(i,s)), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
+        IF (file_vel .NE. '0') WRITE(41,'(A10,E20.7,E20.7,E20.7)') ADJUSTL(atm_type(i,s)), &
+        atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
     END DO
 END DO
 CLOSE(UNIT=40)

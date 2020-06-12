@@ -31,7 +31,10 @@ CHARACTER(LEN=1)            :: IS_c
 CHARACTER(LEN=1)            :: AS_c
 ! Assign
 CHARACTER(LEN=3)            :: assign_center_name
-REAL(dp)                    :: assign_OpH_rcut, assign_OpC_rcut, assign_OpSi_rcut
+REAL(dp)                    :: assign_HO_rcut=1.30, assign_HC_rcut=1.30, assign_HH_rcut=1.30
+REAL(dp)                    :: assign_OC_rcut=1.75, assign_OO_rcut=1.75
+REAL(dp)                    :: assign_CC_rcut=1.75
+
 INTEGER                     :: waterlist
 ! Density
 REAL(dp)                    :: dens_dr, dens_rstart
@@ -134,15 +137,24 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE('assign_center_name')
                     READ(value, * , IOSTAT=iostatus) assign_center_name
                     PRINT'(A50,A64)', 'assign_center_name:', ADJUSTR(assign_center_name)
-                CASE ('assign_OpH_rcut')
-                    READ(value, * , IOSTAT=iostatus) assign_OpH_rcut
-                    PRINT'(A50,E64.10)', 'assign_OpH_rcut: ', assign_OpH_rcut
-                CASE ('assign_OpC_rcut')
-                    READ(value, * , IOSTAT=iostatus) assign_OpC_rcut
-                    PRINT'(A50,E64.10)', 'assign_OpC_rcut: ', assign_OpC_rcut
-                CASE ('assign_OpSi_rcut')
-                    READ(value, * , IOSTAT=iostatus) assign_OpSi_rcut
-                    PRINT'(A50,E64.10)', 'assign_OpSi_rcut: ', assign_OpSi_rcut
+                CASE ('assign_HO_rcut')
+                    READ(value, * , IOSTAT=iostatus) assign_HO_rcut
+                    PRINT'(A50,E64.10)', 'assign_HO_rcut: ', assign_HO_rcut
+                CASE ('assign_HC_rcut')
+                    READ(value, * , IOSTAT=iostatus) assign_HC_rcut
+                    PRINT'(A50,E64.10)', 'assign_HC_rcut: ', assign_HC_rcut
+                CASE ('assign_HH_rcut')
+                    READ(value, * , IOSTAT=iostatus) assign_HH_rcut
+                    PRINT'(A50,E64.10)', 'assign_HH_rcut: ', assign_HH_rcut
+                CASE ('assign_OC_rcut')
+                    READ(value, * , IOSTAT=iostatus) assign_OC_rcut
+                    PRINT'(A50,E64.10)', 'assign_OC_rcut: ', assign_OC_rcut
+                CASE ('assign_OO_rcut')
+                    READ(value, * , IOSTAT=iostatus) assign_OO_rcut
+                    PRINT'(A50,E64.10)', 'assign_OO_rcut: ', assign_OO_rcut
+                CASE ('assign_CC_rcut')
+                    READ(value, * , IOSTAT=iostatus) assign_CC_rcut
+                    PRINT'(A50,E64.10)', 'assign_CC_rcut: ', assign_CC_rcut
                 CASE ('waterlist')
                     READ(value, * , IOSTAT=iostatus) waterlist
                     PRINT'(A50,I64)', 'waterlist: ', waterlist
