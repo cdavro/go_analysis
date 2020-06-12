@@ -19,7 +19,7 @@ CHARACTER(LEN=100)              :: input_file
 
 !   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:)
-CHARACTER(LEN=3), ALLOCATABLE   :: atm_name(:), atm_type(:,:)
+CHARACTER(LEN=3), ALLOCATABLE   :: atm_name(:), atm_type(:,:), temp_atm_type(:)
 REAL(dp), ALLOCATABLE           :: center_avgpos(:,:)
 
 !   ----------------------------------------------- Temporary variables
@@ -174,13 +174,14 @@ ALLOCATE(nb_hydronium(nb_step))
 ALLOCATE(nb_hydroxide(nb_step))
 ALLOCATE(nb_ether(nb_step))
 ALLOCATE(nb_oxygen_group(nb_step))
+ALLOCATE(temp_atm_type(nb_atm))
 
-atm_mat(9,:,:) = 0 ! NbH 
-atm_mat(10,:,:) = 0 ! NbC
-atm_mat(11,:,:) = 0 ! NbO
-atm_mat(12,:,:) = 0 ! NbC
-atm_mat(13,:,:) = 0 ! NbO
-atm_mat(14,:,:) = 0 ! NbH 
+!atm_mat(9,:,:) = 0 ! NbH 
+!atm_mat(10,:,:) = 0 ! NbC
+!atm_mat(11,:,:) = 0 ! NbO
+!atm_mat(12,:,:) = 0 ! NbC
+!atm_mat(13,:,:) = 0 ! NbO
+!atm_mat(14,:,:) = 0 ! NbH 
 conn_mat(:,:,:) = 0.0_dp
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, nb_atm, nb_step, box,conn_mat, atm_type)&
 !$OMP SHARED(assign_HO_rcut, assign_OC_rcut, assign_OO_rcut)&
@@ -188,7 +189,7 @@ conn_mat(:,:,:) = 0.0_dp
 !$OMP SHARED(nb_epoxide, nb_hydroxide, nb_alcohol, nb_water, nb_hydronium, nb_alkoxide, nb_oxygen_group)&
 !$OMP SHARED(nb_ether)&
 !$OMP PRIVATE(s, i, j, k, l)&
-!$OMP PRIVATE(ij_disp_norm, ij_disp_vec, up, temp_id1, temp_id2, temp_dist2)
+!$OMP PRIVATE(ij_disp_norm, ij_disp_vec, up, temp_id1, temp_id2, temp_dist2,temp_atm_type)
 DO s = 1, nb_step
     DO i = 1, nb_atm-1
         DO j = i+1, nb_atm
@@ -314,7 +315,7 @@ DO s = 1, nb_step
 
     DO i = 1, nb_atm
         !IF (conn_mat(2,i,s) .EQ. 12) THEN
-            DO j = 4,18,3
+            DO j = 4, 18, 3
                 IF (conn_mat(j,i,s) .EQ. 12) THEN
                     atm_mat(12,i,s) = atm_mat(12,i,s) + 1
                 ELSE IF (conn_mat(j,i,s) .EQ. 16) THEN
@@ -359,13 +360,28 @@ DO s = 1, nb_step
             END IF
         END IF
     END DO
-    DO l = 1,3
+    temp_atm_type(:) = "XXX"
+    DO l = 1, 100
+        k = 0
+        DO i = 1, nb_atm
+            IF (atm_type(i,s) .EQ. temp_atm_type(i)) THEN
+                k = k + 1
+            END IF
+        END DO
+        IF (k .EQ. nb_atm) THEN
+            !PRINT'(A40,I3,A20)', "Topology converged in:", l-1, "loop(s)."
+            EXIT
+        END IF
+        IF (l .EQ. 100) THEN
+            PRINT'(A40,I3,A20)', "Topology not converged in step:", s
+            EXIT
+        END IF
      AS:DO i = 1, nb_atm
             IF ( (atm_type(i,s) .EQ. "C3") .OR.&
             (atm_type(i,s) .EQ. "C3O") .OR.&
             (atm_type(i,s) .EQ. "C3A") .OR.&
             (atm_type(i,s) .EQ. "C3E"))THEN
-                DO j = 4,18,3
+                DO j = 4, 18, 3
                     IF (conn_mat(j,i,s) .EQ. 16) THEN
                         temp_id1 = INT(conn_mat(j-1,i,s))
                         IF ((atm_type(temp_id1,s) .EQ. "OH") .OR.&
@@ -387,7 +403,7 @@ DO s = 1, nb_step
                 (atm_type(i,s) .EQ. "C2O") .OR.&
                 (atm_type(i,s) .EQ. "C2A") .OR.&
                 (atm_type(i,s) .EQ. "C2E"))THEN
-                DO j = 4,18,3
+                DO j = 4, 18, 3
                     IF (conn_mat(j,i,s) .EQ. 16) THEN
                         temp_id1 = INT(conn_mat(j-1,i,s))
                         IF ((atm_type(temp_id1,s) .EQ. "OH") .OR.&
@@ -410,7 +426,7 @@ DO s = 1, nb_step
                 (atm_type(i,s) .EQ. "HW") .OR.&
                 (atm_type(i,s) .EQ. "HP") .OR.&
                 (atm_type(i,s) .EQ. "HM")) THEN
-                DO j = 4,18,3
+                DO j = 4, 18, 3
                     IF (conn_mat(j,i,s) .EQ. 16) THEN
                         temp_id1 = INT(conn_mat(j-1,i,s))
                         IF ((atm_type(temp_id1,s) .EQ. "OH") .OR.&
@@ -426,18 +442,13 @@ DO s = 1, nb_step
                         END IF
                     END IF
                 END DO
-            
             ELSE IF ((atm_type(i,s) .EQ. "H2")) THEN
-                print*,"HOLA"
-                ! .OR.&
-                !(atm_type(i,s) .EQ. "") .OR.&
-                !(atm_type(i,s) .EQ. "")) THEN
-                k=1
-                DO j = 4,18,3
+                k = 1
+                DO j = 4, 18, 3
                     IF (conn_mat(j,i,s) .EQ. 16) THEN
                         temp_id2(k) = INT(conn_mat(j-1,i,s))
                         temp_dist2(k) = conn_mat(j+1,i,s)
-                        k=k+1
+                        k = k + 1
                     END IF
                 END DO
                 IF ((temp_dist2(1) .EQ. 0) .OR.&
@@ -528,6 +539,7 @@ DO s = 1, nb_step
                     END IF
                 END IF
             END IF
+            temp_atm_type(i) = atm_type(i,s)
         END DO AS
     END DO
     nb_epoxide(s) = COUNT( (atm_type(:,s) .EQ. "OEP"), DIM=1)
@@ -544,24 +556,25 @@ END DO
 !$OMP END PARALLEL DO
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Oxygen groups topologies:", finish-start, "seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Topology:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- Print counts
 start = OMP_get_wtime()
 
 OPEN(UNIT=50, FILE = suffix//"_oxygen_groups_population.txt")
-WRITE(50, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10)') "Step", "Epoxide", "Ether", "Alcohol", "Alkoxide", "Water"&
-, "Hydroxide", "Hydronium", "Total", "Total_O"
+WRITE(50, '(A4,1X,A10,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4)') &
+    "Traj", "Step", "EPO", "ETH", "ALC", "ALK", "H2O", "OH-", "H3O+", "TSum", "TO"
 DO s = 1, nb_step
-    WRITE(50, '(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10)') s, nb_epoxide(s), nb_ether(s), nb_alcohol(s), nb_alkoxide(s)&
-    , nb_water(s),nb_hydroxide(s), nb_hydronium(s), nb_oxygen_group(s), nb_o
+    WRITE(50, '(A4,1X,I10,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4)') &
+    suffix, s, nb_epoxide(s), nb_ether(s), nb_alcohol(s), nb_alkoxide(s)&
+    , nb_water(s), nb_hydroxide(s), nb_hydronium(s), nb_oxygen_group(s), nb_o
 END DO
 CLOSE(UNIT=50)
 
-DEALLOCATE(nb_epoxide,nb_alcohol,nb_alkoxide,nb_water,nb_hydronium,nb_hydroxide,nb_oxygen_group)
+DEALLOCATE(nb_epoxide,nb_alcohol,nb_ether,nb_alkoxide,nb_water,nb_hydronium,nb_hydroxide,nb_oxygen_group)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Oxygen groups topologies output:", finish-start, "seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Oxygen groups topology output:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- Print the xyz and velocities files
 start = OMP_get_wtime()
@@ -574,9 +587,9 @@ DO s = 1, nb_step
     WRITE(40,'(A10,I10)') "Step nb:", s
     IF (file_vel .NE. '0') WRITE(41,'(A10,I10)') "Step nb:", s
     DO i = 1, nb_atm
-        WRITE(40,'(A10,E20.7,E20.7,E20.7)') ADJUSTL(atm_type(i,s)), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
-        IF (file_vel .NE. '0') WRITE(41,'(A10,E20.7,E20.7,E20.7)') ADJUSTL(atm_type(i,s)), &
-        atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
+        WRITE(40,'(A3,1X,E14.5,E14.5,E14.5)') ADJUSTL(atm_type(i,s)), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
+        IF (file_vel .NE. '0') WRITE(41,'(A3,1X,E14.5,E14.5,E14.5)') ADJUSTL(atm_type(i,s))&
+        , atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
     END DO
 END DO
 CLOSE(UNIT=40)
@@ -591,10 +604,10 @@ IF (waterlist .EQ. 1) THEN
 
     OPEN(UNIT=42, FILE = suffix//"_waterlist.txt")
     DO s = 1, nb_step
-        WRITE(42,'(A14)',advance="no")"mask = indices "
+        WRITE(42,'(A14)', ADVANCE="no")"mask = indices "
         DO i = 1, nb_atm
-            IF (atm_mat(10,i,s) .EQ. 0) THEN
-                WRITE(42,'(I5)',advance="no") INT(atm_mat(1,i,s) - 1)
+            IF (atm_type(i,s) .EQ. "OW") THEN
+                WRITE(42,'(I5)', ADVANCE="no") INT(atm_mat(1,i,s) - 1)
             END IF
         END DO
         WRITE(42,*)
@@ -602,7 +615,7 @@ IF (waterlist .EQ. 1) THEN
     CLOSE(UNIT=42)
 
     finish = OMP_get_wtime()
-    PRINT'(A40,F14.2,A20)', "Waterlist (surf):", finish-start, "seconds elapsed"
+    PRINT'(A40,F14.2,A20)', "Waterlist (surf) output:", finish-start, "seconds elapsed"
 END IF
 
 !   ----------------------------------------------- End
@@ -611,5 +624,5 @@ PRINT'(A100)', '--------------------------------------------------'&
 PRINT'(A100)', 'The END'
 
 !   ----------------------------------------------- Deallocate and exit
-DEALLOCATE(atm_name,atm_mat)
+DEALLOCATE(atm_name,atm_mat,conn_mat)
 END PROGRAM assign

@@ -195,14 +195,16 @@ DO j = 1, dens_step
     avg_dens_up(j) = SUM(dens_up(j,:)) / nb_step
 END DO
 
-OPEN(UNIT=41, FILE = suffix//"_density_profile_down.txt")
-OPEN(UNIT=42, FILE = suffix//"_density_profile_up.txt")
-WRITE(41, '(A24,A24,A24,A24)') "step", "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
-WRITE(42, '(A24,A24,A24,A24)') "step", "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
+OPEN(UNIT=41, FILE = suffix//"_density_profile_ISdown_step.txt")
+OPEN(UNIT=42, FILE = suffix//"_density_profile_ISup_step.txt")
+WRITE(41, '(A4,1X,A10,1X,A10,1X,A10,1X,A14)') "Traj", "Step", ">= r (A)", "< r (A)", "ρ/ρ(bulk)"
+WRITE(42, '(A4,1X,A10,1X,A10,1X,A10,1X,A14)') "Traj", "Step", ">= r (A)", "< r (A)", "ρ/ρ(bulk)"
 DO s = 1, nb_step
     DO j = 1, dens_step
-        WRITE(41, '(I24,E20.7,E20.7,E20.7)') s, (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), dens_down(j,s)
-        WRITE(42, '(I24,E20.7,E20.7,E20.7)') s, (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), dens_up(j,s)
+        WRITE(41,'(A4,1X,I10,1X,F10.3,1X,F10.3,1X,E14.5)') suffix, s, (dens_rstart + (j-1) * dens_dr)&
+        , (dens_rstart + j * dens_dr), dens_down(j,s)
+        WRITE(42,'(A4,1X,I10,1X,F10.3,1X,F10.3,1X,E14.5)') suffix, s, (dens_rstart + (j-1) * dens_dr)&
+        , (dens_rstart + j * dens_dr), dens_up(j,s)
     END DO
 END DO
 CLOSE(UNIT=41)
@@ -210,13 +212,17 @@ CLOSE(UNIT=42)
 
 DEALLOCATE(dens_down,dens_up)
 
-OPEN(UNIT=43, FILE = suffix//"_avg_density_profile_down.txt")
-OPEN(UNIT=44, FILE = suffix//"_avg_density_profile_up.txt")
-WRITE(43, '(A24,A24,A24)') "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
-WRITE(44, '(A24,A24,A24)') "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
+OPEN(UNIT=43, FILE = suffix//"_density_profile_ISdown_avg.txt")
+OPEN(UNIT=44, FILE = suffix//"_density_profile_ISup_avg.txt")
+
+
+WRITE(43, '(A4,1X,A10,1X,A10,1X,A14)') 'Traj', ">= r (A)", "< r (A)", "ρ/ρ(bulk)"
+WRITE(44, '(A4,1X,A10,1X,A10,1X,A14)') 'Traj', ">= r (A)", "< r (A)", "ρ/ρ(bulk)"
 DO j = 1, dens_step
-    WRITE(43, '(E20.7,E20.7,E20.7)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_down(j)
-    WRITE(44, '(E20.7,E20.7,E20.7)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_up(j)
+    WRITE(43, '(A4,F10.3,1X,F10.3,1X,E14.5)') suffix, (dens_rstart + (j-1) * dens_dr)&
+    , (dens_rstart + j * dens_dr), avg_dens_down(j)
+    WRITE(44, '(A4,F10.3,1X,F10.3,1X,E14.5)') suffix, (dens_rstart + (j-1) * dens_dr)&
+    , (dens_rstart + j * dens_dr), avg_dens_up(j)
 END DO
 CLOSE(UNIT=43)
 CLOSE(UNIT=44)
@@ -224,7 +230,7 @@ CLOSE(UNIT=44)
 DEALLOCATE(avg_dens_down,avg_dens_up)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Density profiles:", finish-start, "seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Density profiles (IS):", finish-start, "seconds elapsed"
 
 ! D -----------------------------------------------
 start = OMP_get_wtime()
@@ -276,11 +282,11 @@ DO j = 1, dens_step
     avg_dens_down_avgz_c(j) = SUM(dens_down_avgz_c(j,:)) / nb_step
 END DO
 
-OPEN(UNIT=41, FILE = suffix//"_density_profile_down_avgz_c.txt")
-WRITE(41, '(A10,A24,A24,A24)') "step", "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
+OPEN(UNIT=41, FILE = suffix//"_density_profile_avgZC_step.txt")
+WRITE(41, '(A4,1X,A10,1X,A10,1X,A10,1X,A14)') "Traj", "Step", ">= r (A)", "< r (A)", "ρ/ρ(bulk)"
 DO s = 1, nb_step
     DO j = 1, dens_step
-        WRITE(41, '(I10,E20.7,E20.7,E20.7)') s, (dens_rstart + (j-1) * dens_dr)&
+        WRITE(41,'(A4,1X,I10,1X,F10.3,1X,F10.3,1X,E14.5)') suffix, s, (dens_rstart + (j-1) * dens_dr)&
         , (dens_rstart + j * dens_dr), dens_down_avgz_c(j,s)
     END DO
 END DO
@@ -288,17 +294,18 @@ CLOSE(UNIT=41)
 
 DEALLOCATE(dens_down_avgz_c)
 
-OPEN(UNIT=43, FILE = suffix//"_avg_density_profile_down_avgz_c.txt")
-WRITE(43, '(A24,A24,A24)') "[ r (Å)", "r+dr (Å) [", "ρ/ρ(bulk)"
+OPEN(UNIT=43, FILE = suffix//"_density_profile_avgZC_avg.txt")
+WRITE(43, '(A4,1X,A10,1X,A10,1X,A14)') 'Traj', ">= r (A)", "< r (A)", "ρ/ρ(bulk)"
 DO j = 1, dens_step
-    WRITE(43, '(E20.7,E20.7,E20.7)') (dens_rstart + (j-1) * dens_dr), (dens_rstart + j * dens_dr), avg_dens_down_avgz_c(j)
+    WRITE(43, '(A4,1X,F10.3,1X,F10.3,1X,E14.5)') suffix, (dens_rstart + (j-1) * dens_dr)&
+    , (dens_rstart + j * dens_dr), avg_dens_down_avgz_c(j)
 END DO
 CLOSE(UNIT=43)
 
 DEALLOCATE(avg_dens_down_avgz_c)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Density profiles:", finish-start, "seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Density profiles (avgZC):", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- End
 PRINT'(A100)', '--------------------------------------------------'&
