@@ -63,7 +63,12 @@ file_vel=TRIM(file_vel)
 file_is=TRIM(file_is)
 
 !   ----------------------------------------------- Controls
-! To Do
+mcs = INT(mct / timestep_fs)
+
+IF (mcs+1 .GE. nb_step) THEN
+    PRINT*, "Error: Max correlation time > trajectory time"
+    STOP
+END IF
 
 !   -----------------------------------------------
 PRINT'(A100)', 'Run, VDOS, Run!'
@@ -71,7 +76,7 @@ PRINT'(A100)','--------------------------------------------------'&
 ,'--------------------------------------------------'
 
 !   ----------------------------------------------- Allocate function for reading files
-ALLOCATE(atm_mat(23,nb_atm,nb_step))
+ALLOCATE(atm_mat(25,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
 ! A ----------------------------------------------- Read positions
@@ -156,18 +161,20 @@ DO s = 1, nb_step
                 atm_mat(23,i,s) = atm_mat(6,j,s)
             END IF
             IF (XO_disp_norm .LE. hb_X1O_rcut) THEN
-                IF (atm_mat(3,j,s) .EQ. 1) THEN ! C
+                IF (atm_mat(2,j,s) .EQ. 12) THEN ! CC
                     atm_mat(10,i,s) = 1
                     atm_mat(14,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
+                ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OEP
                     atm_mat(11,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OH
+                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OET
+                    atm_mat(25,i,s) = 1
+                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OH
                     atm_mat(12,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
+                ELSE IF (atm_mat(3,j,s) .EQ. 14) THEN ! OA
                     atm_mat(13,i,s) = 1
                 END IF
             ELSE IF (XO_disp_norm .LE. hb_X2O_rcut) THEN
-                IF (atm_mat(3,j,s) .EQ. 1) THEN ! C
+                IF (atm_mat(2,j,s) .EQ. 12) THEN ! CX
                     atm_mat(14,i,s) = 1
                 END IF
             END IF
@@ -234,13 +241,9 @@ END IF
 
 ! H ----------------------------------------------- VVCF
 start = OMP_get_wtime()
-mcs = INT(mct / timestep_fs)
 mcsb = INT(mctb / timestep_fs) + 1
 
-IF (mcs+1 .GE. nb_step) THEN
-    PRINT*, "Error: Max correlation time > trajectory time"
-    STOP
-END IF
+
 ALLOCATE(vdos_mat(nb_atm,mcs+1))
 ALLOCATE(vdos_cnt(mcs+1))
 ALLOCATE(vdos_atm(mcs+1))
