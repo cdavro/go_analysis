@@ -70,7 +70,7 @@ PRINT'(A100)','--------------------------------------------------'&
 ,'--------------------------------------------------'
 
 !   ----------------------------------------------- Allocate function for reading files
-ALLOCATE(atm_mat(24,nb_atm,nb_step))
+ALLOCATE(atm_mat(25,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
 ! A ----------------------------------------------- Read positions
@@ -88,27 +88,27 @@ IF (IS_c .EQ. 'Y' ) THEN
     start = OMP_get_wtime()
 
     CALL sb_count_is(file_is,nb_step,nb_max_is)
-    
+
     finish = OMP_get_wtime()
     PRINT'(A40,F14.2,A20)', "IS grid:", finish-start, "seconds elapsed"
-    
+
 ! A ----------------------------------------------- Read IS
     start = OMP_get_wtime()
-    
+
     ALLOCATE(is_mat(5,nb_max_is,nb_step))
     ALLOCATE(nb_is(nb_step))
     is_mat(:,:,:) = 0.0_dp
     nb_is(:) = 0
-    
+
     CALL sb_read_is(file_is,nb_step,box(:),is_mat(:,:,:),nb_is(:))
-    
+
     finish = OMP_get_wtime()
     PRINT'(A40,F14.2,A20)', "IS:", finish-start, "seconds elapsed"
 END IF
 
 ! B ----------------------------------------------- OH groups and corresponding values
 start = OMP_get_wtime()
-ALLOCATE(OHvec_mat(38,nb_o*3,nb_step))
+ALLOCATE(OHvec_mat(39,nb_o*3,nb_step))
 ALLOCATE(nb_max_OHvec(nb_step))
 
 nb_max_OHvec(:) = 0.0
@@ -272,7 +272,7 @@ DO s = 1, nb_step
 
             IF ( ( (XOh_disp_norm .LE. OHvec_mat(32,i,s)) .OR.&
             (OHvec_mat(32,i,s) .EQ. 0.0) ) .AND.&
-            (atm_mat(3,j,s) .EQ. 1.) ) THEN
+            (atm_mat(2,j,s) .EQ. 12) ) THEN
                 OHvec_mat(31,i,s) = atm_mat(1,j,s)
                 OHvec_mat(32,i,s) = XOh_disp_norm
                 OHvec_mat(33,i,s) = atm_mat(6,j,s)
@@ -280,25 +280,27 @@ DO s = 1, nb_step
 
             IF ( ( (XHo_disp_norm .LE. OHvec_mat(36,i,s)) .OR.&
             (OHvec_mat(36,i,s) .EQ. 0.0) ) .AND.&
-            (atm_mat(3,j,s) .EQ. 1.) ) THEN
+            (atm_mat(2,j,s) .EQ. 12) ) THEN
                 OHvec_mat(35,i,s) = atm_mat(1,j,s)
                 OHvec_mat(36,i,s) = XHo_disp_norm
                 OHvec_mat(37,i,s) = atm_mat(6,j,s)
             END IF
 
             IF (XOh_disp_norm .LE. hb_X1Oh_rcut) THEN
-                IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
+                IF (atm_mat(2,j,s) .EQ. 12) THEN ! CC
                     OHvec_mat(20,i,s) = 1
                     OHvec_mat(24,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
+                ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OEP
                     OHvec_mat(21,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OH
+                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OET
+                    OHvec_mat(39,i,s) = 1
+                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OH
                     OHvec_mat(22,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
+                ELSE IF (atm_mat(3,j,s) .EQ. 14) THEN ! OA
                     OHvec_mat(23,i,s) = 1
                 END IF
             ELSE IF (XOh_disp_norm .LE. hb_X2Oh_rcut) THEN
-                IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
+                IF (atm_mat(2,j,s) .EQ. 12) THEN ! CX
                     OHvec_mat(24,i,s) = 1
                 END IF
             END IF
@@ -347,25 +349,26 @@ DO s = 1, nb_step
 
             IF ( ( (XO_disp_norm .LE. atm_mat(22,i,s)) .OR.&
             (atm_mat(22,i,s) .EQ. 0.0) ) .AND.&
-            (atm_mat(3,j,s) .EQ. 1.) ) THEN
+            (atm_mat(2,j,s) .EQ. 12) ) THEN
                 atm_mat(21,i,s) = atm_mat(1,j,s)
                 atm_mat(22,i,s) = XO_disp_norm
                 atm_mat(23,i,s) = atm_mat(6,j,s)
             END IF
             IF (XO_disp_norm .LE. hb_X1O_rcut) THEN
-                IF (atm_mat(3,j,s) .EQ. 1) THEN ! C
+                IF (atm_mat(2,j,s) .EQ. 12) THEN ! CC
                     atm_mat(10,i,s) = 1
                     atm_mat(14,i,s) = 1
-
-                ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
+                ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OEP
                     atm_mat(11,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OH
+                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OET
+                    atm_mat(25,i,s) = 1
+                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OH
                     atm_mat(12,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
+                ELSE IF (atm_mat(3,j,s) .EQ. 14) THEN ! OA
                     atm_mat(13,i,s) = 1
                 END IF
             ELSE IF (XO_disp_norm .LE. hb_X2O_rcut) THEN
-                IF (atm_mat(3,j,s) .EQ. 1) THEN ! C
+                IF (atm_mat(2,j,s) .EQ. 12) THEN ! CX
                     atm_mat(14,i,s) = 1
                 END IF
             END IF
@@ -491,16 +494,25 @@ END IF
 ! X ----------------------------------------------- Write OH BOND
 start = OMP_get_wtime()
 
-OPEN(UNIT=31, FILE=suffix//"_O_hbonds.txt")
-WRITE(31, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A20,A20,A20)')&
-"Step", "Oid", "OType", "TA_O", "TD_O", "TDU_O"&
-, "cC", "cOE", "cOH", "cOA", "cCX", "dist_ISD", "dist_ISU", "dist_AS"
+OPEN(UNIT=31, FILE=suffix//"_O_HB.txt")
+WRITE(31, '(A4,1X,A10,1X,A10,1X,A6&
+            &,1X,A6,1X,A6,1X,A6&
+            &,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4&
+            &,1X,A14,1X,A14,1X,A14)')&
+    "Traj", "Step", "O_ID", "O_Type"&
+    , "TA_O", "TD_O", "TDU_O"&
+    , "cCC", "cOEP", "cOET", "cOH", "cOA", "cCX"&
+    , "dist_ISD", "dist_ISU", "dist_AS"
 DO s = 1, nb_step
     DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. 16) THEN
-            WRITE(31,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7)')&
-            s, INT(atm_mat(1,i,s)), INT(atm_mat(3,i,s)), INT(atm_mat(7,i,s))&
-            , INT(atm_mat(8,i,s)), INT(atm_mat(9,i,s)), INT(atm_mat(10,i,s)), INT(atm_mat(11,i,s))&
+            WRITE(31,'(A4,1X,I10,1X,I10,1X,I6&
+            &,1X,I6,1X,I6,1X,I6&
+            &,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4&
+            &,1X,E14.5,1X,E14.5,1X,E14.5)')&
+            suffix, s, INT(atm_mat(1,i,s)), INT(atm_mat(3,i,s)), INT(atm_mat(7,i,s))&
+            , INT(atm_mat(8,i,s)), INT(atm_mat(9,i,s)), INT(atm_mat(10,i,s))&
+            , INT(atm_mat(11,i,s)), INT(atm_mat(25,i,s))&
             , INT(atm_mat(12,i,s)), INT(atm_mat(13,i,s)), INT(atm_mat(14,i,s))&
             , (atm_mat(15,i,s)*atm_mat(16,i,s)),(atm_mat(18,i,s)*atm_mat(19,i,s))&
             , (atm_mat(22,i,s)*atm_mat(24,i,s))
@@ -509,46 +521,47 @@ DO s = 1, nb_step
 END DO
 CLOSE(UNIT=31)
 
-OPEN(UNIT=32, FILE = suffix//"_OH_hbonds.txt")
-WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A20,A20,A20,A20)')&
-    "Step","Oid", "Hid", "OType"&
+OPEN(UNIT=32, FILE = suffix//"_OH_HB.txt")
+WRITE(32, '(A4,1X,A10,1X,A10,1X,A10,1X,A6&
+            &,1X,A6,1X,A6,1X,A6&
+            &,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4&
+            &,1X,A6,1X,A6,1X,A6,1X,A14,1X,A14&
+            &,1X,A14,1X,A14&
+            &,1X,A6,1X,A6,1X,A5,1X,A6&
+            &,1X,A6,1X,A6,1X,A5,1X,A6&
+            &,1X,A6,1X,A6,1X,A5,1X,A6&
+            &,1X,A6,1X,A6,1X,A5,1X,A6)')&
+    "Traj", "Step", "O_ID", "H_ID", "O_Type"&
     , "TA_OH", "TD_OH", "TDU_OH"&
-    , "cC", "cOE", "cOH", "cOA", "cCX"&
+    , "cCC", "cOEP", "cOET", "cOH", "cOA", "cCX"&
     , "TA_O", "TD_O", "TDU_O", "dist_ISD", "dist_ISU"&
-    , "dist_AS", "dist_HAS"
+    , "dist_AS", "dist_HAS"&
+    , "O_ID", "O_Type", "r (A)", "alpha (rad)"&
+    , "O_ID", "O_Type", "r (A)", "alpha (rad)"&
+    , "O_ID", "O_Type", "r (A)", "alpha (rad)"&
+    , "O_ID", "O_Type", "r (A)", "alpha (rad)"
 DO s = 1, nb_step
     DO i = 1, nb_max_OHvec(s)
-        WRITE(32,'(I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,I10,E20.7,E20.7,E20.7,E20.7)')&
-        s, INT(OHvec_mat(1,i,s)), INT(OHvec_mat(2,i,s)), INT(OHvec_mat(3,i,s)) &
+        WRITE(32,'(A4,1X,I10,1X,I10,1X,I10,1X,I6&
+                    &,1X,I6,1X,I6,1X,I6&
+                    &,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4&
+                    &,1X,I6,1X,I6,1X,I6,1X,E14.5,1X,E14.5&
+                    &,1X,E14.5,1X,E14.5)', ADVANCE = "no")&
+        suffix, s, INT(OHvec_mat(1,i,s)), INT(OHvec_mat(2,i,s)), INT(OHvec_mat(3,i,s)) &
         , INT(OHvec_mat(14,i,s)), INT(OHvec_mat(15,i,s)), INT(OHvec_mat(16,i,s))&
-        , INT(OHvec_mat(20,i,s)), INT(OHvec_mat(21,i,s)), INT(OHvec_mat(22,i,s)), INT(OHvec_mat(23,i,s)) , INT(OHvec_mat(24,i,s))&
+        , INT(OHvec_mat(20,i,s)), INT(OHvec_mat(21,i,s)), INT(OHvec_mat(39,i,s))&
+        , INT(OHvec_mat(22,i,s)), INT(OHvec_mat(23,i,s)) , INT(OHvec_mat(24,i,s))&
         , INT(OHvec_mat(17,i,s)), INT(OHvec_mat(18,i,s)), INT(OHvec_mat(19,i,s))&
         , (OHvec_mat(25,i,s)*OHvec_mat(26,i,s)), (OHvec_mat(28,i,s)*OHvec_mat(29,i,s))&
         , (OHvec_mat(32,i,s)*OHvec_mat(34,i,s)), (OHvec_mat(36,i,s)*OHvec_mat(38,i,s))
+        DO j = 4, 19, 4
+            WRITE(32, '(1X,I6,1X,I6,1X,F5.3,1X,F6.4)', ADVANCE = "no")&
+            INT(OHvec_hbond_mat(j,i,s)),INT(OHvec_hbond_mat(j+1,i,s)), OHvec_hbond_mat(j+2,i,s), OHvec_hbond_mat(j+3,i,s)
+        END DO
+        WRITE(32,'()')
     END DO
 END DO
 CLOSE(UNIT=32)
-
-OPEN(UNIT=33, FILE = suffix//"_OH_hbonds_dist.txt")
-WRITE(33, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10,A10)')&
-    "Step","OHid","Hid", "OType"&
-    , "Oid", "OType", "r", "alpha"&
-    , "Oid", "OType", "r", "alpha"&
-    , "Oid", "OType", "r", "alpha"&
-    , "Oid", "OType", "r", "alpha"
-
-DO s = 1, nb_step
-    DO i = 1, nb_max_OHvec(s)
-        WRITE(33, '(I10,I10,I10,I10)', ADVANCE = "no")&
-            s, INT(OHvec_hbond_mat(1,i,s)), INT(OHvec_hbond_mat(3,i,s)), INT(OHvec_hbond_mat(2,i,s))
-        DO j = 4, 19, 4
-            WRITE(33, '(I10,I10,F10.3,F10.3)', ADVANCE = "no")&
-            INT(OHvec_hbond_mat(j,i,s)),INT(OHvec_hbond_mat(j+1,i,s)), OHvec_hbond_mat(j+2,i,s), OHvec_hbond_mat(j+3,i,s)
-        END DO
-        WRITE(33,'()')
-    END DO
-END DO
-CLOSE(UNIT=33)
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "O/OH Hbonds output:" ,finish-start, "seconds elapsed"
@@ -561,5 +574,6 @@ PRINT'(A100)', 'The END'
 !   ----------------------------------------------- Deallocate and exit
 IF (IS_c .EQ. 'Y') DEALLOCATE(is_mat,nb_is)
 
-DEALLOCATE(OHvec_mat, atm_mat,nb_max_OHvec)
+DEALLOCATE(OHvec_mat,atm_mat,nb_max_OHvec)
+
 END PROGRAM hbonds

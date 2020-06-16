@@ -142,7 +142,7 @@ END IF
 
 ! B ----------------------------------------------- OH groups and corresponding values
 start = OMP_get_wtime()
-ALLOCATE(OHvec_mat(39,nb_o*3,nb_step))
+ALLOCATE(OHvec_mat(40,nb_o*3,nb_step))
 
 OHvec_mat(:,:,:) = 0.0_dp
 
@@ -280,24 +280,26 @@ DO s = 1, nb_step
 
             IF ( ( (XOh_disp_norm .LE. OHvec_mat(35,i,s)) .OR.&
             (OHvec_mat(35,i,s) .EQ. 0.0) ) .AND.&
-            (atm_mat(3,j,s) .EQ. 1.) ) THEN
+            (atm_mat(2,j,s) .EQ. 12) ) THEN
                 OHvec_mat(34,i,s) = atm_mat(1,j,s)
                 OHvec_mat(35,i,s) = XOh_disp_norm
                 OHvec_mat(36,i,s) = atm_mat(6,j,s)
             END IF
             IF (XOh_disp_norm .LE. vvcf_X1Oh_rcut) THEN
-                IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
+                IF (atm_mat(2,j,s) .EQ. 12) THEN ! CC
                     OHvec_mat(23,i,s) = 1
                     OHvec_mat(27,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
+                ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OEP
                     OHvec_mat(24,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OH
+                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OET
+                    OHvec_mat(40,i,s) = 1
+                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OH
                     OHvec_mat(25,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
+                ELSE IF (atm_mat(3,j,s) .EQ. 14) THEN ! OA
                     OHvec_mat(26,i,s) = 1
                 END IF
             ELSE IF (XOh_disp_norm .LE. vvcf_X2Oh_rcut) THEN
-                IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C
+                IF (atm_mat(2,j,s) .EQ. 12) THEN ! CX
                     OHvec_mat(27,i,s) = 1
                 END IF
             END IF
@@ -371,7 +373,6 @@ IF (IS_c .EQ. 'Y') DEALLOCATE(is_mat, nb_is)
 
 ! H ----------------------------------------------- VVAF/VVCF
 start = OMP_get_wtime()
-
 mcsb = INT(mctb / timestep_fs) + 1
 
 ALLOCATE(vvcf_xxz(mcs+1))
@@ -380,9 +381,9 @@ timings(:) = 0.0_dp
 vvcf_xxz(:) = 0.0_dp
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) DEFAULT(NONE) SHARED(vvcf_xxz, mcsb, mcs, OHvec_mat, nb_o, box, timings, nb_step)&
-!$OMP SHARED(layers_s, hbonds_s, intracorr, autocorr, IS_c, layer_up, layer_down, timestep_fs, vvcf_rcut)&
+!$OMP SHARED(layers_s, hbonds_s, intracorr, autocorr, IS_c, IS_ud, layer_up, layer_down, timestep_fs, vvcf_rcut)&
 !$OMP SHARED(water_only, close_c_only, up_down_only, close_gl_only, close_gol_only, close_ol_only, hbonds_double)&
-!$OMP SHARED(dcle, dcgt, acle, acgt, dcle2, dcgt2, acle2, acgt2)&
+!$OMP SHARED(dcle, dcgt, acle, acgt, dcle2, dcgt2, acle2, acgt2, vvcf_X2Oh_rcut)&
 !$OMP PRIVATE(t, s, i, j, l, v)&
 !$OMP PRIVATE(tij_vec, trij, OH_vel_vec, OH_disp_vec, start_i, finish_i, keep, vvcf_xxz_t, timings_t)
 DO t = mcsb, mcs+1
@@ -400,10 +401,10 @@ DO t = mcsb, mcs+1
                 END IF
 
                 IF ( (water_only .EQ. "Y") .AND.& ! Select water only
-                (OHvec_mat(3,i,s) .NE. 13) ) THEN
+                (OHvec_mat(3,i,s) .NE. 19) ) THEN
                     CYCLE H1
-                ELSE IF ( (water_only .EQ. "E") .AND.& ! Exclude water
-                (OHvec_mat(3,i,s) .EQ. 13) ) THEN
+                ELSE IF ( (water_only .EQ. "E") .AND.& ! Only GO groups
+                ( (OHvec_mat(3,i,s) .NE. 12) .OR. (OHvec_mat(3,i,s) .NE. 12) ) ) THEN
                     CYCLE H1
                 END IF
 
@@ -412,9 +413,18 @@ DO t = mcsb, mcs+1
                     CYCLE H1
                 END IF
 
+                IF ( (IS_ud .EQ. "D") .AND.&
+                 ( (OHvec_mat(28,i,s) .GT. vvcf_X2Oh_rcut) ) ) THEN
+                    CYCLE H1
+                ELSE IF ( (IS_ud .EQ. "U") .AND.&
+                    ( (OHvec_mat(31,i,s) .GT. vvcf_X2Oh_rcut) ) ) THEN
+                    CYCLE H1
+                END IF
+
                 IF ( (close_gl_only .EQ. "Y") .AND. (&
                 (OHvec_mat(23,i,s) .EQ. 0) .OR.&
                 ( (OHvec_mat(24,i,s) .EQ. 1) .OR.&
+                (OHvec_mat(40,i,s) .EQ. 1) .OR.&
                 (OHvec_mat(25,i,s) .EQ. 1) .OR.&
                 (OHvec_mat(26,i,s) .EQ. 1) ) ) )THEN
                     CYCLE H1
@@ -423,6 +433,7 @@ DO t = mcsb, mcs+1
                 IF ( (close_gol_only .EQ. "Y") .AND. (&
                 (OHvec_mat(23,i,s) .EQ. 0) .OR.&
                 ( (OHvec_mat(24,i,s) .EQ. 0) .OR.&
+                (OHvec_mat(40,i,s) .EQ. 0) .OR.&
                 (OHvec_mat(25,i,s) .EQ. 0) .OR.&
                 (OHvec_mat(26,i,s) .EQ. 0) ) ) )THEN
                     CYCLE H1
@@ -431,6 +442,7 @@ DO t = mcsb, mcs+1
                 IF ( (close_ol_only .EQ. "Y") .AND. (&
                 (OHvec_mat(23,i,s) .EQ. 1) .OR.&
                 ( (OHvec_mat(24,i,s) .EQ. 0) .OR.&
+                (OHvec_mat(40,i,s) .EQ. 0) .OR.&
                 (OHvec_mat(25,i,s) .EQ. 0) .OR.&
                 (OHvec_mat(26,i,s) .EQ. 0) ) ) )THEN
                     CYCLE H1
@@ -446,9 +458,16 @@ DO t = mcsb, mcs+1
 
                 IF ((layers_s .EQ. "Y") .AND. (IS_c .EQ. 'Y' )) THEN
 
-                    IF ( (OHvec_mat(28,i,s)*OHvec_mat(29,i,s) .GT. layer_up) .OR.&
-                    (OHvec_mat(28,i,s)*OHvec_mat(29,i,s) .LE. layer_down)) THEN ! Surface distance (go)
-                        CYCLE H1
+                    IF (IS_ud .EQ. "U") THEN
+                        IF ( (OHvec_mat(31,i,s)*OHvec_mat(32,i,s) .GT. layer_up) .OR.&
+                        (OHvec_mat(31,i,s)*OHvec_mat(32,i,s) .LE. layer_down)) THEN ! Surface distance (U)
+                            CYCLE H1
+                        END IF
+                    ELSE IF (IS_ud .EQ. "D") THEN
+                        IF ( (OHvec_mat(28,i,s)*OHvec_mat(29,i,s) .GT. layer_up) .OR.&
+                        (OHvec_mat(28,i,s)*OHvec_mat(29,i,s) .LE. layer_down)) THEN ! Surface distance (D)
+                            CYCLE H1
+                        END IF
                     END IF
 
                 END IF
@@ -570,15 +589,15 @@ END IF
 start = OMP_get_wtime()
 
 IF (autocorr .EQ. "Y") THEN
-    OPEN(UNIT=51, FILE=suffix//"_vvaf_xxz.txt")
-    WRITE(51,'(A20,A20)') "Time (fs)", "VVAF_xxz (Å2.fs2)"
+    OPEN(UNIT=51, FILE=suffix//"_vvaf_xxz_"//IS_ud//".txt")
+    WRITE(51,'(A20,1X,A20)') "Time (fs)", "VVAF_xxz (A2.fs2)"
 ELSE
-    OPEN(UNIT=51, FILE=suffix//"_vvcf_xxz.txt")
-    WRITE(51,'(A20,A20)') "Time (fs)", "VVCF_xxz (Å2.fs2)"
+    OPEN(UNIT=51, FILE=suffix//"_vvcf_xxz_"//IS_ud//".txt")
+    WRITE(51,'(A20,1X,A20)') "Time (fs)", "VVCF_xxz (A2.fs2)"
 END IF
-    DO t = mcsb, mcs+1
-        WRITE(51,'(E20.7,E20.7)') (t-1)*timestep_fs, vvcf_xxz(t)
-    END DO
+DO t = mcsb, mcs+1
+    WRITE(51,'(E20.10,1X,E20.10)') (t-1)*timestep_fs, vvcf_xxz(t)
+END DO
 CLOSE(UNIT=51)
 
 finish = OMP_get_wtime()

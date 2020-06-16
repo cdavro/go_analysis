@@ -27,8 +27,9 @@ REAL(dp)                    :: ylo=0.0_dp, yhi=0.0_dp
 REAL(dp)                    :: zlo=0.0_dp, zhi=0.0_dp
 REAL(dp)                    :: box(3)
 ! Surface related
-CHARACTER(LEN=1)            :: IS_c
-CHARACTER(LEN=1)            :: AS_c
+CHARACTER(LEN=1)            :: IS_c="N"
+CHARACTER(LEN=1)            :: AS_c="N"
+CHARACTER(LEN=1)            :: IS_ud="A"
 ! Assign
 CHARACTER(LEN=3)            :: assign_center_name
 REAL(dp)                    :: assign_HO_rcut=1.30, assign_HC_rcut=1.30, assign_HH_rcut=1.30
@@ -45,7 +46,6 @@ REAL(dp)                    :: L0_down, L0_up, L1_down, L1_up
 REAL(dp)                    :: L2_down, L2_up, L3_down, L3_up
 ! Fluctuation
 INTEGER                     :: fluct_center_atmnb
-REAL(dp)                    :: fluct_OpC_rcut
 ! Water Angle
 REAL(dp)                    :: wa_X1Owat_rcut, wa_X2Owat_rcut
 INTEGER                     :: wa_AS_center_atmnb
@@ -99,7 +99,7 @@ SUBROUTINE READINPUTSUB(input_file)
                     PRINT'(A50,A64)', 'XYZ velocities file:', ADJUSTR(file_vel)
                 CASE ('file_is')
                     READ(value, * , IOSTAT=iostatus) file_is
-                    PRINT'(A50,A64)', 'XYZ velocities file:', ADJUSTR(file_is)
+                    PRINT'(A50,A64)', 'XYZ IS file:', ADJUSTR(file_is)
                 CASE ('nb_atm')
                     READ(value, * , IOSTAT=iostatus) nb_atm
                     PRINT'(A50,I64)', 'Number of Atoms: ', nb_atm
@@ -109,6 +109,9 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE('IS_c')
                     READ(value, * , IOSTAT=iostatus) IS_c
                     PRINT'(A50,A64)', 'IS_c:', IS_c
+                CASE('IS_ud')
+                    READ(value, * , IOSTAT=iostatus) IS_ud
+                    PRINT'(A50,A64)', 'IS_ud:', IS_ud
                 CASE('AS_c')
                     READ(value, * , IOSTAT=iostatus) AS_c
                     PRINT'(A50,A64)', 'AS_c:', AS_c
@@ -175,9 +178,6 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('fluct_center_atmnb')
                     READ(value, * , IOSTAT=iostatus) fluct_center_atmnb
                     PRINT'(A50,I64)', 'fluct_center_atmnb: ', fluct_center_atmnb
-                CASE ('fluct_OpC_rcut')
-                    READ(value, * , IOSTAT=iostatus) fluct_OpC_rcut
-                    PRINT'(A50,E64.10)', 'fluct_OpC_rcut: ', fluct_OpC_rcut
 ! Water Angle
                 CASE ('wa_AS_center_atmnb')
                     READ(value, * , IOSTAT=iostatus) wa_AS_center_atmnb

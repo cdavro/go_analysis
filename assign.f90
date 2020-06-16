@@ -35,7 +35,7 @@ INTEGER, ALLOCATABLE            :: nb_oxygen_group(:), nb_ether(:)
 REAL(dp), ALLOCATABLE           :: conn_mat(:,:,:)
 
 !   ----------------------------------------------- Counters
-INTEGER                         :: i, s, k, j, l
+INTEGER                         :: s, i, j, k, l
 INTEGER                         :: CAC
 
 !   -----------------------------------------------
@@ -176,12 +176,12 @@ ALLOCATE(nb_ether(nb_step))
 ALLOCATE(nb_oxygen_group(nb_step))
 ALLOCATE(temp_atm_type(nb_atm))
 
-!atm_mat(9,:,:) = 0 ! NbH 
+!atm_mat(9,:,:) = 0 ! NbH
 !atm_mat(10,:,:) = 0 ! NbC
 !atm_mat(11,:,:) = 0 ! NbO
 !atm_mat(12,:,:) = 0 ! NbC
 !atm_mat(13,:,:) = 0 ! NbO
-!atm_mat(14,:,:) = 0 ! NbH 
+!atm_mat(14,:,:) = 0 ! NbH
 conn_mat(:,:,:) = 0.0_dp
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, nb_atm, nb_step, box,conn_mat, atm_type)&
 !$OMP SHARED(assign_HO_rcut, assign_OC_rcut, assign_OO_rcut)&
@@ -199,7 +199,7 @@ DO s = 1, nb_step
             END DO
             ij_disp_norm = NORM2(ij_disp_vec)
             IF ( ij_disp_norm .LT. 2.00 ) THEN
-                IF (atm_mat(2,i,s) .EQ. 16) THEN 
+                IF (atm_mat(2,i,s) .EQ. 16) THEN
                     IF (atm_mat(2,j,s) .EQ. 1) THEN
                         IF(ij_disp_norm .LE. assign_HO_rcut) THEN
                             atm_mat(9,i,s) = atm_mat(9,i,s) + 1
@@ -314,16 +314,17 @@ DO s = 1, nb_step
     END DO
 
     DO i = 1, nb_atm
-        !IF (conn_mat(2,i,s) .EQ. 12) THEN
-            DO j = 4, 18, 3
-                IF (conn_mat(j,i,s) .EQ. 12) THEN
-                    atm_mat(12,i,s) = atm_mat(12,i,s) + 1
-                ELSE IF (conn_mat(j,i,s) .EQ. 16) THEN
-                    atm_mat(13,i,s) = atm_mat(13,i,s) + 1
-                ELSE IF (conn_mat(j,i,s) .EQ. 1) THEN
-                    atm_mat(14,i,s) = atm_mat(14,i,s) + 1
-                END IF
-            END DO
+        DO j = 4, 18, 3
+            IF (conn_mat(j,i,s) .EQ. 12) THEN
+                atm_mat(12,i,s) = atm_mat(12,i,s) + 1
+            ELSE IF (conn_mat(j,i,s) .EQ. 16) THEN
+                atm_mat(13,i,s) = atm_mat(13,i,s) + 1
+            ELSE IF (conn_mat(j,i,s) .EQ. 1) THEN
+                atm_mat(14,i,s) = atm_mat(14,i,s) + 1
+            END IF
+        END DO
+    END DO
+    DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. 16) THEN
             IF ( (atm_mat(12,i,s) .EQ. 0) .AND. (atm_mat(13,i,s) .EQ. 0) .AND. (atm_mat(14,i,s) .EQ. 2)) THEN
                 atm_type(i,s) = "OW"
@@ -337,7 +338,7 @@ DO s = 1, nb_step
                 atm_type(i,s) = "OA"
             ELSE IF ( (atm_mat(12,i,s) .EQ. 2) .AND. (atm_mat(13,i,s) .EQ. 0) .AND. (atm_mat(14,i,s) .EQ. 0)) THEN
                 atm_type(i,s) = "OE"
-            ELSE 
+            ELSE
                 atm_type(i,s) = "OX"
             END IF
         ELSE IF (atm_mat(2,i,s) .EQ. 12) THEN
@@ -351,9 +352,9 @@ DO s = 1, nb_step
                 atm_type(i,s) = "CX"
             END IF
         ELSE IF (atm_mat(2,i,s) .EQ. 1) THEN
-            IF ((atm_mat(12,i,s) .EQ. 0) .AND. (atm_mat(13,i,s) .EQ. 1) .AND. (atm_mat(14,i,s) .EQ.0)) THEN
+            IF ((atm_mat(12,i,s) .EQ. 0) .AND. (atm_mat(13,i,s) .EQ. 1) .AND. (atm_mat(14,i,s) .EQ. 0)) THEN
                 atm_type(i,s) = "H1"
-            ELSE IF ((atm_mat(12,i,s) .EQ. 0) .AND. (atm_mat(13,i,s) .EQ. 2) .AND. (atm_mat(14,i,s) .EQ.0)) THEN
+            ELSE IF ((atm_mat(12,i,s) .EQ. 0) .AND. (atm_mat(13,i,s) .EQ. 2) .AND. (atm_mat(14,i,s) .EQ. 0)) THEN
                 atm_type(i,s) = "H2"
             ELSE
                 atm_type(i,s) = "HX"
@@ -369,7 +370,6 @@ DO s = 1, nb_step
             END IF
         END DO
         IF (k .EQ. nb_atm) THEN
-            !PRINT'(A40,I3,A20)', "Topology converged in:", l-1, "loop(s)."
             EXIT
         END IF
         IF (l .EQ. 100) THEN
@@ -453,89 +453,71 @@ DO s = 1, nb_step
                 END DO
                 IF ((temp_dist2(1) .EQ. 0) .OR.&
                 (temp_dist2(2) .EQ. 0)) THEN
+                    PRINT*,"WIERD",s,i
                     CYCLE AS
                 END IF
+                k=0
                 IF (temp_dist2(2) .LE. temp_dist2(1)) THEN
-                    IF (atm_type(temp_id2(2),s) .EQ. "OM") THEN
-                        atm_type(temp_id2(2),s) = "OW"
-                        atm_type(i,s) = "HW"
-                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OW") THEN
-                        atm_type(temp_id2(2),s) = "OP"
-                        atm_type(i,s) = "HP"
-                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OA") THEN
-                        atm_type(temp_id2(2),s) = "OH"
-                        atm_type(i,s) = "HO"
-                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OA2") THEN
-                        atm_type(temp_id2(2),s) = "OH2"
-                        atm_type(i,s) = "HO"
-                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OA3") THEN
-                        atm_type(temp_id2(2),s) = "OH3"
-                        atm_type(i,s) = "HO"
-                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OP") THEN
-                        atm_type(temp_id2(2),s) = "OP"
-                        atm_type(i,s) = "HP"
-                        print*, "NOT GOOD", atm_type(i,s)
-                    END IF
-                    IF (atm_type(temp_id2(1),s) .EQ. "OM") THEN
-                        atm_type(temp_id2(1),s) = "OM"
-                        atm_type(i,s) = "HM"
-                        print*, "NOT GOOD", atm_type(i,s)
-                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OW") THEN
-                        atm_type(temp_id2(1),s) = "OM"
-                        atm_type(i,s) = "HM"
-                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OA") THEN
-                        atm_type(temp_id2(1),s) = "OA"
-                        print*, "NOT GOOD", atm_type(i,s)
-                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OA2") THEN
-                        atm_type(temp_id2(1),s) = "OA2"
-                        print*, "NOT GOOD", atm_type(i,s)
-                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OA3") THEN
-                        atm_type(temp_id2(1),s) = "OA3"
-                        print*, "NOT GOOD", atm_type(i,s)
-                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OP") THEN
-                        atm_type(temp_id2(1),s) = "OW"
-                        atm_type(i,s) = "HW"
-                    END IF
+                    k=2
                 ELSE
-                    IF (atm_type(temp_id2(1),s) .EQ. "OM") THEN
-                        atm_type(temp_id2(1),s) = "OW"
+                    k=1
+                END IF
+                IF ((k .EQ. 2) .OR. (k .EQ. 1)) THEN
+                    IF (atm_type(temp_id2(k),s) .EQ. "OH") THEN
+                        atm_type(temp_id2(k),s) = "OH"
+                        atm_type(i,s) = "HO"
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OH2") THEN
+                        atm_type(temp_id2(k),s) = "OH2"
+                        atm_type(i,s) = "HO"
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OH3") THEN
+                        atm_type(temp_id2(k),s) = "OH3"
+                        atm_type(i,s) = "HO"
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OM") THEN
+                        atm_type(temp_id2(k),s) = "OM"
+                        atm_type(i,s) = "HM"
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OW") THEN
+                        atm_type(temp_id2(k),s) = "OW"
                         atm_type(i,s) = "HW"
-                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OW") THEN
-                        atm_type(temp_id2(1),s) = "OP"
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OP") THEN
+                        atm_type(temp_id2(k),s) = "OP"
                         atm_type(i,s) = "HP"
-                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OA") THEN
-                        atm_type(temp_id2(1),s) = "OH"
-                        atm_type(i,s) = "HO"
-                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OA2") THEN
-                        atm_type(temp_id2(1),s) = "OH2"
-                        atm_type(i,s) = "HO"
-                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OA3") THEN
-                        atm_type(temp_id2(1),s) = "OH3"
-                        atm_type(i,s) = "HO"
-                    ELSE IF (atm_type(temp_id2(1),s) .EQ. "OP") THEN
-                        atm_type(temp_id2(1),s) = "OP"
-                        atm_type(i,s) = "HP"
-                        print*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OA") THEN
+                        PRINT*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OA2") THEN
+                        PRINT*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OA3") THEN
+                        PRINT*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OE") THEN
+                        PRINT*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OEP") THEN
+                        PRINT*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OET") THEN
+                        PRINT*, "NOT GOOD", atm_type(i,s)
                     END IF
-                    IF (atm_type(temp_id2(2),s) .EQ. "OM") THEN
-                        atm_type(temp_id2(2),s) = "OM"
-                        atm_type(i,s) = "HM"
-                        print*, "NOT GOOD", atm_type(i,s)
-                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OW") THEN
-                        atm_type(temp_id2(2),s) = "OM"
-                        atm_type(i,s) = "HM"
-                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OA") THEN
-                        atm_type(temp_id2(2),s) = "OA"
-                        print*, "NOT GOOD", atm_type(i,s)
-                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OA2") THEN
-                        atm_type(temp_id2(2),s) = "OA2"
-                        print*, "NOT GOOD", atm_type(i,s)
-                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OA3") THEN
-                        atm_type(temp_id2(2),s) = "OA3"
-                        print*, "NOT GOOD", atm_type(i,s)
-                    ELSE IF (atm_type(temp_id2(2),s) .EQ. "OP") THEN
-                        atm_type(temp_id2(2),s) = "OW"
-                        atm_type(i,s) = "HW"
+                    IF (atm_type(temp_id2(k),s) .EQ. "OH") THEN
+                        atm_type(temp_id2(k),s) = "OA"
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OH2") THEN
+                        atm_type(temp_id2(k),s) = "OA2"
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OH3") THEN
+                        atm_type(temp_id2(k),s) = "OA3"
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OW") THEN
+                        atm_type(temp_id2(k),s) = "OM"
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OP") THEN
+                        atm_type(temp_id2(k),s) = "OW"
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OA") THEN
+                        PRINT*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OA2") THEN
+                        PRINT*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OA3") THEN
+                        PRINT*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OE") THEN
+                        PRINT*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OEP") THEN
+                        PRINT*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OET") THEN
+                        PRINT*, "NOT GOOD", atm_type(i,s)
+                    ELSE IF (atm_type(temp_id2(k),s) .EQ. "OM") THEN
+                        PRINT*, "NOT GOOD", atm_type(i,s)
                     END IF
                 END IF
             END IF
@@ -587,8 +569,8 @@ DO s = 1, nb_step
     WRITE(40,'(A10,I10)') "Step nb:", s
     IF (file_vel .NE. '0') WRITE(41,'(A10,I10)') "Step nb:", s
     DO i = 1, nb_atm
-        WRITE(40,'(A3,1X,E14.5,E14.5,E14.5)') ADJUSTL(atm_type(i,s)), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
-        IF (file_vel .NE. '0') WRITE(41,'(A3,1X,E14.5,E14.5,E14.5)') ADJUSTL(atm_type(i,s))&
+        WRITE(40,'(A3,1X,E14.5,1X,E14.5,1X,E14.5)') ADJUSTL(atm_type(i,s)), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
+        IF (file_vel .NE. '0') WRITE(41,'(A3,1X,E14.5,1X,E14.5,1X,E14.5)') ADJUSTL(atm_type(i,s))&
         , atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
     END DO
 END DO
@@ -625,4 +607,5 @@ PRINT'(A100)', 'The END'
 
 !   ----------------------------------------------- Deallocate and exit
 DEALLOCATE(atm_name,atm_mat,conn_mat)
+
 END PROGRAM assign

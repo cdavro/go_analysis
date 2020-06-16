@@ -32,7 +32,7 @@ REAL(dp)                        :: r
 INTEGER                         :: count_dens_down, count_dens_up, count_dens_down_avgz_c
 
 !   ----------------------------------------------- Counters
-INTEGER                         :: i, s, k, j, o
+INTEGER                         :: s, i, j, k, o
 
 !   -----------------------------------------------
 PRINT'(A100)','--------------------------------------------------'&
@@ -168,7 +168,7 @@ DO s = 1, nb_step
         count_dens_down = 0
         count_dens_up = 0
     C1:DO i = 1, nb_atm
-            IF (atm_mat(3,i,s) .NE. 13) THEN
+            IF (atm_mat(3,i,s) .NE. 19) THEN
                 CYCLE C1
             END IF
             IF ( (atm_mat(7,i,s)*atm_mat(8,i,s) .GE. r) .AND. (atm_mat(7,i,s)*atm_mat(8,i,s) .LT. r+dens_dr) ) THEN
@@ -188,15 +188,14 @@ END DO
 ALLOCATE(avg_dens_down(dens_step))
 avg_dens_down(:) = 0.0_dp
 ALLOCATE(avg_dens_up(dens_step))
-avg_dens_up(:) = 0.0_dp
 
 DO j = 1, dens_step
     avg_dens_down(j) = SUM(dens_down(j,:)) / nb_step
     avg_dens_up(j) = SUM(dens_up(j,:)) / nb_step
 END DO
 
-OPEN(UNIT=41, FILE = suffix//"_density_profile_ISdown_step.txt")
-OPEN(UNIT=42, FILE = suffix//"_density_profile_ISup_step.txt")
+OPEN(UNIT=41, FILE = suffix//"_density_profile_IS_D_step.txt")
+OPEN(UNIT=42, FILE = suffix//"_density_profile_IS_U_step.txt")
 WRITE(41, '(A4,1X,A10,1X,A10,1X,A10,1X,A14)') "Traj", "Step", ">= r (A)", "< r (A)", "ρ/ρ(bulk)"
 WRITE(42, '(A4,1X,A10,1X,A10,1X,A10,1X,A14)') "Traj", "Step", ">= r (A)", "< r (A)", "ρ/ρ(bulk)"
 DO s = 1, nb_step
@@ -212,8 +211,8 @@ CLOSE(UNIT=42)
 
 DEALLOCATE(dens_down,dens_up)
 
-OPEN(UNIT=43, FILE = suffix//"_density_profile_ISdown_avg.txt")
-OPEN(UNIT=44, FILE = suffix//"_density_profile_ISup_avg.txt")
+OPEN(UNIT=43, FILE = suffix//"_density_profile_IS_D_avg.txt")
+OPEN(UNIT=44, FILE = suffix//"_density_profile_IS_U_avg.txt")
 
 
 WRITE(43, '(A4,1X,A10,1X,A10,1X,A14)') 'Traj', ">= r (A)", "< r (A)", "ρ/ρ(bulk)"
@@ -260,7 +259,7 @@ DO s = 1, nb_step
     DO j = 1, dens_step
         count_dens_down_avgz_c = 0
     D1:DO i = 1, nb_atm
-            IF (atm_mat(3,i,s) .NE. 13) THEN
+            IF (atm_mat(3,i,s) .NE. 19) THEN
                 CYCLE D1
             END IF
             IF ( ((atm_mat(6,i,s) - avg_z(s)) .GE. r) .AND. ( (atm_mat(6,i,s) - avg_z(s)) .LT. r+dens_dr)) THEN

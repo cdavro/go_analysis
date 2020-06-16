@@ -21,12 +21,10 @@ INTEGER                         :: CAC
 
 !   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:)
-REAL(dp)                        :: avg_z, CO_disp_vec(3), CO_disp_norm
+REAL(dp)                        :: avg_z
 
 !   ----------------------------------------------- Counters
-INTEGER                         :: i, s, o ,j, k
-INTEGER, ALLOCATABLE            :: error_c(:)
-INTEGER                         :: error_t
+INTEGER                         :: s, i, o
 
 !   -----------------------------------------------
 PRINT'(A100)','--------------------------------------------------'&
@@ -71,14 +69,11 @@ PRINT'(A40,F14.2,A20)', "Positions:", finish-start, "seconds elapsed"
 
 ! D -----------------------------------------------
 start = OMP_get_wtime()
-ALLOCATE(error_c(nb_step))
-error_t = 0
-error_c(:) = 0
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, nb_step, nb_atm)&
-!$OMP SHARED(fluct_center_atmnb, error_c, fluct_OpC_rcut)&
-!$OMP PRIVATE(CO_disp_norm, CO_disp_vec, avg_z)&
-!$OMP PRIVATE(s, i, o, j)
+!$OMP SHARED(fluct_center_atmnb)&
+!$OMP PRIVATE(avg_z)&
+!$OMP PRIVATE(s, i, o)
 DO s = 1, nb_step
     o = 0
     avg_z = 0.0_dp
@@ -89,69 +84,27 @@ DO s = 1, nb_step
         END IF
     END DO
     avg_z = avg_z / o
-    D1:DO i = 1, nb_atm
+    DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. fluct_center_atmnb) THEN
             atm_mat(7,i,s) = atm_mat(6,i,s) - avg_z
-         D2:DO j = 1, nb_atm
-                IF (atm_mat(3,j,s) .EQ. 10) THEN
-                    DO k=1,3
-                        CO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
-                        CO_disp_vec(k) = CO_disp_vec(k) - box(k) * ANINT(CO_disp_vec(k)/box(k))
-                    END DO
-                    CO_disp_norm = NORM2(CO_disp_vec)
-                    IF (CO_disp_norm .LT. fluct_OpC_rcut) THEN
-                        IF (atm_mat(8,i,s) .NE. 0.0) THEN
-                            error_c(s) = error_c(s) + 1
-                        END IF
-                        atm_mat(8,i,s) = 10
-                    END IF
-                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN
-                    DO k=1,3
-                        CO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
-                        CO_disp_vec(k) = CO_disp_vec(k) - box(k) * ANINT(CO_disp_vec(k)/box(k))
-                    END DO
-                    CO_disp_norm = NORM2(CO_disp_vec)
-                    IF (CO_disp_norm .LT. fluct_OpC_rcut) THEN
-                        IF (atm_mat(8,i,s) .NE. 0.0) THEN
-                            error_c(s) = error_c(s) + 1
-                        END IF
-                        atm_mat(8,i,s) = 11
-                    END IF
-                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN
-                    DO k=1,3
-                        CO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
-                        CO_disp_vec(k) = CO_disp_vec(k) - box(k) * ANINT(CO_disp_vec(k)/box(k))
-                    END DO
-                    CO_disp_norm = NORM2(CO_disp_vec)
-                    IF (CO_disp_norm .LT. fluct_OpC_rcut) THEN
-                        IF (atm_mat(8,i,s) .NE. 0.0) THEN
-                            error_c(s) = error_c(s) + 1
-                        END IF
-                        atm_mat(8,i,s) = 12
-                    END IF
-                END IF
-            END DO D2
         END IF
-    END DO D1
+    END DO
 END DO
 !$OMP END PARALLEL DO
 
-error_t = SUM(error_c(:))
-
-OPEN(UNIT=41, FILE = suffix//"_fluct_avgz_c.txt")
-WRITE(41, '(A10,A10,A20,A10)') "Step", "id", "z_fluct", "type"
+OPEN(UNIT=41, FILE = suffix//"_fluct_avgZC.txt")
+WRITE(41, '(A4,1X,A10,1X,A10,1X,A6,1X,A14)') "Traj", "Step", "C_ID", "C_Type", "zFluct"
 DO s = 1, nb_step
     DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. fluct_center_atmnb) THEN
-            WRITE(41, '(I10,I10,E20.7,I10)') s, INT(atm_mat(1,i,s))&
-            , atm_mat(7,i,s), INT(atm_mat(8,i,s))
+            WRITE(41, '(A4,1X,I10,1X,I10,1X,I6,1X,E14.5)') suffix, s, INT(atm_mat(1,i,s))&
+            , INT(atm_mat(3,i,s)) , atm_mat(7,i,s)
         END IF
     END DO
 END DO
 CLOSE(UNIT=41)
 
 finish = OMP_get_wtime()
-PRINT'(A40,I10)', "Errors:", error_t
 PRINT'(A40,F14.2,A20)', "Fluctuation profiles:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- End

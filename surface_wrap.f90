@@ -23,7 +23,7 @@ INTEGER, ALLOCATABLE            :: nb_pt_is(:)
 INTEGER                         :: nb_line_is, nb_max_is
 
 !   ----------------------------------------------- Counters
-INTEGER                         :: i, s
+INTEGER                         :: s, i
 CHARACTER(LEN=64)               :: dummy
 INTEGER                         :: CAC
 
@@ -79,7 +79,7 @@ finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "IS grid:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- Allocate function for reading files
-ALLOCATE(is_mat(3,nb_max_is,nb_step))
+ALLOCATE(is_mat(4,nb_max_is,nb_step))
 ALLOCATE(nb_pt_is(nb_step))
 is_mat(:,:,:) = 0.0_dp
 nb_pt_is(:) = 0
@@ -92,7 +92,7 @@ DO s = 1, nb_step
     READ(20, *) nb_pt_is(s)
     READ(20, *) dummy, dummy
     DO i = 1, nb_pt_is(s)
-        READ(20, *) dummy, is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s), dummy, dummy
+        READ(20, *) dummy, is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s), is_mat(4,i,s), dummy
     END DO
 END DO
 CLOSE(UNIT=20)
@@ -114,7 +114,13 @@ DO s = 1, nb_step
     WRITE(40,'(I10)') nb_pt_is(s)
     WRITE(40,'(A10,I10)') "Step nb:", s
     DO i = 1, nb_pt_is(s)
-        WRITE(40, '(A10,E20.7,E20.7,E20.7)') "X", is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
+        IF (is_mat(4,i,s) .GT. 0.0) THEN
+            WRITE(40, '(A4,1X,E14.5,1X,E14.5,1X,E14.5)') "XD", is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
+        ELSE IF (is_mat(4,i,s) .LT. 0.0) THEN
+            WRITE(40, '(A4,1X,E14.5,1X,E14.5,1X,E14.5)') "XU", is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
+        ELSE
+            WRITE(40, '(A4,1X,E14.5,1X,E14.5,1X,E14.5)') "X0", is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
+        END IF
     END DO
 END DO
 CLOSE(UNIT=40)
@@ -129,4 +135,5 @@ PRINT'(A100)', 'The END'
 
 !   ----------------------------------------------- Deallocate and exit
 DEALLOCATE(is_mat,nb_pt_is)
+
 END PROGRAM surface_wrap

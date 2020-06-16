@@ -33,7 +33,7 @@ INTEGER                         :: nb_h
 
 !   ----------------------------------------------- Counters
 INTEGER                         :: i, s, k, j
-INTEGER                         :: count_L0, count_L1, count_L2, count_L3
+INTEGER                         :: count_L0, count_L1, count_L2, count_L3, count_all
 
 !   -----------------------------------------------
 PRINT'(A100)','--------------------------------------------------'&
@@ -83,20 +83,20 @@ IF (IS_c .EQ. 'Y' ) THEN
     start = OMP_get_wtime()
 
     CALL sb_count_is(file_is,nb_step,nb_max_is)
-    
+
     finish = OMP_get_wtime()
     PRINT'(A40,F14.2,A20)', "IS grid:", finish-start, "seconds elapsed"
-    
+
     ! A ----------------------------------------------- Read IS
     start = OMP_get_wtime()
-    
+
     ALLOCATE(is_mat(5,nb_max_is,nb_step))
     ALLOCATE(nb_is(nb_step))
     is_mat(:,:,:) = 0.0_dp
     nb_is(:) = 0
-    
+
     CALL sb_read_is(file_is,nb_step,box(:),is_mat(:,:,:),nb_is(:))
-    
+
     finish = OMP_get_wtime()
     PRINT'(A40,F14.2,A20)', "IS:", finish-start, "seconds elapsed"
 END IF
@@ -111,7 +111,7 @@ IF (IS_c .EQ. 'Y' ) THEN
     !$OMP PRIVATE(SpO_disp_vec, SpO_disp_norm)
     DO s = 1, nb_step
         DO i = 1, nb_atm
-            IF (atm_mat(3,i,s) .EQ. 13) THEN
+            IF (atm_mat(3,i,s) .EQ. 19) THEN
                 DO j = 1, nb_is(s)
                     IF (is_mat(4,j,s) .EQ. 1) THEN
                         DO k = 1, 3
@@ -159,59 +159,78 @@ END IF
 start = OMP_get_wtime()
 
 OPEN(UNIT=40, FILE = suffix//"_order.xyz")
-OPEN(UNIT=41, FILE = suffix//"_cell.cell")
-OPEN(UNIT=42, FILE = suffix//"_count.txt")
+OPEN(UNIT=41, FILE = suffix//"_order.cell")
+OPEN(UNIT=42, FILE = suffix//"_order_count.txt")
+WRITE(42,'(A4,1X,A10,1X,A10,1X,A10,1X,A10,1X,A10,1X,A10,1X,A10)') "Traj", "Step", "L0 Count"&
+, "L1 Count", "L2 Count", "L3 Count", "LA Count", "TW Count"
 DO s = 1, nb_step
     WRITE(40,'(I10)') nb_atm-nb_h
-    WRITE(40,'(F5.2,A1,F5.2,A1,F5.2)') box(1)," ", box(2)," ", box(3)
-    WRITE(41,'(F5.2,A1,F5.2,A1,F5.2)') box(1)," ", box(2)," ", box(3)
+    WRITE(40,'(F7.4,1X,F7.4,1X,F7.4)') box(1), box(2), box(3)
+    WRITE(41,'(F7.4,1X,F7.4,1X,F7.4)') box(1), box(2), box(3)
     count_L0 = 0
     count_L1 = 0
     count_L2 = 0
     count_L3 = 0
+    count_all = 0
     Z1:DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. 1) CYCLE Z1
         IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 1) ) THEN
-            type = "C"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 28) .AND. (atm_mat(3,i,s) .EQ. 2) ) THEN
-            type ="Si"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 28) .AND. (atm_mat(3,i,s) .EQ. 1) ) THEN
-            type ="SiF"
+            type = "CC"
+        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 3) ) THEN
+            type = "C2O"
+        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 4) ) THEN
+            type = "C3O"
+        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 5) ) THEN
+            type = "C2A"
+        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 6) ) THEN
+            type = "C3A"
+        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 7) ) THEN
+            type = "C2E"
+        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 8) ) THEN
+            type = "C3E"
         ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 10) ) THEN
-            type = "OE"
+            type = "OEP"
         ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 11) ) THEN
+            type = "OET"
+        ELSE IF ( ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 12) ) .OR.&
+             ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 12) ) ) THEN
             type = "OH"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 12) ) THEN
+        ELSE IF ( ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 14) ) .OR.&
+            ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 14) ) ) THEN
             type = "OA"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 13) ) THEN
+        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 19) ) THEN
             type = "OW"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 14) ) THEN
+            count_all = count_all + 1
+        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 18) ) THEN
             type = "OM"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 15) ) THEN
+        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 17) ) THEN
             type = "OP"
+        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. -1) ) THEN
+            type = "CX"
         ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. -1) ) THEN
-            type = "OP"
+            type = "OX"
         END IF
-        IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 13) &
+        IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 19) &
             .AND. (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L0_down) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L0_up) ) THEN
-            type = "O0"
+            type = "OL0"
             count_L0 = count_L0 + 1
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 13) &
+        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 19) &
             .AND. (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L1_down) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L1_up) ) THEN
-            type = "O1"
+            type = "OL1"
             count_L1 = count_L1 + 1
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 13) &
+        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 19) &
             .AND. (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L2_down) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L2_up) ) THEN
-            type = "O2"
+            type = "OL2"
             count_L2 = count_L2 + 1
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 13) &
+        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 19) &
             .AND. (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L3_down) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L3_up) ) THEN
-            type = "O3"
+            type = "OL3"
             count_L3 = count_L3 + 1
         END IF
-        WRITE(40,'(A10,E20.7,E20.7,E20.7)') ADJUSTL(type), atm_mat(4,i,s), atm_mat(5,i,s), atm_mat(6,i,s)
+        WRITE(40,'(A4,1X,E14.5,1X,E14.5,1X,E14.5)') ADJUSTL(type), atm_mat(4,i,s), atm_mat(5,i,s), atm_mat(6,i,s)
     END DO Z1
-    WRITE(42,'(I10,I10,I10,I10,I10)') s, count_L0, count_L1, count_L2, count_L3
+    WRITE(42,'(A4,1X,I10,1X,I10,1X,I10,1X,I10,1X,I10,1X,I10,1X,I10)') suffix, s, count_L0, count_L1, count_L2, count_L3&
+    , count_L0+count_L1+count_L2+count_L3, count_all
 END DO
 CLOSE(UNIT=40)
 CLOSE(UNIT=41)
@@ -229,4 +248,5 @@ PRINT'(A100)', 'The END'
 IF (IS_c .EQ. 'Y') DEALLOCATE(is_mat,nb_is)
 
 DEALLOCATE(atm_mat)
+
 END PROGRAM order_layer

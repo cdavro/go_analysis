@@ -93,20 +93,20 @@ IF (IS_c .EQ. 'Y' ) THEN
     start = OMP_get_wtime()
 
     CALL sb_count_is(file_is,nb_step,nb_max_is)
-    
+
     finish = OMP_get_wtime()
     PRINT'(A40,F14.2,A20)', "IS grid:", finish-start, "seconds elapsed"
-    
+
 ! A ----------------------------------------------- Read IS
     start = OMP_get_wtime()
-    
+
     ALLOCATE(is_mat(19,nb_max_is,nb_step))
     ALLOCATE(nb_is(nb_step))
     is_mat(:,:,:) = 0.0_dp
     nb_is(:) = 0
-    
+
     CALL sb_read_is(file_is,nb_step,box,is_mat(1:5,:,:),nb_is)
-    
+
     finish = OMP_get_wtime()
     PRINT'(A40,F14.2,A20)', "IS:", finish-start, "seconds elapsed"
 END IF
@@ -117,7 +117,7 @@ IF (AS_c .EQ. 'Y') THEN
         ALLOCATE(nb_as(nb_step))
         nb_as(:) = 0
         DO s = 1, nb_step
-            nb_as(s) = COUNT(atm_mat(3,:,s) .EQ. 1, DIM=1)
+            nb_as(s) = COUNT(atm_mat(2,:,s) .EQ. wa_AS_center_atmnb, DIM=1)
         END DO
         nb_max_as = MAXVAL(nb_as)
 
@@ -128,7 +128,7 @@ IF (AS_c .EQ. 'Y') THEN
         DO s = 1, nb_step
             j = 0
             DO i = 1, nb_atm
-                IF (atm_mat(3,i,s) .EQ. wa_AS_center_atmnb) THEN
+                IF (atm_mat(2,i,s) .EQ. wa_AS_center_atmnb) THEN
                     j = j + 1
                     as_mat(5,j,s) = atm_mat(1,i,s)
                     DO k = 1, 3
@@ -144,7 +144,7 @@ END IF
 
 ! B ----------------------------------------------- Water
 start = OMP_get_wtime()
-ALLOCATE(WAT_mat(52,nb_o*3,nb_step))
+ALLOCATE(WAT_mat(53,nb_o*3,nb_step))
 ALLOCATE(nb_max_WAT(nb_step))
 
 nb_max_WAT(:) = 0.0
@@ -156,14 +156,14 @@ WAT_mat(:,:,:) = 0.0_dp
 DO s = 1, nb_step
     o = 0
     DO i = 1, nb_atm
-        IF (atm_mat(3,i,s) .EQ. 13) THEN
+        IF (atm_mat(3,i,s) .EQ. 19) THEN
             o = o + 1
             WAT_mat(1,o,s) = atm_mat(1,i,s)
             DO k = 1, 3
                 WAT_mat(k+1,o,s) = atm_mat(k+3,i,s)
             END DO
             DO j = 1, nb_atm
-                IF (atm_mat(3,j,s) .EQ. 23) THEN
+                IF (atm_mat(3,j,s) .EQ. 29) THEN
                     DO k = 1, 3
                         OpH_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
                         OpH_disp_vec(k) = OpH_disp_vec(k) - box(k) * ANINT(OpH_disp_vec(k) / box(k))
@@ -241,24 +241,26 @@ DO s = 1, nb_step
 
             IF ( ( (XOwat_disp_norm .LE. WAT_mat(51,i,s)) .OR.&
             (WAT_mat(51,i,s) .EQ. 0.0) ) .AND.&
-            (atm_mat(3,j,s) .EQ. 1.) ) THEN
+            (atm_mat(2,j,s) .EQ. 12) ) THEN
                 WAT_mat(50,i,s) = atm_mat(1,j,s)
                 WAT_mat(51,i,s) = XOwat_disp_norm
                 WAT_mat(52,i,s) = atm_mat(6,j,s)
             END IF
             IF (XOwat_disp_norm .LE. wa_X1Owat_rcut) THEN
-                IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C or SiF
+                IF (atm_mat(2,j,s) .EQ. 12) THEN ! CC
                     WAT_mat(27,i,s) = 1
                     WAT_mat(28,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OE
+                ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OEP
                     WAT_mat(24,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OH
+                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OET
+                    WAT_mat(53,i,s) = 1
+                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OH
                     WAT_mat(25,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OA
+                ELSE IF (atm_mat(3,j,s) .EQ. 14) THEN ! OA
                     WAT_mat(26,i,s) = 1
                 END IF
             ELSE IF (XOwat_disp_norm .LE. wa_X2Owat_rcut) THEN
-                IF (atm_mat(3,j,s) .EQ. 1.) THEN ! C or SiF
+                IF (atm_mat(2,j,s) .EQ. 12) THEN ! CX
                     WAT_mat(28,i,s) = 1
                 END IF
             END IF
@@ -530,21 +532,26 @@ IF (IS_c .EQ. 'Y' ) THEN
     ! E ----------------------------------------------- Write WAT angle IS
     start = OMP_get_wtime()
 
-    OPEN(UNIT=32, FILE = suffix//"_IS_water_angle.txt")
-    WRITE(32, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,&
-        &A20,A20,A20,A20,A20,A20,A20,A20,A20,A20)')&
-        "Step", "Oid", "H1id", "H2id", "cOE", "cOH", "cOA", "cC", "cCX"&
+    OPEN(UNIT=32, FILE = suffix//"_IS_WA.txt")
+    WRITE(32, '(A4,1X,A10,1X,A10,1X,A10,1X,A10,1X&
+        &,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X&
+        &,A14,1X,A14,1X,A14,1X,A14,1X,A14,1X,A14,1X,A14,1X,A14,1X,A14,1X,A14)')&
+        "Traj", "Step", "O_ID", "H1_ID", "H2_ID"&
+        , "cOEP", "cOET", "cOH", "cOA", "cCC", "cCX"&
         , "dist_ISD", "dist_ISU"&
         , "DW/NISD", "DW/NISU"&
         , "HH/NISD", "HH/NISU"&
         , "OH1/NISD", "OH1/NISU"&
         , "OH2/NISD", "OH2/NISD"
+
     DO s = 1, nb_step
         DO i = 1, nb_max_WAT(s)
-            WRITE(32, '(I10,I10,I10,I10,I10,I10,I10,I10,I10,&
-            &E20.7,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7,E20.7)')&
-            s, INT(WAT_mat(1,i,s)), INT(WAT_mat(5,i,s)), INT(WAT_mat(10,i,s))&
-            , INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
+            WRITE(32, '(A4,1X,I10,1X,I10,1X,I10,1X,I10,1X&
+            &,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X&
+            &,E14.5,1X,E14.5,1X,E14.5,1X,E14.5,1X,E14.5,1X&
+            &,E14.5,1X,E14.5,1X,E14.5,1X,E14.5,1X,E14.5)')&
+            suffix, s, INT(WAT_mat(1,i,s)), INT(WAT_mat(5,i,s)), INT(WAT_mat(10,i,s))&
+            , INT(WAT_mat(24,i,s)), INT(WAT_mat(53,i,s)), INT(WAT_mat(25,i,s))&
             , INT(WAT_mat(26,i,s)), INT(WAT_mat(27,i,s)), INT(WAT_mat(28,i,s))&
             , (WAT_mat(29,i,s)*WAT_mat(30,i,s)), (WAT_mat(32,i,s)*WAT_mat(33,i,s))&
             , WAT_mat(35,i,s), WAT_mat(39,i,s)&
@@ -719,17 +726,20 @@ IF (AS_c .EQ. 'Y' ) THEN
     ! E ----------------------------------------------- Write WAT angle AS
     start = OMP_get_wtime()
 
-    OPEN(UNIT=33, FILE = suffix//"_AS_water_angle.txt")
-    WRITE(33, '(A10,A10,A10,A10,A10,A10,A10,A10,A10,&
-        &A20,A20,A20,A20,A20)')&
-        "Step", "Oid", "H1id", "H2id", "cOE", "cOH", "cOA", "cC", "cCX"&
+    OPEN(UNIT=33, FILE = suffix//"_AS_WA.txt")
+    WRITE(33, '(A4,1X,A10,1X,A10,1X,A10,1X,A10,1X&
+        &,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X&
+        &,A14,1X,A14,1X,A14,1X,A14,1X,A14)')&
+        "Traj", "Step", "O_ID", "H1_ID", "H2_ID"&
+        , "cOEP", "cOET", "cOH", "cOA", "cCC", "cCX"&
         , "dist_AS", "DW/NAS", "HH/NAS", "OH1/NAS", "OH2/NAS"
     DO s = 1, nb_step
         DO i = 1, nb_max_WAT(s)
-            WRITE(33, '(I10,I10,I10,I10,I10,I10,I10,I10,I10,&
-            &E20.7,E20.7,E20.7,E20.7,E20.7)')&
-            s, INT(WAT_mat(1,i,s)), INT(WAT_mat(5,i,s)), INT(WAT_mat(10,i,s))&
-            , INT(WAT_mat(24,i,s)), INT(WAT_mat(25,i,s))&
+            WRITE(33, '(A4,1X,I10,1X,I10,1X,I10,1X,I10,1X&
+            &,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X&
+            &,E14.5,1X,E14.5,1X,E14.5,1X,E14.5,1X,E14.5)')&
+            suffix, s, INT(WAT_mat(1,i,s)), INT(WAT_mat(5,i,s)), INT(WAT_mat(10,i,s))&
+            , INT(WAT_mat(24,i,s)), INT(WAT_mat(53,i,s)), INT(WAT_mat(25,i,s))&
             , INT(WAT_mat(26,i,s)), INT(WAT_mat(27,i,s)), INT(WAT_mat(28,i,s))&
             , (WAT_mat(43,i,s)*WAT_mat(44,i,s)), WAT_mat(46,i,s), WAT_mat(47,i,s)&
             , WAT_mat(48,i,s), WAT_mat(49,i,s)
@@ -751,4 +761,5 @@ IF (IS_c .EQ. 'Y') DEALLOCATE(is_mat,nb_is)
 IF (AS_c .EQ. 'Y') DEALLOCATE(as_mat,nb_as)
 
 DEALLOCATE(WAT_mat, atm_mat, nb_max_WAT)
+
 END PROGRAM water_angle
