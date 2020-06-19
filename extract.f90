@@ -76,17 +76,15 @@ start = OMP_get_wtime()
 dotpos = SCAN(TRIM(file_pos),".", BACK= .true.)
 WRITE (stepi_s, "(I10)") stepi
 WRITE (stepf_s, "(I10)") stepf
-stepi_s = TRIM(stepi_s)
-stepf_s = TRIM(stepf_s)
 
-IF ( dotpos > 0 ) out_file = file_pos(1:dotpos-1)//"-"//stepi_s//"-"//stepf_s//".xyz"
+IF ( dotpos > 0 ) out_file = file_pos(1:dotpos-1)//"-"//TRIM(ADJUSTL(stepi_s))//"-"//TRIM(ADJUSTL(stepf_s))//".xyz"
 
 OPEN(UNIT=40, FILE = out_file)
 DO s = stepi, stepf
     WRITE(40,'(I10)') nb_atm
     WRITE(40,'(A10,I10)') "Step nb:", s
     DO i = 1, nb_atm
-        WRITE(40,'(A3,1X,E14.5,1X,E14.5,1X,E14.5)') ADJUSTL(atm_name(i,s)), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
+        WRITE(40,'(A3,1X,E14.5,1X,E14.5,1X,E14.5)') ADJUSTL(atm_name(i,s)), atm_mat(4,i,s), atm_mat(5,i,s), atm_mat(6,i,s)
     END DO
 END DO
 CLOSE(UNIT=40)
