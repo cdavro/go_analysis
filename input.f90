@@ -32,7 +32,6 @@ CHARACTER(LEN=1)            :: AS_c="N"
 CHARACTER(LEN=1)            :: IS_ud="A"
 ! Extract                   :: 
 INTEGER                     :: stepi, stepf
-
 ! Assign
 CHARACTER(LEN=3)            :: assign_center_name
 REAL(dp)                    :: assign_HO_rcut=1.30, assign_HC_rcut=1.30, assign_HH_rcut=1.30
@@ -167,10 +166,10 @@ SUBROUTINE READINPUTSUB(input_file)
 ! Extract
                 CASE('stepi')
                     READ(value, * , IOSTAT=iostatus) stepi
-                    PRINT'(A50,A64)', 'stepi:', stepi
+                    PRINT'(A50,I64)', 'stepi:', stepi
                 CASE ('stepf')
                     READ(value, * , IOSTAT=iostatus) stepf
-                    PRINT'(A50,E64.10)', 'stepf: ', stepf
+                    PRINT'(A50,I64)', 'stepf: ', stepf
 ! Density
                 CASE ('dens_center_atmnb')
                     READ(value, * , IOSTAT=iostatus) dens_center_atmnb

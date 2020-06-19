@@ -12,8 +12,6 @@ MODULE SB_GO
         CHARACTER(LEN=3), ALLOCATABLE, INTENT(INOUT) :: sb_atm_name(:,:)
         INTEGER                                      :: s, i
 
-        ALLOCATE(sb_atm_name(sb_nb_atm,sb_nb_step))
-
         OPEN(UNIT=20,FILE=sb_file_pos,STATUS='old',FORM='formatted',ACTION='READ')
         DO s = 1, sb_nb_step
             READ(20, *)
@@ -43,17 +41,19 @@ MODULE SB_GO
                 ELSE IF (sb_atm_name(i,s) .EQ. "C3E") THEN
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 8
-                ELSE IF (sb_atm_name(i,s) .EQ. "OEP") THEN
+                ELSE IF ((sb_atm_name(i,s) .EQ. "OEP") .OR.&
+                    (sb_atm_name(i,s) .EQ. "OEQ")) THEN
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 10
-                ELSE IF (sb_atm_name(i,s) .EQ. "OET") THEN
+                ELSE IF ((sb_atm_name(i,s) .EQ. "OET") .OR.&
+                    (sb_atm_name(i,s) .EQ. "OEU")) THEN
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 11
-                ELSE IF ((sb_atm_name(i,s) .EQ. "OH2") .OR. &
+                ELSE IF ((sb_atm_name(i,s) .EQ. "OH2") .OR.&
                     (sb_atm_name(i,s) .EQ. "OH3")) THEN
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 12
-                ELSE IF ((sb_atm_name(i,s) .EQ. "OA2") .OR. &
+                ELSE IF ((sb_atm_name(i,s) .EQ. "OA2") .OR.&
                     (sb_atm_name(i,s) .EQ. "OA3")) THEN
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 14
@@ -66,6 +66,12 @@ MODULE SB_GO
                 ELSE IF (sb_atm_name(i,s) .EQ. "OP") THEN
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 17
+                ELSE IF (sb_atm_name(i,s) .EQ. "HQ") THEN
+                    sb_atm_mat(2,i,s) = 1
+                    sb_atm_mat(3,i,s) = 20
+                ELSE IF (sb_atm_name(i,s) .EQ. "HU") THEN
+                    sb_atm_mat(2,i,s) = 1
+                    sb_atm_mat(3,i,s) = 21
                 ELSE IF (sb_atm_name(i,s) .EQ. "HO") THEN
                     sb_atm_mat(2,i,s) = 1
                     sb_atm_mat(3,i,s) = 23
@@ -94,6 +100,7 @@ MODULE SB_GO
                 ELSE IF ((sb_atm_name(i,s) .EQ. "H") .OR.&
                     (sb_atm_name(i,s) .EQ. "H1") .OR.&
                     (sb_atm_name(i,s) .EQ. "H2") .OR.&
+                    (sb_atm_name(i,s) .EQ. "H3") .OR.&
                     (sb_atm_name(i,s) .EQ. "HX")) THEN
                     sb_atm_mat(2,i,s) = 1
                     sb_atm_mat(3,i,s) = -1
