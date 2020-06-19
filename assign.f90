@@ -89,8 +89,6 @@ DO s = 1, nb_step
             atm_mat(2,i,s) = 16
         ELSE IF (atm_name(i)(1:1) .EQ. "H") THEN
             atm_mat(2,i,s) = 1
-        ELSE IF (atm_name(i)(1:2) .EQ. "Si") THEN
-            atm_mat(2,i,s) = 28
         END IF
         IF (atm_name(i) .EQ. assign_center_name) THEN
             atm_mat(15,i,s) = 1

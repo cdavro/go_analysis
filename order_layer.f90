@@ -21,6 +21,7 @@ INTEGER                         :: CAC
 
 !   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:), is_mat(:,:,:)
+CHARACTER(LEN=3), ALLOCATABLE   :: atm_name(:,:)
 INTEGER                         :: nb_max_is
 INTEGER, ALLOCATABLE            :: nb_is(:)
 
@@ -66,12 +67,14 @@ PRINT'(A100)','--------------------------------------------------'&
 
 !   ----------------------------------------------- Allocate function for reading files
 ALLOCATE(atm_mat(25,nb_atm,nb_step))
+ALLOCATE(atm_name(nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
 ! A ----------------------------------------------- Read positions
 start = OMP_get_wtime()
 
-CALL sb_read_pos_xyz(file_pos,nb_atm,nb_step,atm_mat(1:6,:,:))
+CALL sb_read_pos_xyz(file_pos,nb_atm,nb_step,atm_mat(1:6,:,:),atm_name)
+DEALLOCATE(atm_name) ! Not Used
 
 nb_h = COUNT(atm_mat(2,:,1) .EQ. 1, DIM=1)
 

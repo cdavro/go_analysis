@@ -21,6 +21,7 @@ INTEGER                         :: CAC
 
 !   ----------------------------------------------- Infos/properties
 REAL(dp), ALLOCATABLE           :: atm_mat(:,:,:), is_mat(:,:,:)
+CHARACTER(LEN=3), ALLOCATABLE   :: atm_name(:,:)
 INTEGER, ALLOCATABLE            :: nb_is(:)
 INTEGER                         :: nb_max_is
 REAL(dp), ALLOCATABLE           :: avg_z(:)
@@ -65,12 +66,14 @@ PRINT'(A100)', '--------------------------------------------------'&
 
 !   ----------------------------------------------- Allocate the atm_mat array
 ALLOCATE(atm_mat(12,nb_atm,nb_step))
+ALLOCATE(atm_name(nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
 ! A ----------------------------------------------- Read positions
 start = OMP_get_wtime()
 
-CALL sb_read_pos_xyz(file_pos,nb_atm,nb_step,atm_mat(1:6,:,:))
+CALL sb_read_pos_xyz(file_pos,nb_atm,nb_step,atm_mat(1:6,:,:),atm_name)
+DEALLOCATE(atm_name) ! Not Used
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Positions:", finish-start, "seconds elapsed"
