@@ -128,37 +128,39 @@ IF (file_vel .NE. '0') THEN
 END IF
 
 !   ----------------------------------------------- Calculate geom center of go carbons and center so Zcarbon_avg = 0.0
-start = OMP_get_wtime()
+IF ( WRAP_C .EQ. "Y") THEN
+    start = OMP_get_wtime()
 
-ALLOCATE(center_avgpos(3,nb_step))
+    ALLOCATE(center_avgpos(3,nb_step))
 
-DO s = 1, nb_step
-    center_avgpos(:,s) = 0.0_dp
+    DO s = 1, nb_step
+        center_avgpos(:,s) = 0.0_dp
 
-    DO i = 1, nb_atm
-        IF (atm_mat(15,i,s) .EQ. 1) THEN
-            DO k = 1, 3
-                center_avgpos(k,s) = center_avgpos(k,s) + atm_mat(k+2,i,s)
-            END DO
-        END IF
-    END DO
-
-    center_avgpos(:,s) = center_avgpos(:,s) / nb_center(s)
-    z_shift = 0.0_dp - center_avgpos(3,s)
-
-    DO i = 1, nb_atm
-        atm_mat(5,i,s) = atm_mat(5,i,s) + z_shift
-        DO k = 1, 3
-            atm_mat(k+2,i,s) = atm_mat(k+2,i,s) - box(k) * ANINT(atm_mat(k+2,i,s) / box(k))
+        DO i = 1, nb_atm
+            IF (atm_mat(15,i,s) .EQ. 1) THEN
+                DO k = 1, 3
+                    center_avgpos(k,s) = center_avgpos(k,s) + atm_mat(k+2,i,s)
+                END DO
+            END IF
         END DO
+
+        center_avgpos(:,s) = center_avgpos(:,s) / nb_center(s)
+        z_shift = 0.0_dp - center_avgpos(3,s)
+
+        DO i = 1, nb_atm
+            atm_mat(5,i,s) = atm_mat(5,i,s) + z_shift
+            DO k = 1, 3
+                atm_mat(k+2,i,s) = atm_mat(k+2,i,s) - box(k) * ANINT(atm_mat(k+2,i,s) / box(k))
+            END DO
+        END DO
+
     END DO
 
-END DO
+    DEALLOCATE(center_avgpos,nb_center)
 
-DEALLOCATE(center_avgpos,nb_center)
-
-finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Center/Wrap:", finish-start, "seconds elapsed"
+    finish = OMP_get_wtime()
+    PRINT'(A40,F14.2,A20)', "Center/Wrap:", finish-start, "seconds elapsed"
+END IF
 
 !   ----------------------------------------------- Search the topology, water and oxygen groups
 start = OMP_get_wtime()
@@ -385,6 +387,7 @@ DO s = 1, nb_step
         END IF
 
      AS:DO i = 1, nb_atm
+            ! ASSIGN CARBONS
             IF ( (atm_type(i,s) .EQ. "C3") .OR.&
                 (atm_type(i,s) .EQ. "C3O") .OR.&
                 (atm_type(i,s) .EQ. "C3A") .OR.&
@@ -411,6 +414,7 @@ DO s = 1, nb_step
                         END IF
                     END IF
                 END DO
+            ! ASSIGN CARBONS
             ELSE IF ( (atm_type(i,s) .EQ. "C2") .OR.&
                 (atm_type(i,s) .EQ. "C2O") .OR.&
                 (atm_type(i,s) .EQ. "C2A") .OR.&
@@ -437,6 +441,7 @@ DO s = 1, nb_step
                         END IF
                     END IF
                 END DO
+            ! ASSIGN MONOVALENT H
             ELSE IF ((atm_type(i,s) .EQ. "H1") .OR.&
                 (atm_type(i,s) .EQ. "HE") .OR.&
                 (atm_type(i,s) .EQ. "HU") .OR.&
@@ -464,6 +469,7 @@ DO s = 1, nb_step
                         END IF
                     END IF
                 END DO
+            ! CHECK DIVALENT H
             ELSE IF ((atm_type(i,s) .EQ. "H2")) THEN
                 k = 1
                 temp_id2(:) = 0
@@ -495,101 +501,7 @@ DO s = 1, nb_step
                     END IF
                 END DO
                 m=1
-                !ELSE
-                !    atm_type(i,s) = "H1"
-                !    atm_mat(14,temp_id2(2),s) = atm_mat(14,temp_id2(2),s) - 1
-                !    DO j = 4, 18, 3
-                !        IF ( temp_id2(2) .EQ. conn_mat(j-1,i,s) ) THEN
-                !            conn_mat(j,i,s) = 0
-                !            conn_mat(j+1,i,s) = 0
-                !            conn_mat(j-1,i,s) = 0
-                !        END IF
-                !    END DO
-                !    m=1
-                !END IF
-                
-                !IF (atm_type(temp_id2(k),s) .EQ. "OH") THEN
-                !    atm_type(temp_id2(k),s) = "OH"
-                !    atm_type(i,s) = "HO"
-                !ELSE IF (atm_type(temp_id2(k),s) .EQ. "OH2") THEN
-                !    atm_type(temp_id2(k),s) = "OH2"
-                !    atm_type(i,s) = "HO"
-                !ELSE IF (atm_type(temp_id2(k),s) .EQ. "OH3") THEN
-                !!!    atm_type(temp_id2(k),s) = "OH3"
-                !    atm_type(i,s) = "HO"
-                !ELSE IF (atm_type(temp_id2(k),s) .EQ. "OM") THEN
-                !    atm_type(temp_id2(k),s) = "OM"
-                !    atm_type(i,s) = "HM"
-                !ELSE IF (atm_type(temp_id2(k),s) .EQ. "OW") THEN
-                !    atm_type(temp_id2(k),s) = "OW"
-                !    atm_type(i,s) = "HW"
-                !ELSE IF (atm_type(temp_id2(k),s) .EQ. "OP") THEN
-                !    atm_type(temp_id2(k),s) = "OP"
-                !    atm_type(i,s) = "HP"
-                !ELSE IF (atm_type(temp_id2(k),s) .EQ. "OEQ") THEN
-                !    atm_type(temp_id2(k),s) = "OEQ"
-                !    atm_type(i,s) = "HE"
-                !ELSE IF (atm_type(temp_id2(k),s) .EQ. "OEU") THEN
-                !    atm_type(temp_id2(k),s) = "OEU"
-                !    atm_type(i,s) = "HU"
-
-                
-
-                !ELSE IF ( (atm_type(temp_id2(k),s) .EQ. "OA") .OR.&
-                !(atm_type(temp_id2(k),s) .EQ. "OA2") .OR.&
-                !(atm_type(temp_id2(k),s) .EQ. "OA3") ) THEN
-                !    IF (atm_mat(14,temp_id2(k),s) .GE. 1) THEN
-                !        atm_mat(14,temp_id2(k),s) = atm_mat(14,temp_id2(k),s) - 1
-                !    ELSE
-                !        PRINT*, "K-Error", s, l, atm_type(i,s), i&
-                !        , k, atm_type(temp_id2(k),s), temp_id2(k), temp_dist2(k)&
-                !        , atm_mat(12,temp_id2(k),s), atm_mat(13,temp_id2(k),s), atm_mat(14,temp_id2(k),s)&
-                !        , m, atm_type(temp_id2(m),s), temp_id2(m), temp_dist2(m)&
-                !        , atm_mat(12,temp_id2(m),s), atm_mat(13,temp_id2(m),s), atm_mat(14,temp_id2(m),s)
-                !    END IF
-                !ELSE IF ( (atm_type(temp_id2(k),s) .EQ. "OE") .OR.&
-                !(atm_type(temp_id2(k),s) .EQ. "OEP") .OR. &
-                !(atm_type(temp_id2(k),s) .EQ. "OET") ) THEN
-                !    IF (atm_mat(14,temp_id2(k),s) .GE. 1) THEN
-                !        atm_mat(14,temp_id2(k),s) = atm_mat(14,temp_id2(k),s) - 1
-                !    ELSE 
-                !        PRINT*, "K-Error", s, l, atm_type(i,s), i&
-                !        , k, atm_type(temp_id2(k),s), temp_id2(k), temp_dist2(k)&
-                !        , atm_mat(12,temp_id2(k),s), atm_mat(13,temp_id2(k),s), atm_mat(14,temp_id2(k),s)&
-                !        , m, atm_type(temp_id2(m),s), temp_id2(m), temp_dist2(m)&
-                !        , atm_mat(12,temp_id2(m),s), atm_mat(13,temp_id2(m),s), atm_mat(14,temp_id2(m),s)
-                !    END IF
-                !END IF
-
-
-                !IF (atm_type(temp_id2(m),s) .EQ. "OH") THEN
-                !    atm_type(temp_id2(m),s) = "OA"
-                !ELSE IF (atm_type(temp_id2(m),s) .EQ. "OH2") THEN
-                !    atm_type(temp_id2(m),s) = "OA2"
-                !ELSE IF (atm_type(temp_id2(m),s) .EQ. "OH3") THEN
-                !    atm_type(temp_id2(m),s) = "OA3"
-                !ELSE IF (atm_type(temp_id2(m),s) .EQ. "OW") THEN
-                !    atm_type(temp_id2(m),s) = "OM"
-                !ELSE IF (atm_type(temp_id2(m),s) .EQ. "OP") THEN
-                !    atm_type(temp_id2(m),s) = "OW"
-                !ELSE IF (atm_type(temp_id2(m),s) .EQ. "OEQ") THEN
-                !    atm_type(temp_id2(m),s) = "OEP"
-                !ELSE IF (atm_type(temp_id2(m),s) .EQ. "OEU") THEN
-                !    atm_type(temp_id2(m),s) = "OET"
-
-                !ELSE IF ( (atm_type(temp_id2(m),s) .EQ. "OA") .OR.&
-                !(atm_type(temp_id2(m),s) .EQ. "OA2") .OR.&
-                !(atm_type(temp_id2(m),s) .EQ. "OA3") .OR.&
-                !(atm_type(temp_id2(m),s) .EQ. "OE") .OR.&
-                !(atm_type(temp_id2(m),s) .EQ. "OEP").OR.&
-                !(atm_type(temp_id2(m),s) .EQ. "OET").OR.&
-                !(atm_type(temp_id2(m),s) .EQ. "OM") ) THEN
-                !    PRINT*, "M-Error", s, l, atm_type(i,s), i&
-                !    , k, atm_type(temp_id2(k),s), temp_id2(k), temp_dist2(k)&
-                !    , atm_mat(12,temp_id2(k),s), atm_mat(13,temp_id2(k),s), atm_mat(14,temp_id2(k),s)&
-                !    , m, atm_type(temp_id2(m),s), temp_id2(m), temp_dist2(m)&
-                !    , atm_mat(12,temp_id2(m),s), atm_mat(13,temp_id2(m),s), atm_mat(14,temp_id2(m),s)
-                !END IF
+            ! CHECK TRIVALENT H
             ELSE IF ((atm_type(i,s) .EQ. "H3")) THEN
                 k = 1
                 temp_id2(:) = 0
@@ -622,55 +534,10 @@ DO s = 1, nb_step
                     END IF
                 END DO
                 m=1
-
-
-
-
-
-                !atm_mat(14,temp_id2(MAXLOC(temp_dist2, DIM=1)),s) = atm_mat(14,temp_id2(MAXLOC(temp_dist2, DIM=1)),s) - 1
-                !DO j = 4, 18, 3
-                !    IF ( temp_id2(1) .EQ. conn_mat(j-1,i,s) ) THEN
-                !        conn_mat(j,i,s) = 0
-                !        conn_mat(j+1,i,s) = 0
-                !        conn_mat(j-1,i,s) = 0
-                !    END IF
-                !END DO
-
-                !m=1
-
-
-
-                    !IF (atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OH") THEN
-                    !    atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) = "OA"
-                    !ELSE IF (atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OH2") THEN
-                    !    atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) = "OA2"
-                    !!ELSE IF (atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OH3") THEN
-                     !   atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) = "OA3"
-                    !ELSE IF (atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OW") THEN
-                    !    atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) = "OM"
-                    !ELSE IF (atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OP") THEN
-                    !    atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) = "OW"
-                    !ELSE IF (atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OEQ") THEN
-                    !    atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) = "OEP"
-                    !ELSE IF (atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OEU") THEN
-                    !    atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) = "OET"
-                    !ELSE IF ( (atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OA") .OR.&
-                    !(atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OA2") .OR.&
-                    !(atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OA3") .OR.&
-                    !(atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OEP") .OR.&
-                    !(atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OET") .OR.&
-                    !(atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OE") .OR.&
-                    !(atm_type(temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .EQ. "OM") ) THEN
-                    !    IF ( atm_mat(14,temp_id2(MAXLOC(temp_dist2, DIM=1)),s) .GE. 1) THEN
-                    !        atm_mat(14,temp_id2(k),s) = atm_mat(14,temp_id2(k),s) - 1
-                    !    ELSE
-                    !        PRINT*, "FUCK", s, i
-                    !    END IF
-                    !END IF
-                    !atm_type(i,s) = "H2"
             END IF
             temp_atm_type(i,1) = atm_type(i,s)
         END DO AS
+        ! Reupdate Oxygen
         IF (m .EQ. 1) THEN
             DO i = 1, nb_atm
                 IF ((atm_mat(2,i,s) .EQ. 16) .AND. (m .EQ. 1) )THEN
@@ -733,9 +600,13 @@ PRINT'(A40,F14.2,A20)', "Oxygen groups topology output:", finish-start, "seconds
 
 !   ----------------------------------------------- Print the xyz and velocities files
 start = OMP_get_wtime()
-
-OPEN(UNIT=40, FILE = suffix//"_wrapped_"//file_pos)
-IF (file_vel .NE. '0') OPEN(UNIT=41, FILE = suffix//"_wrapped_"//file_vel)
+IF ( WRAP_C .EQ. "Y") THEN
+    OPEN(UNIT=40, FILE = suffix//"_wrapped_"//file_pos)
+    IF (file_vel .NE. '0') OPEN(UNIT=41, FILE = suffix//"_wrapped_"//file_vel)
+ELSE 
+    OPEN(UNIT=40, FILE = suffix//"_nonwrapped_"//file_pos)
+    IF (file_vel .NE. '0') OPEN(UNIT=41, FILE = suffix//"_nonwrapped_"//file_vel)
+END IF
 DO s = 1, nb_step
     WRITE(40,'(I10)') nb_atm
     IF (file_vel .NE. '0') WRITE(41,'(I10)') nb_atm

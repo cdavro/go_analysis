@@ -1,5 +1,7 @@
 FC = gfortran
 FCFLAGS = -fopenmp
+#FC = ifort
+#FCFLAGS = -qopenmp
 
 input.o: input.f90
 	$(FC) $(FCFLAGS) -c input.f90
@@ -9,6 +11,9 @@ sb_go.o: sb_go.f90
 
 assign.o: assign.f90
 	$(FC) $(FCFLAGS) -c assign.f90
+
+assign_ff.o: assign_ff.f90
+	$(FC) $(FCFLAGS) -c assign_ff.f90
 
 extract.o: extract.f90
 	$(FC) $(FCFLAGS) -c extract.f90
@@ -37,6 +42,9 @@ vvcf.o: vvcf.f90
 assign: input.o assign.o
 	$(FC) $(FCFLAGS) input.o assign.o -o assign
 
+assign_ff: input.o assign_ff.o
+	$(FC) $(FCFLAGS) input.o assign_ff.o -o assign_ff
+
 surface_wrap: input.o surface_wrap.o
 	$(FC) $(FCFLAGS) input.o surface_wrap.o -o surface_wrap
 
@@ -62,8 +70,9 @@ vvcf: input.o sb_go.o vvcf.o
 	$(FC) $(FCFLAGS) input.o sb_go.o vvcf.o -o vvcf
 
 
-all: input.o sb_go.o density.o order_layer.o fluctuation.o assign.o extract.o surface_wrap.o water_angle.o hbonds.o vvcf.o 
+all: input.o sb_go.o density.o order_layer.o fluctuation.o assign.o assign_ff.o extract.o surface_wrap.o water_angle.o hbonds.o vvcf.o 
 	$(FC) $(FCFLAGS) input.o assign.o -o assign
+	$(FC) $(FCFLAGS) input.o assign_ff.o -o assign_ff
 	$(FC) $(FCFLAGS) input.o surface_wrap.o -o surface_wrap
 	$(FC) $(FCFLAGS) input.o sb_go.o extract.o -o extract
 	$(FC) $(FCFLAGS) input.o sb_go.o density.o -o density
@@ -77,4 +86,4 @@ clean:
 	rm -f *.o 
 
 realclean:
-	rm -f *.o *.mod assign extract surface_wrap density order_layer fluctuation water_angle hbonds vvcf 
+	rm -f *.o *.mod assign assign_ff extract surface_wrap density order_layer fluctuation water_angle hbonds vvcf 

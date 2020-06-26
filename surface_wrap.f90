@@ -102,14 +102,19 @@ PRINT'(A40,F14.2,A20)', "IS:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- Wrap and write
 start = OMP_get_wtime()
-
-DO s = 1, nb_step
-    DO i = 1, nb_pt_is(s)
-        is_mat(:,i,s) = is_mat(:,i,s) - box(:) * ANINT(is_mat(:,i,s) / box(:))
+IF ( WRAP_C .EQ. "Y") THEN
+    DO s = 1, nb_step
+        DO i = 1, nb_pt_is(s)
+            is_mat(:,i,s) = is_mat(:,i,s) - box(:) * ANINT(is_mat(:,i,s) / box(:))
+        END DO
     END DO
-END DO
+END IF
 
-OPEN(UNIT=40, FILE = suffix//"_wrapped_surf.xyz")
+IF ( WRAP_C .EQ. "Y") THEN
+    OPEN(UNIT=40, FILE = suffix//"_wrapped_surf.xyz")
+ELSE 
+    OPEN(UNIT=40, FILE = suffix//"_nonwrapped_surf.xyz")
+END IF
 DO s = 1, nb_step
     WRITE(40,'(I10)') nb_pt_is(s)
     WRITE(40,'(A10,I10)') "Step nb:", s

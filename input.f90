@@ -32,13 +32,15 @@ CHARACTER(LEN=1)            :: AS_c="N"
 CHARACTER(LEN=1)            :: IS_ud="A"
 ! Extract                   :: 
 INTEGER                     :: stepi, stepf
+CHARACTER(LEN=1)            :: WRAP_C="Y"
 ! Assign
 CHARACTER(LEN=3)            :: assign_center_name
 REAL(dp)                    :: assign_HO_rcut=1.30, assign_HC_rcut=1.30, assign_HH_rcut=1.30
 REAL(dp)                    :: assign_OC_rcut=1.75, assign_OO_rcut=1.75
 REAL(dp)                    :: assign_CC_rcut=1.75
-
 INTEGER                     :: waterlist
+! Assign FF
+INTEGER                     :: assign_center_nb
 ! Density
 REAL(dp)                    :: dens_dr, dens_rstart
 INTEGER                     :: dens_step
@@ -138,6 +140,9 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('zhi')
                     READ(value, * , IOSTAT=iostatus) zhi
                     PRINT'(A50,E64.10)', 'Box_Z_high: ', zhi
+                CASE('WRAP_C')
+                    READ(value, * , IOSTAT=iostatus) WRAP_C
+                    PRINT'(A50,A64)', 'WRAP_C:', ADJUSTR(WRAP_C)
 ! Assign
                 CASE('assign_center_name')
                     READ(value, * , IOSTAT=iostatus) assign_center_name
@@ -163,6 +168,10 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE ('waterlist')
                     READ(value, * , IOSTAT=iostatus) waterlist
                     PRINT'(A50,I64)', 'waterlist: ', waterlist
+! Assign
+                CASE('assign_center_nb')
+                    READ(value, * , IOSTAT=iostatus) assign_center_nb
+                    PRINT'(A50,I64)', 'assign_center_nb:', assign_center_nb
 ! Extract
                 CASE('stepi')
                     READ(value, * , IOSTAT=iostatus) stepi
