@@ -45,16 +45,16 @@ PRINT'(A100)','--------------------------------------------------'&
 !   ----------------------------------------------- Get arguments (filenames, choices)
 CAC = COMMAND_ARGUMENT_COUNT()
 
-IF (CAC .EQ. 0) THEN
+IF ( CAC .EQ. 0 ) THEN
     PRINT*, "No input files"
     STOP
 END IF
 
 CALL GET_COMMAND_ARGUMENT(1, input_file)
-input_file=TRIM( input_file )
+input_file=TRIM(input_file)
 CALL READINPUTSUB(input_file)
-file_pos=TRIM( file_pos )
-file_is=TRIM( file_is )
+file_pos=TRIM(file_pos)
+file_is=TRIM(file_is)
 
 !   ----------------------------------------------- Controls
 ! To Do
@@ -124,7 +124,7 @@ DO s = 1, nb_step
                         END IF
                         atm_mat(9,i,s) = is_mat(5,j,s)
                     END IF
-                ELSE IF ( is_mat(4,j,s) .EQ. 2) THEN
+                ELSE IF ( is_mat(4,j,s) .EQ. 2 ) THEN
                     DO k = 1, 3
                         ISaO_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
                         ISaO_disp_vec(k) = ISaO_disp_vec(k) - box(k) * ANINT( ISaO_disp_vec(k) / box(k) )
@@ -181,8 +181,8 @@ DO s = 1, nb_step
                 count_dens_up = count_dens_up + 1
             END IF
         END DO C1
-        dens_down(j,s) = ((15.999+ (2*1.00784) ) * count_dens_down ) / (box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23)
-        dens_up(j,s) = ((15.999+ (2*1.00784) ) * count_dens_up ) / (box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23)
+        dens_down(j,s) = ( (15.999+ (2*1.00784) ) * count_dens_down ) / (box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23)
+        dens_up(j,s) = ( (15.999+ (2*1.00784) ) * count_dens_up ) / (box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23)
         r = r + dens_dr
     END DO
 END DO
@@ -262,14 +262,14 @@ DO s = 1, nb_step
     DO j = 1, dens_step
         count_dens_down_avgz_c = 0
     D1:DO i = 1, nb_atm
-            IF ( atm_mat(3,i,s) .NE. 26 ) THEN !Water Oxygen
+            IF ( atm_mat(3,i,s) .NE. 23 ) THEN !Water Oxygen
                 CYCLE D1
             END IF
-            IF ( ((atm_mat(6,i,s) - avg_z(s) ) .GE. r ) .AND. ( (atm_mat(6,i,s) - avg_z(s) ) .LT. r+dens_dr) ) THEN
+            IF ( ( (atm_mat(6,i,s) - avg_z(s) ) .GE. r ) .AND. ( (atm_mat(6,i,s) - avg_z(s) ) .LT. r+dens_dr) ) THEN
                 count_dens_down_avgz_c = count_dens_down_avgz_c + 1
             END IF
         END DO D1
-        dens_down_avgz_c(j,s) = ((15.999+ (2*1.00784) ) * count_dens_down_avgz_c ) &
+        dens_down_avgz_c(j,s) = ( (15.999+ (2*1.00784) ) * count_dens_down_avgz_c ) &
         / (box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23)
         r = r + dens_dr
     END DO
