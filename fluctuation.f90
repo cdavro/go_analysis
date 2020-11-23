@@ -37,7 +37,7 @@ PRINT'(A100)','--------------------------------------------------'&
 !   ----------------------------------------------- Get arguments (filenames, choices)
 CAC = COMMAND_ARGUMENT_COUNT()
 
-IF (CAC .EQ. 0) THEN
+IF ( CAC .EQ. 0 ) THEN
     PRINT*, "No input files"
     STOP
 END IF
@@ -81,14 +81,14 @@ DO s = 1, nb_step
     o = 0
     avg_z = 0.0_dp
     DO i = 1, nb_atm
-        IF (atm_mat(2,i,s) .EQ. fluct_center_atmnb) THEN
+        IF ( atm_mat(2,i,s) .EQ. fluct_center_atmnb ) THEN
             avg_z = avg_z + atm_mat(6,i,s)
             o = o + 1
         END IF
     END DO
     avg_z = avg_z / o
     DO i = 1, nb_atm
-        IF (atm_mat(2,i,s) .EQ. fluct_center_atmnb) THEN
+        IF ( atm_mat(2,i,s) .EQ. fluct_center_atmnb ) THEN
             atm_mat(7,i,s) = atm_mat(6,i,s) - avg_z
         END IF
     END DO
@@ -99,9 +99,9 @@ OPEN(UNIT=41, FILE = suffix//"_fluct_avgZC.txt")
 WRITE(41, '(A4,1X,A10,1X,A10,1X,A6,1X,A14)') "Traj", "Step", "C_ID", "C_Type", "zFluct"
 DO s = 1, nb_step
     DO i = 1, nb_atm
-        IF (atm_mat(2,i,s) .EQ. fluct_center_atmnb) THEN
-            WRITE(41, '(A4,1X,I10,1X,I10,1X,I6,1X,E14.5)') suffix, s, INT(atm_mat(1,i,s))&
-            , INT(atm_mat(3,i,s)) , atm_mat(7,i,s)
+        IF ( atm_mat(2,i,s) .EQ. fluct_center_atmnb ) THEN
+            WRITE(41, '(A4,1X,I10,1X,I10,1X,I6,1X,E14.5)') suffix, s, INT( atm_mat(1,i,s) )&
+            , INT( atm_mat(3,i,s) ) , atm_mat(7,i,s)
         END IF
     END DO
 END DO

@@ -38,7 +38,7 @@ PRINT'(A100)','--------------------------------------------------'&
 !   ----------------------------------------------- Get arguments (filenames, choices)
 CAC = COMMAND_ARGUMENT_COUNT()
 
-IF (CAC .EQ. 0) THEN
+IF ( CAC .EQ. 0 ) THEN
     PRINT*, "No input files"
     STOP
 END IF
@@ -73,22 +73,21 @@ PRINT'(A40,F14.2,A20)', "Positions:", finish-start, "seconds elapsed"
 !   ----------------------------------------------- Print the xyz and velocities files
 start = OMP_get_wtime()
 
-dotpos = SCAN(TRIM(file_pos),".", BACK= .true.)
+dotpos = SCAN( TRIM(file_pos),".", BACK= .true. )
 WRITE (stepi_s, "(I10)") stepi
 WRITE (stepf_s, "(I10)") stepf
 
-IF ( dotpos > 0 ) out_file = file_pos(1:dotpos-1)//"-"//TRIM(ADJUSTL(stepi_s))//"-"//TRIM(ADJUSTL(stepf_s))//".xyz"
+IF ( dotpos > 0 ) out_file = file_pos(1:dotpos-1)//"-"//TRIM(ADJUSTL( stepi_s ))//"-"//TRIM(ADJUSTL( stepf_s ))//".xyz"
 
 OPEN(UNIT=40, FILE = out_file)
 DO s = stepi, stepf
     WRITE(40,'(I10)') nb_atm
     WRITE(40,'(A10,I10)') "Step nb:", s
     DO i = 1, nb_atm
-        WRITE(40,'(A3,1X,E14.5,1X,E14.5,1X,E14.5)') ADJUSTL(atm_name(i,s)), atm_mat(4,i,s), atm_mat(5,i,s), atm_mat(6,i,s)
+        WRITE(40,'(A3,1X,E14.5,1X,E14.5,1X,E14.5)') ADJUSTL( atm_name(i,s) ), atm_mat(4,i,s), atm_mat(5,i,s), atm_mat(6,i,s)
     END DO
 END DO
 CLOSE(UNIT=40)
-IF (file_vel .NE. '0') CLOSE(UNIT=41)
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Positions/Velocities output:", finish-start, "seconds elapsed"

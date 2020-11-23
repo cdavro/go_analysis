@@ -66,10 +66,10 @@ MODULE SB_GO
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 15
                 !!!---
-                ELSE IF ( (sb_atm_name(i,s) .EQ. "OH2") .OR.& ! PAlcohol/Alcohol Oxygen (1C+xH)
-                    (sb_atm_name(i,s) .EQ. "OH3") ) THEN
+                ELSE IF ( (sb_atm_name(i,s) .EQ. "OH2" ) .OR.& ! PAlcohol/Alcohol Oxygen (1C+xH)
+                    (sb_atm_name(i,s) .EQ. "OH3" ) ) THEN
                     sb_atm_mat(2,i,s) = 16
-                    sb_atm_mat(3,i,s) = 16 
+                    sb_atm_mat(3,i,s) = 16
                 ELSE IF ( sb_atm_name(i,s) .EQ. "OEN" ) THEN ! Epoxy Oxygen (2C+0H)
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 17
@@ -124,24 +124,24 @@ MODULE SB_GO
                     sb_atm_mat(2,i,s) = 17
                     sb_atm_mat(3,i,s) = 33
                 ! Unknown carbon types
-                ELSE IF ( (sb_atm_name(i,s) .EQ. "C").OR.&
-                    (sb_atm_name(i,s) .EQ. "C2").OR.&
-                    (sb_atm_name(i,s) .EQ. "C3").OR.&
-                    (sb_atm_name(i,s) .EQ. "CX") ) THEN
+                ELSE IF ( (sb_atm_name(i,s) .EQ. "C" ) .OR.&
+                    (sb_atm_name(i,s) .EQ. "C2" ) .OR.&
+                    (sb_atm_name(i,s) .EQ. "C3" ) .OR.&
+                    (sb_atm_name(i,s) .EQ. "CX" ) ) THEN
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = -1
-                ELSE IF ( (sb_atm_name(i,s) .EQ. "O") .OR.&
-                    (sb_atm_name(i,s) .EQ. "OH") .OR. &
-                    (sb_atm_name(i,s) .EQ. "OE") .OR. &
-                    (sb_atm_name(i,s) .EQ. "OA") .OR. &
-                    (sb_atm_name(i,s) .EQ. "OX") ) THEN
+                ELSE IF ( (sb_atm_name(i,s) .EQ. "O" ) .OR.&
+                    (sb_atm_name(i,s) .EQ. "OH" ) .OR. &
+                    (sb_atm_name(i,s) .EQ. "OE" ) .OR. &
+                    (sb_atm_name(i,s) .EQ. "OA" ) .OR. &
+                    (sb_atm_name(i,s) .EQ. "OX" ) ) THEN
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = -1
-                ELSE IF ( (sb_atm_name(i,s) .EQ. "H") .OR.&
-                    (sb_atm_name(i,s) .EQ. "H1") .OR.&
-                    (sb_atm_name(i,s) .EQ. "H2") .OR.&
-                    (sb_atm_name(i,s) .EQ. "H3") .OR.&
-                    (sb_atm_name(i,s) .EQ. "HX") ) THEN
+                ELSE IF ( (sb_atm_name(i,s) .EQ. "H" ) .OR.&
+                    (sb_atm_name(i,s) .EQ. "H1" ) .OR.&
+                    (sb_atm_name(i,s) .EQ. "H2" ) .OR.&
+                    (sb_atm_name(i,s) .EQ. "H3" ) .OR.&
+                    (sb_atm_name(i,s) .EQ. "HX" ) ) THEN
                     sb_atm_mat(2,i,s) = 1
                     sb_atm_mat(3,i,s) = -1
                 END IF
@@ -169,7 +169,7 @@ MODULE SB_GO
             END IF
         END DO
         REWIND(21)
-        sb_nb_max_is = CEILING(1.0 * sb_nb_line_is / sb_nb_step) * 2
+        sb_nb_max_is = CEILING( 1.0 * sb_nb_line_is / sb_nb_step ) * 2
     END SUBROUTINE sb_count_is
 
 
@@ -200,7 +200,7 @@ MODULE SB_GO
                     sb_is_mat(4,i,s) = 0
                 END IF
                 DO k = 1, 3
-                    sb_is_mat(k,i,s) = sb_is_mat(k,i,s) - sb_box(k) * ANINT(sb_is_mat(k,i,s) / sb_box(k))
+                    sb_is_mat(k,i,s) = sb_is_mat(k,i,s) - sb_box(k) * ANINT( sb_is_mat(k,i,s) / sb_box(k) )
                 END DO
             END DO
         END DO

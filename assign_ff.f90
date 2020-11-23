@@ -47,7 +47,7 @@ PRINT'(A100)','--------------------------------------------------'&
 !   ----------------------------------------------- Get arguments (filenames, choices)
 CAC = COMMAND_ARGUMENT_COUNT()
 
-IF (CAC .EQ. 0) THEN
+IF ( CAC .EQ. 0 ) THEN
     PRINT*, "No input files"
     STOP
 END IF
@@ -82,50 +82,50 @@ DO s = 1, nb_step
     DO i = 1, nb_atm
         READ(20, *) atm_name(i), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
         atm_mat(1,i,s) = i
-        IF (atm_name(i) .EQ. "126") THEN
+        IF ( atm_name(i) .EQ. "126" ) THEN
             atm_mat(2,i,s) = 12
             atm_type(i,s) = "C3E"
-        ELSE IF (atm_name(i) .EQ. "108") THEN
+        ELSE IF ( atm_name(i) .EQ. "108" ) THEN
             atm_mat(2,i,s) = 12
             atm_type(i,s) = "C3O"
-        ELSE IF (atm_name(i) .EQ. "88") THEN
+        ELSE IF ( atm_name(i) .EQ. "88" ) THEN
             atm_mat(2,i,s) = 12
             atm_type(i,s) = "CC"
-        ELSE IF (atm_name(i) .EQ. "122") THEN
+        ELSE IF ( atm_name(i) .EQ. "122" ) THEN
             atm_mat(2,i,s) = 16
             atm_type(i,s) = "OEP"
-        ELSE IF (atm_name(i) .EQ. "109") THEN
+        ELSE IF ( atm_name(i) .EQ. "109" ) THEN
             atm_mat(2,i,s) = 16
             atm_type(i,s) = "OH3"
-        ELSE IF (atm_name(i) .EQ. "110") THEN
+        ELSE IF ( atm_name(i) .EQ. "110" ) THEN
             atm_mat(2,i,s) = 1
             atm_type(i,s) = "HO"
-        ELSE IF (atm_name(i) .EQ. "76") THEN
+        ELSE IF ( atm_name(i) .EQ. "76" ) THEN
             atm_mat(2,i,s) = 16
             atm_type(i,s) = "OW"
-        ELSE IF (atm_name(i) .EQ. "77") THEN
+        ELSE IF ( atm_name(i) .EQ. "77" ) THEN
             atm_mat(2,i,s) = 1
             atm_type(i,s) = "HW"
         END IF
-        IF (atm_mat(2,i,s) .EQ. assign_center_nb) THEN
+        IF ( atm_mat(2,i,s) .EQ. assign_center_nb ) THEN
             atm_mat(9,i,s) = 1
         END IF
     END DO
 END DO
 CLOSE(UNIT=20)
 
-nb_o = COUNT(atm_mat(2,:,1) .EQ. 16, DIM=1)
+nb_o = COUNT( atm_mat(2,:,1) .EQ. 16, DIM=1 )
 
 ALLOCATE(nb_center(nb_step))
 DO s = 1, nb_step
-    nb_center(s) = COUNT(atm_mat(9,:,s) .EQ. 1, DIM=1)
+    nb_center(s) = COUNT( atm_mat(9,:,s) .EQ. 1, DIM=1 )
 END DO
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Positions:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- Read velocities
-IF (file_vel .NE. '0') THEN
+IF ( file_vel .NE. '0' ) THEN
     start = OMP_get_wtime()
 
     OPEN(UNIT=21, FILE=file_vel, STATUS='old', FORM='formatted', ACTION='READ')
@@ -143,7 +143,7 @@ IF (file_vel .NE. '0') THEN
 END IF
 
 !   ----------------------------------------------- Calculate geom center of go carbons and center so Zcarbon_avg = 0.0
-IF ( WRAP_C .EQ. "Y") THEN
+IF ( WRAP_C .EQ. "Y" ) THEN
     start = OMP_get_wtime()
 
     ALLOCATE(center_avgpos(3,nb_step))
@@ -152,7 +152,7 @@ IF ( WRAP_C .EQ. "Y") THEN
         center_avgpos(:,s) = 0.0_dp
 
         DO i = 1, nb_atm
-            IF (atm_mat(9,i,s) .EQ. 1) THEN
+            IF ( atm_mat(9,i,s) .EQ. 1 ) THEN
                 DO k = 1, 3
                     center_avgpos(k,s) = center_avgpos(k,s) + atm_mat(k+2,i,s)
                 END DO
@@ -165,7 +165,7 @@ IF ( WRAP_C .EQ. "Y") THEN
         DO i = 1, nb_atm
             atm_mat(5,i,s) = atm_mat(5,i,s) + z_shift
             DO k = 1, 3
-                atm_mat(k+2,i,s) = atm_mat(k+2,i,s) - box(k) * ANINT(atm_mat(k+2,i,s) / box(k))
+                atm_mat(k+2,i,s) = atm_mat(k+2,i,s) - box(k) * ANINT( atm_mat(k+2,i,s) / box(k) )
             END DO
         END DO
 
@@ -194,13 +194,13 @@ ALLOCATE(nb_oxygen_group(nb_step))
 !$OMP PRIVATE(s)
 
 DO s = 1, nb_step
-    nb_epoxide(s) = COUNT( (atm_type(:,s) .EQ. "OEP"), DIM=1) +  COUNT( (atm_type(:,s) .EQ. "OEQ"), DIM=1)
-    nb_ether(s) = COUNT( (atm_type(:,s) .EQ. "OET"), DIM=1) +  COUNT( (atm_type(:,s) .EQ. "OEU"), DIM=1)
-    nb_alcohol(s) = COUNT( (atm_type(:,s) .EQ. "OH2"), DIM=1) + COUNT( (atm_type(:,s) .EQ. "OH3"), DIM=1)
-    nb_alkoxide(s) = COUNT( (atm_type(:,s) .EQ. "OA2"), DIM=1) + COUNT( (atm_type(:,s) .EQ. "OA3"), DIM=1)
-    nb_water(s) = COUNT( (atm_type(:,s) .EQ. "OW"), DIM=1)
-    nb_hydroxide(s) = COUNT( (atm_type(:,s) .EQ. "OM"), DIM=1)
-    nb_hydronium(s) = COUNT( (atm_type(:,s) .EQ. "OP"), DIM=1)
+    nb_epoxide(s) = COUNT( (atm_type(:,s) .EQ. "OEP"), DIM=1) +  COUNT( (atm_type(:,s) .EQ. "OEQ"), DIM=1 )
+    nb_ether(s) = COUNT( (atm_type(:,s) .EQ. "OET"), DIM=1) +  COUNT( (atm_type(:,s) .EQ. "OEU"), DIM=1 )
+    nb_alcohol(s) = COUNT( (atm_type(:,s) .EQ. "OH2"), DIM=1) + COUNT( (atm_type(:,s) .EQ. "OH3"), DIM=1 )
+    nb_alkoxide(s) = COUNT( (atm_type(:,s) .EQ. "OA2"), DIM=1) + COUNT( (atm_type(:,s) .EQ. "OA3"), DIM=1 )
+    nb_water(s) = COUNT( (atm_type(:,s) .EQ. "OW"), DIM=1 )
+    nb_hydroxide(s) = COUNT( (atm_type(:,s) .EQ. "OM"), DIM=1 )
+    nb_hydronium(s) = COUNT( (atm_type(:,s) .EQ. "OP"), DIM=1 )
     nb_oxygen_group(s) = nb_epoxide(s) + nb_alcohol(s) + nb_ether(s) + &
         nb_alkoxide(s) + nb_hydroxide(s) + nb_hydronium(s) + nb_water(s)
 
@@ -230,40 +230,40 @@ PRINT'(A40,F14.2,A20)', "Oxygen groups topology output:", finish-start, "seconds
 
 !   ----------------------------------------------- Print the xyz and velocities files
 start = OMP_get_wtime()
-IF ( WRAP_C .EQ. "Y") THEN
+IF ( WRAP_C .EQ. "Y" ) THEN
     OPEN(UNIT=40, FILE = suffix//"_wrapped_"//file_pos)
-    IF (file_vel .NE. '0') OPEN(UNIT=41, FILE = suffix//"_wrapped_"//file_vel)
-ELSE 
+    IF ( file_vel .NE. '0') OPEN(UNIT=41, FILE = suffix//"_wrapped_"//file_vel)
+ELSE
     OPEN(UNIT=40, FILE = suffix//"_nonwrapped_"//file_pos)
-    IF (file_vel .NE. '0') OPEN(UNIT=41, FILE = suffix//"_nonwrapped_"//file_vel)
+    IF ( file_vel .NE. '0') OPEN(UNIT=41, FILE = suffix//"_nonwrapped_"//file_vel)
 END IF
 DO s = 1, nb_step
     WRITE(40,'(I10)') nb_atm
-    IF (file_vel .NE. '0') WRITE(41,'(I10)') nb_atm
+    IF ( file_vel .NE. '0') WRITE(41,'(I10)') nb_atm
     WRITE(40,'(A10,I10)') "Step nb:", s
-    IF (file_vel .NE. '0') WRITE(41,'(A10,I10)') "Step nb:", s
+    IF ( file_vel .NE. '0') WRITE(41,'(A10,I10)') "Step nb:", s
     DO i = 1, nb_atm
-        WRITE(40,'(A3,1X,E14.5,1X,E14.5,1X,E14.5)') ADJUSTL(atm_type(i,s)), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
-        IF (file_vel .NE. '0') WRITE(41,'(A3,1X,E14.5,1X,E14.5,1X,E14.5)') ADJUSTL(atm_type(i,s))&
+        WRITE(40,'(A3,1X,E14.5,1X,E14.5,1X,E14.5)') ADJUSTL( atm_type(i,s) ), atm_mat(3,i,s), atm_mat(4,i,s), atm_mat(5,i,s)
+        IF ( file_vel .NE. '0') WRITE(41,'(A3,1X,E14.5,1X,E14.5,1X,E14.5)') ADJUSTL( atm_type(i,s) )&
         , atm_mat(6,i,s), atm_mat(7,i,s), atm_mat(8,i,s)
     END DO
 END DO
 CLOSE(UNIT=40)
-IF (file_vel .NE. '0') CLOSE(UNIT=41)
+IF ( file_vel .NE. '0') CLOSE(UNIT=41)
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Positions/Velocities output:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- Print the waterlist (mask indices for surf)
-IF (waterlist .EQ. 1) THEN
+IF ( waterlist .EQ. 1 ) THEN
     start = OMP_get_wtime()
 
     OPEN(UNIT=42, FILE = suffix//"_waterlist.txt")
     DO s = 1, nb_step
         WRITE(42,'(A14)', ADVANCE="no")"mask = indices "
         DO i = 1, nb_atm
-            IF (atm_type(i,s) .EQ. "OW") THEN
-                WRITE(42,'(I5)', ADVANCE="no") INT(atm_mat(1,i,s) - 1)
+            IF ( atm_type(i,s) .EQ. "OW" ) THEN
+                WRITE(42,'(I5)', ADVANCE="no") INT( atm_mat(1,i,s) - 1 )
             END IF
         END DO
         WRITE(42,*)

@@ -30,7 +30,7 @@ REAL(dp)                    :: box(3)
 CHARACTER(LEN=1)            :: IS_c="N"
 CHARACTER(LEN=1)            :: AS_c="N"
 CHARACTER(LEN=1)            :: IS_ud="A"
-! Extract                   :: 
+! Extract                   ::
 INTEGER                     :: stepi, stepf
 CHARACTER(LEN=1)            :: WRAP_C="Y"
 ! Assign
@@ -83,15 +83,14 @@ SUBROUTINE READINPUTSUB(input_file)
     PRINT'(A100)', 'Input parameters'
     PRINT'(A100)', '--------------------------------------------------' &
     , '--------------------------------------------------'
-    RL:DO WHILE (iostatus == 0)
+    RL:DO WHILE ( iostatus == 0 )
         READ(file_unit, '(A)', IOSTAT=iostatus) value
-        IF (iostatus == 0)then
+        IF ( iostatus == 0 )then
             line_c=line_c + 1
-
-            delim=SCAN(value, '    ')
+            delim=SCAN( value, '    ' )
             label=value(1:delim)
             value=value(delim + 1:)
-            IF (label(1:1) == '!')THEN
+            IF ( label(1:1) == '!' )THEN
                 CYCLE RL
             END IF
             SELECT CASE (label)
@@ -351,7 +350,7 @@ SUBROUTINE READINPUTSUB(input_file)
     box(3)=zhi - zlo
 
     DO i=1, 3
-        IF (box(i) .LT. 0.1)THEN
+        IF ( box(i) .LT. 0.1 )THEN
             PRINT'(A100)', '--------------------------------------------------' &
             , '--------------------------------------------------'
             PRINT'(A100)', "The box seems very small, please check your input file"
