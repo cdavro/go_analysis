@@ -56,10 +56,10 @@ IF ( CAC .EQ. 0 ) THEN
 END IF
 
 CALL GET_COMMAND_ARGUMENT(1, input_file)
-input_file=TRIM( input_file )
+input_file=TRIM(input_file)
 CALL READINPUTSUB(input_file)
-file_pos=TRIM( file_pos )
-file_vel=TRIM( file_vel )
+file_pos=TRIM(file_pos)
+file_vel=TRIM(file_vel)
 
 !   ----------------------------------------------- Controls
 ! To Do
@@ -70,13 +70,13 @@ PRINT'(A100)', '--------------------------------------------------'&
 , '--------------------------------------------------'
 
 !   ----------------------------------------------- Allocate function for reading files
-ALLOCATE(atm_mat(15,nb_atm,nb_step) )
+ALLOCATE(atm_mat(15,nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
 !   ----------------------------------------------- Read positions
 start = OMP_get_wtime()
-ALLOCATE(atm_name(nb_atm) )
-ALLOCATE(atm_type(nb_atm,nb_step) )
+ALLOCATE(atm_name(nb_atm))
+ALLOCATE(atm_type(nb_atm,nb_step))
 
 OPEN(UNIT=20, FILE=file_pos, STATUS='old', FORM='formatted', ACTION='READ')
 DO s = 1, nb_step
@@ -110,7 +110,7 @@ nb_c = COUNT( atm_mat(2,:,1) .EQ. 12, DIM=1 )
 nb_o = COUNT( atm_mat(2,:,1) .EQ. 16, DIM=1 )
 nb_h = COUNT( atm_mat(2,:,1) .EQ. 1, DIM=1 )
 
-ALLOCATE(nb_center(nb_step) )
+ALLOCATE(nb_center(nb_step))
 DO s = 1, nb_step
     nb_center(s) = COUNT( atm_mat(15,:,s) .EQ. 1, DIM=1 )
 END DO
@@ -140,7 +140,7 @@ END IF
 IF ( WRAP_C .EQ. "Y" ) THEN
     start = OMP_get_wtime()
 
-    ALLOCATE(center_avgpos(3,nb_step) )
+    ALLOCATE(center_avgpos(3,nb_step))
 
     DO s = 1, nb_step
         center_avgpos(:,s) = 0.0_dp
@@ -174,19 +174,19 @@ END IF
 !   ----------------------------------------------- Search the topology, water and oxygen groups
 start = OMP_get_wtime()
 
-ALLOCATE(conn_mat(17,nb_atm,nb_step) )
-ALLOCATE(nb_epoxide(nb_step) )
-ALLOCATE(nb_pepoxide(nb_step) )
-ALLOCATE(nb_ether(nb_step) )
-ALLOCATE(nb_pether(nb_step) )
-ALLOCATE(nb_alcohol(nb_step) )
-ALLOCATE(nb_alkoxide(nb_step) )
-ALLOCATE(nb_ketone(nb_step) )
-ALLOCATE(nb_water(nb_step) )
-ALLOCATE(nb_hydronium(nb_step) )
-ALLOCATE(nb_hydroxide(nb_step) )
-ALLOCATE(nb_oxygen_group(nb_step) )
-ALLOCATE(temp_atm_type(nb_atm,2) )
+ALLOCATE(conn_mat(17,nb_atm,nb_step))
+ALLOCATE(nb_epoxide(nb_step))
+ALLOCATE(nb_pepoxide(nb_step))
+ALLOCATE(nb_ether(nb_step))
+ALLOCATE(nb_pether(nb_step))
+ALLOCATE(nb_alcohol(nb_step))
+ALLOCATE(nb_alkoxide(nb_step))
+ALLOCATE(nb_ketone(nb_step))
+ALLOCATE(nb_water(nb_step))
+ALLOCATE(nb_hydronium(nb_step))
+ALLOCATE(nb_hydroxide(nb_step))
+ALLOCATE(nb_oxygen_group(nb_step))
+ALLOCATE(temp_atm_type(nb_atm,2))
 
 !atm_mat(9,:,:) = 0 ! NbH
 !atm_mat(10,:,:) = 0 ! NbC
