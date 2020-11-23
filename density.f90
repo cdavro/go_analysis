@@ -171,7 +171,7 @@ DO s = 1, nb_step
         count_dens_down = 0
         count_dens_up = 0
     C1:DO i = 1, nb_atm
-            IF ( atm_mat(3,i,s) .NE. 23 ) THEN !Water Oxygen
+            IF ( atm_mat(3,i,s) .NE. 23 ) THEN ! Water Oxygen
                 CYCLE C1
             END IF
             IF ( ( atm_mat(7,i,s)*atm_mat(8,i,s) .GE. r ) .AND. ( atm_mat(7,i,s)*atm_mat(8,i,s) .LT. r+dens_dr ) ) THEN
@@ -262,7 +262,7 @@ DO s = 1, nb_step
     DO j = 1, dens_step
         count_dens_down_avgz_c = 0
     D1:DO i = 1, nb_atm
-            IF ( atm_mat(3,i,s) .NE. 23 ) THEN !Water Oxygen
+            IF ( atm_mat(3,i,s) .NE. 23 ) THEN ! Water Oxygen
                 CYCLE D1
             END IF
             IF ( ( (atm_mat(6,i,s) - avg_z(s) ) .GE. r ) .AND. ( ( atm_mat(6,i,s) - avg_z(s) ) .LT. r+dens_dr ) ) THEN

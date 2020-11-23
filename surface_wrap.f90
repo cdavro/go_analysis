@@ -37,7 +37,7 @@ PRINT'(A100)', '--------------------------------------------------'&
 !   ----------------------------------------------- Get arguments (filenames, choices)
 CAC = COMMAND_ARGUMENT_COUNT()
 
-IF (CAC .EQ. 0) THEN
+IF ( CAC .EQ. 0 ) THEN
     PRINT*, "No input files"
     STOP
 END IF
@@ -66,7 +66,7 @@ OPEN(UNIT=20, FILE=file_is, STATUS='old', FORM='formatted', ACTION='READ')
 nb_line_is=0_dp
 DO
     READ(20,*,IOSTAT=iostatus)
-    IF (iostatus .NE. 0) THEN
+    IF ( iostatus .NE. 0 ) THEN
         EXIT
     ELSE
         nb_line_is = nb_line_is + 1
@@ -102,10 +102,10 @@ PRINT'(A40,F14.2,A20)', "IS:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- Wrap and write
 start = OMP_get_wtime()
-IF ( WRAP_C .EQ. "Y") THEN
+IF ( WRAP_C .EQ. "Y" ) THEN
     DO s = 1, nb_step
         DO i = 1, nb_pt_is(s)
-            is_mat(:,i,s) = is_mat(:,i,s) - box(:) * ANINT(is_mat(:,i,s) / box(:))
+            is_mat(:,i,s) = is_mat(:,i,s) - box(:) * ANINT( is_mat(:,i,s) / box(:) )
         END DO
     END DO
 END IF
@@ -119,9 +119,9 @@ DO s = 1, nb_step
     WRITE(40,'(I10)') nb_pt_is(s)
     WRITE(40,'(A10,I10)') "Step nb:", s
     DO i = 1, nb_pt_is(s)
-        IF (is_mat(4,i,s) .GT. 0.0) THEN
+        IF ( is_mat(4,i,s) .GT. 0.0 ) THEN
             WRITE(40, '(A4,1X,E14.5,1X,E14.5,1X,E14.5)') "XD", is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
-        ELSE IF (is_mat(4,i,s) .LT. 0.0) THEN
+        ELSE IF ( is_mat(4,i,s) .LT. 0.0 ) THEN
             WRITE(40, '(A4,1X,E14.5,1X,E14.5,1X,E14.5)') "XU", is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
         ELSE
             WRITE(40, '(A4,1X,E14.5,1X,E14.5,1X,E14.5)') "X0", is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
