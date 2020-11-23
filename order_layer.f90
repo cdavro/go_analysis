@@ -46,7 +46,7 @@ PRINT'(A100)','--------------------------------------------------'&
 !   ----------------------------------------------- Get arguments (filenames, choices)
 CAC = COMMAND_ARGUMENT_COUNT()
 
-IF (CAC .EQ. 0) THEN
+IF ( CAC .EQ. 0 ) THEN
     PRINT*,"No input files"
     STOP
 END IF
@@ -74,14 +74,13 @@ atm_mat(:,:,:) = 0.0_dp
 start = OMP_get_wtime()
 
 CALL sb_read_pos_xyz(file_pos,nb_atm,nb_step,atm_mat(1:6,:,:),atm_name)
-DEALLOCATE(atm_name) ! Not Used
 
 nb_h = COUNT(atm_mat(2,:,1) .EQ. 1, DIM=1)
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Positions:", finish-start, "seconds elapsed"
 
-IF (IS_c .EQ. 'Y' ) THEN
+IF ( IS_c .EQ. 'Y' ) THEN
 ! A ----------------------------------------------- Since the number of points for the IS isn't constant, count it.
     start = OMP_get_wtime()
 
@@ -104,9 +103,9 @@ IF (IS_c .EQ. 'Y' ) THEN
     PRINT'(A40,F14.2,A20)', "IS:", finish-start, "seconds elapsed"
 END IF
 
-IF (IS_c .EQ. 'Y' ) THEN
+IF ( IS_c .EQ. 'Y' ) THEN
 
-    ! X ----------------------------------------------- Calculate closest distance between IS and any O atom
+    ! X ----------------------------------------------- Calculate closest distance between IS and Water Oxygen
     start = OMP_get_wtime()
 
     !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, is_mat, nb_is, nb_atm, nb_step)&
@@ -114,32 +113,32 @@ IF (IS_c .EQ. 'Y' ) THEN
     !$OMP PRIVATE(SpO_disp_vec, SpO_disp_norm)
     DO s = 1, nb_step
         DO i = 1, nb_atm
-            IF (atm_mat(3,i,s) .EQ. 19) THEN
+            IF ( atm_mat(3,i,s) .EQ. 23 ) THEN ! Water Oxygen
                 DO j = 1, nb_is(s)
-                    IF (is_mat(4,j,s) .EQ. 1) THEN
+                    IF ( is_mat(4,j,s) .EQ. 1 ) THEN
                         DO k = 1, 3
                             SpO_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
-                            SpO_disp_vec(k) = SpO_disp_vec(k) - box(k) * ANINT(SpO_disp_vec(k)/box(k))
+                            SpO_disp_vec(k) = SpO_disp_vec(k) - box(k) * ANINT( SpO_disp_vec(k)/box(k) )
                         END DO
-                        SpO_disp_norm = NORM2(SpO_disp_vec)
-                        IF ( (SpO_disp_norm .LT. atm_mat(15,i,s)) .OR. atm_mat(15,i,s) .EQ. 0.0 ) THEN
+                        SpO_disp_norm = NORM2( SpO_disp_vec )
+                        IF ( ( SpO_disp_norm .LT. atm_mat(15,i,s) ) .OR. ( atm_mat(15,i,s) .EQ. 0.0 ) ) THEN
                             atm_mat(15,i,s) = SpO_disp_norm
-                            IF (atm_mat(6,i,s) .LT. is_mat(3,j,s)) THEN
+                            IF ( atm_mat(6,i,s) .LT. is_mat(3,j,s ) ) THEN
                                 atm_mat(16,i,s) = -1
                             ELSE
                                 atm_mat(16,i,s) = 1
                             END IF
                             atm_mat(17,i,s) = is_mat(5,j,s)
                         END IF
-                    ELSE IF (is_mat(4,j,s) .EQ. 2) THEN
+                    ELSE IF ( is_mat(4,j,s) .EQ. 2 ) THEN
                         DO k = 1, 3
                             SpO_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
-                            SpO_disp_vec(k) = SpO_disp_vec(k) - box(k) * ANINT(SpO_disp_vec(k)/box(k))
+                            SpO_disp_vec(k) = SpO_disp_vec(k) - box(k) * ANINT( SpO_disp_vec(k)/box(k) )
                         END DO
-                        SpO_disp_norm = NORM2(SpO_disp_vec)
-                        IF ( (SpO_disp_norm .LT. atm_mat(18,i,s)) .OR. atm_mat(18,i,s) .EQ. 0.0 ) THEN
+                        SpO_disp_norm = NORM2( SpO_disp_vec )
+                        IF ( ( SpO_disp_norm .LT. atm_mat(18,i,s) ) .OR. (atm_mat(18,i,s) .EQ. 0.0 ) ) THEN
                             atm_mat(18,i,s) = SpO_disp_norm
-                            IF (atm_mat(6,i,s) .GT. is_mat(3,j,s)) THEN
+                            IF ( atm_mat(6,i,s) .GT. is_mat(3,j,s ) ) THEN
                                 atm_mat(19,i,s) = -1
                             ELSE
                                 atm_mat(19,i,s) = 1
@@ -176,61 +175,30 @@ DO s = 1, nb_step
     count_L3 = 0
     count_all = 0
     Z1:DO i = 1, nb_atm
-        IF (atm_mat(2,i,s) .EQ. 1) CYCLE Z1
-        IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 1) ) THEN
-            type = "CC"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 3) ) THEN
-            type = "C2O"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 4) ) THEN
-            type = "C3O"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 5) ) THEN
-            type = "C2A"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 6) ) THEN
-            type = "C3A"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 7) ) THEN
-            type = "C2E"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. 8) ) THEN
-            type = "C3E"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 10) ) THEN
-            type = "OEP"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 11) ) THEN
-            type = "OET"
-        ELSE IF ( ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 12) ) .OR.&
-             ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 12) ) ) THEN
-            type = "OH"
-        ELSE IF ( ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 14) ) .OR.&
-            ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 14) ) ) THEN
-            type = "OA"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 19) ) THEN
+        IF ( atm_mat(2,i,s) .EQ. 1 ) CYCLE Z1
+        type = atm_name(i,s)
+        IF ( atm_name(i,s) .EQ. "OW" ) THEN
             type = "OW"
             count_all = count_all + 1
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 18) ) THEN
-            type = "OM"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 17) ) THEN
-            type = "OP"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 12) .AND. (atm_mat(3,i,s) .EQ. -1) ) THEN
-            type = "CX"
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. -1) ) THEN
-            type = "OX"
         END IF
-        IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 19) &
-            .AND. (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L0_down) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L0_up) ) THEN
+        IF ( ( atm_name(i,s) .EQ. "OW" ) .AND. &
+            (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L0_down ) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L0_up ) ) THEN
             type = "OL0"
             count_L0 = count_L0 + 1
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 19) &
-            .AND. (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L1_down) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L1_up) ) THEN
+        ELSE IF ( ( atm_name(i,s) .EQ. "OW" ) .AND. &
+            (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L1_down ) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L1_up ) ) THEN
             type = "OL1"
             count_L1 = count_L1 + 1
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 19) &
-            .AND. (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L2_down) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L2_up) ) THEN
+        ELSE IF ( ( atm_name(i,s) .EQ. "OW" ) .AND. &
+            (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L2_down ) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L2_up ) ) THEN
             type = "OL2"
             count_L2 = count_L2 + 1
-        ELSE IF ( (atm_mat(2,i,s) .EQ. 16) .AND. (atm_mat(3,i,s) .EQ. 19) &
-            .AND. (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L3_down) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L3_up) ) THEN
+        ELSE IF ( ( atm_name(i,s) .EQ. "OW" ) .AND. &
+            (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L3_down ) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L3_up ) ) THEN
             type = "OL3"
             count_L3 = count_L3 + 1
         END IF
-        WRITE(40,'(A4,1X,E14.5,1X,E14.5,1X,E14.5)') ADJUSTL(type), atm_mat(4,i,s), atm_mat(5,i,s), atm_mat(6,i,s)
+        WRITE(40,'(A4,1X,E14.5,1X,E14.5,1X,E14.5)') ADJUSTL( type ), atm_mat(4,i,s), atm_mat(5,i,s), atm_mat(6,i,s)
     END DO Z1
     WRITE(42,'(A4,1X,I10,1X,I10,1X,I10,1X,I10,1X,I10,1X,I10,1X,I10)') suffix, s, count_L0, count_L1, count_L2, count_L3&
     , count_L0+count_L1+count_L2+count_L3, count_all
@@ -248,7 +216,7 @@ PRINT'(A100)', '--------------------------------------------------'&
 PRINT'(A100)', 'The END'
 
 !   ----------------------------------------------- Deallocate and exit
-IF (IS_c .EQ. 'Y') DEALLOCATE(is_mat,nb_is)
+IF ( IS_c .EQ. 'Y' ) DEALLOCATE(is_mat,nb_is)
 
 DEALLOCATE(atm_mat)
 
