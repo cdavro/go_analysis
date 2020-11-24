@@ -71,7 +71,7 @@ PRINT'(A100)','--------------------------------------------------'&
 ,'--------------------------------------------------'
 
 !   ----------------------------------------------- Allocate function for reading files
-ALLOCATE(atm_mat(25,nb_atm,nb_step))
+ALLOCATE(atm_mat(29,nb_atm,nb_step))
 ALLOCATE(atm_name(nb_atm,nb_step))
 atm_mat(:,:,:) = 0.0_dp
 
@@ -111,7 +111,7 @@ END IF
 
 ! B ----------------------------------------------- OH groups and corresponding values
 start = OMP_get_wtime()
-ALLOCATE(OHvec_mat(39,nb_o*3,nb_step))
+ALLOCATE(OHvec_mat(43,nb_o*3,nb_step))
 ALLOCATE(nb_max_OHvec(nb_step))
 
 nb_max_OHvec(:) = 0.0
@@ -293,14 +293,25 @@ DO s = 1, nb_step
                 IF (atm_mat(2,j,s) .EQ. 12) THEN ! CC
                     OHvec_mat(20,i,s) = 1
                     OHvec_mat(24,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OEP
+                ELSE IF ( (atm_mat(3,j,s) .EQ. 17) .OR.& ! OEN
+                (atm_mat(3,j,s) .EQ. 19) ) THEN ! OEP
                     OHvec_mat(21,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OET
+                ELSE IF ( (atm_mat(3,j,s) .EQ. 18) .OR.& ! OFN
+                (atm_mat(3,j,s) .EQ. 20) ) THEN ! OFP
                     OHvec_mat(39,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OH
+                ELSE IF (atm_mat(3,j,s) .EQ. 16) THEN ! OH2/OH3
                     OHvec_mat(22,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 14) THEN ! OA
+                ELSE IF (atm_mat(3,j,s) .EQ. 21) THEN ! OA3
                     OHvec_mat(23,i,s) = 1
+                ELSE IF (atm_mat(3,j,s) .EQ. 22) THEN ! OA2
+                    OHvec_mat(40,i,s) = 1
+                ELSE IF ( (atm_mat(3,j,s) .EQ. 32) .OR.& ! NA
+                (atm_mat(3,j,s) .EQ. 33) ) THEN ! CLM
+                    OHvec_mat(41,i,s) = 1
+                ELSE IF (atm_mat(3,j,s) .EQ. 24) THEN ! OH
+                    OHvec_mat(42,i,s) = 1
+                ELSE IF (atm_mat(3,j,s) .EQ. 25) THEN ! H3O
+                    OHvec_mat(43,i,s) = 1
                 END IF
             ELSE IF (XOh_disp_norm .LE. hb_X2Oh_rcut) THEN
                 IF (atm_mat(2,j,s) .EQ. 12) THEN ! CX
@@ -361,14 +372,25 @@ DO s = 1, nb_step
                 IF (atm_mat(2,j,s) .EQ. 12) THEN ! CC
                     atm_mat(10,i,s) = 1
                     atm_mat(14,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 10) THEN ! OEP
+                ELSE IF ( (atm_mat(3,j,s) .EQ. 17) .OR.& ! OEN
+                (atm_mat(3,j,s) .EQ. 19) ) THEN ! OEP
                     atm_mat(11,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 11) THEN ! OET
+                ELSE IF ( (atm_mat(3,j,s) .EQ. 18) .OR.& ! OFN
+                (atm_mat(3,j,s) .EQ. 20) ) THEN ! OFP
                     atm_mat(25,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 12) THEN ! OH
+                ELSE IF (atm_mat(3,j,s) .EQ. 16) THEN ! OH2/OH3
                     atm_mat(12,i,s) = 1
-                ELSE IF (atm_mat(3,j,s) .EQ. 14) THEN ! OA
+                ELSE IF (atm_mat(3,j,s) .EQ. 21) THEN ! OA3
                     atm_mat(13,i,s) = 1
+                ELSE IF (atm_mat(3,j,s) .EQ. 22) THEN ! OA2
+                    atm_mat(26,i,s) = 1
+                ELSE IF ( (atm_mat(3,j,s) .EQ. 32) .OR.& ! NA
+                (atm_mat(3,j,s) .EQ. 33) ) THEN ! CLM
+                    atm_mat(27,i,s) = 1
+                ELSE IF (atm_mat(3,j,s) .EQ. 24) THEN ! OH
+                    atm_mat(28,i,s) = 1
+                ELSE IF (atm_mat(3,j,s) .EQ. 25) THEN ! H3O
+                    atm_mat(29,i,s) = 1
                 END IF
             ELSE IF (XO_disp_norm .LE. hb_X2O_rcut) THEN
                 IF (atm_mat(2,j,s) .EQ. 12) THEN ! CX
@@ -500,23 +522,27 @@ start = OMP_get_wtime()
 OPEN(UNIT=31, FILE=suffix//"_O_HB.txt")
 WRITE(31, '(A4,1X,A10,1X,A10,1X,A6&
             &,1X,A6,1X,A6,1X,A6&
-            &,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4&
+            &,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4&
             &,1X,A14,1X,A14,1X,A14)')&
     "Traj", "Step", "O_ID", "O_Type"&
     , "TA_O", "TD_O", "TDU_O"&
-    , "cCC", "cOEP", "cOET", "cOH", "cOA", "cCX"&
+    , "cCC", "cOEP", "cOET", "cOH", "cOA3", "cOA2", "cION", "cOM", "cH3O", "cCX"&
     , "dist_ISD", "dist_ISU", "dist_AS"
 DO s = 1, nb_step
     DO i = 1, nb_atm
         IF (atm_mat(2,i,s) .EQ. 16) THEN
             WRITE(31,'(A4,1X,I10,1X,I10,1X,I6&
             &,1X,I6,1X,I6,1X,I6&
-            &,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4&
+            &,1X,I4,1X,I4,1X,I4&
+            &,1X,I4,1X,I4,1X,I4&
+            &,1X,I4,1X,I4,1X,I4,1X,I4&
             &,1X,E14.5,1X,E14.5,1X,E14.5)')&
-            suffix, s, INT(atm_mat(1,i,s)), INT(atm_mat(3,i,s)), INT(atm_mat(7,i,s))&
-            , INT(atm_mat(8,i,s)), INT(atm_mat(9,i,s)), INT(atm_mat(10,i,s))&
-            , INT(atm_mat(11,i,s)), INT(atm_mat(25,i,s))&
-            , INT(atm_mat(12,i,s)), INT(atm_mat(13,i,s)), INT(atm_mat(14,i,s))&
+            suffix, s, INT(atm_mat(1,i,s)), INT(atm_mat(3,i,s))&
+            , INT(atm_mat(7,i,s)), INT(atm_mat(8,i,s)), INT(atm_mat(9,i,s))&
+            , INT(atm_mat(10,i,s)), INT(atm_mat(11,i,s)), INT(atm_mat(25,i,s))&
+            , INT(atm_mat(12,i,s)), INT(atm_mat(13,i,s)), INT(atm_mat(26,i,s))&
+            , INT(atm_mat(27,i,s)), INT(atm_mat(28,i,s)), INT(atm_mat(29,i,s))&
+            , INT(atm_mat(14,i,s))&
             , (atm_mat(15,i,s)*atm_mat(16,i,s)),(atm_mat(18,i,s)*atm_mat(19,i,s))&
             , (atm_mat(22,i,s)*atm_mat(24,i,s))
     END IF
@@ -527,7 +553,7 @@ CLOSE(UNIT=31)
 OPEN(UNIT=32, FILE = suffix//"_OH_HB.txt")
 WRITE(32, '(A4,1X,A10,1X,A10,1X,A10,1X,A6&
             &,1X,A6,1X,A6,1X,A6&
-            &,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4&
+            &,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4&
             &,1X,A6,1X,A6,1X,A6,1X,A14,1X,A14&
             &,1X,A14,1X,A14&
             &,1X,A6,1X,A6,1X,A5,1X,A6&
@@ -536,7 +562,7 @@ WRITE(32, '(A4,1X,A10,1X,A10,1X,A10,1X,A6&
             &,1X,A6,1X,A6,1X,A5,1X,A6)')&
     "Traj", "Step", "O_ID", "H_ID", "O_Type"&
     , "TA_OH", "TD_OH", "TDU_OH"&
-    , "cCC", "cOEP", "cOET", "cOH", "cOA", "cCX"&
+    , "cCC", "cOEP", "cOET", "cOH", "cOA3", "cOA2", "cION", "cOM", "cH3O", "cCX"&
     , "TA_O", "TD_O", "TDU_O", "dist_ISD", "dist_ISU"&
     , "dist_AS", "dist_HAS"&
     , "O_ID", "O_Type", "r (A)", "alpha (rad)"&
@@ -547,13 +573,15 @@ DO s = 1, nb_step
     DO i = 1, nb_max_OHvec(s)
         WRITE(32,'(A4,1X,I10,1X,I10,1X,I10,1X,I6&
                     &,1X,I6,1X,I6,1X,I6&
-                    &,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4&
+                    &,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4&
                     &,1X,I6,1X,I6,1X,I6,1X,E14.5,1X,E14.5&
                     &,1X,E14.5,1X,E14.5)', ADVANCE = "no")&
         suffix, s, INT(OHvec_mat(1,i,s)), INT(OHvec_mat(2,i,s)), INT(OHvec_mat(3,i,s)) &
         , INT(OHvec_mat(14,i,s)), INT(OHvec_mat(15,i,s)), INT(OHvec_mat(16,i,s))&
         , INT(OHvec_mat(20,i,s)), INT(OHvec_mat(21,i,s)), INT(OHvec_mat(39,i,s))&
-        , INT(OHvec_mat(22,i,s)), INT(OHvec_mat(23,i,s)) , INT(OHvec_mat(24,i,s))&
+        , INT(OHvec_mat(22,i,s)), INT(OHvec_mat(23,i,s))&
+        , INT(OHvec_mat(40,i,s)), INT(OHvec_mat(41,i,s)), INT(OHvec_mat(42,i,s)), INT(OHvec_mat(43,i,s))&
+        , INT(OHvec_mat(24,i,s))&
         , INT(OHvec_mat(17,i,s)), INT(OHvec_mat(18,i,s)), INT(OHvec_mat(19,i,s))&
         , (OHvec_mat(25,i,s)*OHvec_mat(26,i,s)), (OHvec_mat(28,i,s)*OHvec_mat(29,i,s))&
         , (OHvec_mat(32,i,s)*OHvec_mat(34,i,s)), (OHvec_mat(36,i,s)*OHvec_mat(38,i,s))
