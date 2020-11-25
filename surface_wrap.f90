@@ -18,7 +18,7 @@ REAL(dp)                        :: start,finish
 CHARACTER(LEN=100)              :: input_file
 
 !   ----------------------------------------------- Infos/properties
-REAL(dp), ALLOCATABLE           :: is_mat(:,:,:)
+REAL(dp), ALLOCATABLE           :: is_mat(:,:,:), min_max(:,:)
 INTEGER, ALLOCATABLE            :: nb_pt_is(:)
 INTEGER                         :: nb_line_is, nb_max_is
 
@@ -81,8 +81,11 @@ PRINT'(A40,F14.2,A20)', "IS grid:", finish-start, "seconds elapsed"
 !   ----------------------------------------------- Allocate function for reading files
 ALLOCATE(is_mat(4,nb_max_is,nb_step))
 ALLOCATE(nb_pt_is(nb_step))
+ALLOCATE(min_max(3,nb_step))
+
 is_mat(:,:,:) = 0.0_dp
 nb_pt_is(:) = 0
+min_max(:,:) = 0.0_dp
 
 !   ----------------------------------------------- Read positions
 start = OMP_get_wtime()
@@ -107,24 +110,31 @@ IF ( WRAP_C .EQ. "Y" ) THEN
         DO i = 1, nb_pt_is(s)
             is_mat(:,i,s) = is_mat(:,i,s) - box(:) * ANINT( is_mat(:,i,s) / box(:) )
         END DO
+        min_max(1,s) = MINVAL( is_mat(3,:,s), MASK = is_mat(3,:,s) .NE. 0)
+        min_max(2,s) = MAXVAL( is_mat(3,:,s) )
+        min_max(3,s) = (min_max(1,s) + min_max(2,s)) / 2.0
+    END DO
+ELSE
+    DO s = 1, nb_step
+        min_max(1,s) = MINVAL( is_mat(3,:,s), MASK = is_mat(3,:,s) .NE. 0)
+        min_max(2,s) = MAXVAL( is_mat(3,:,s) )
+        min_max(3,s) = (min_max(1,s) + min_max(2,s)) / 2.0
     END DO
 END IF
 
 IF ( WRAP_C .EQ. "Y") THEN
     OPEN(UNIT=40, FILE = suffix//"_wrapped_surf.xyz")
-ELSE 
+ELSE
     OPEN(UNIT=40, FILE = suffix//"_nonwrapped_surf.xyz")
 END IF
 DO s = 1, nb_step
     WRITE(40,'(I10)') nb_pt_is(s)
     WRITE(40,'(A10,I10)') "Step nb:", s
     DO i = 1, nb_pt_is(s)
-        IF ( is_mat(4,i,s) .GT. 0.0 ) THEN
+        IF ( is_mat(3,i,s) .LT. min_max(3,s) ) THEN
             WRITE(40, '(A4,1X,E14.5,1X,E14.5,1X,E14.5)') "XD", is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
-        ELSE IF ( is_mat(4,i,s) .LT. 0.0 ) THEN
+        ELSE IF ( is_mat(3,i,s) .GT. min_max(4,s) ) THEN
             WRITE(40, '(A4,1X,E14.5,1X,E14.5,1X,E14.5)') "XU", is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
-        ELSE
-            WRITE(40, '(A4,1X,E14.5,1X,E14.5,1X,E14.5)') "X0", is_mat(1,i,s), is_mat(2,i,s), is_mat(3,i,s)
         END IF
     END DO
 END DO
@@ -139,6 +149,6 @@ PRINT'(A100)', '--------------------------------------------------'&
 PRINT'(A100)', 'The END'
 
 !   ----------------------------------------------- Deallocate and exit
-DEALLOCATE(is_mat,nb_pt_is)
+DEALLOCATE(is_mat,nb_pt_is,min_max)
 
 END PROGRAM surface_wrap
