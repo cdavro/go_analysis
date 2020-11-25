@@ -146,15 +146,6 @@ SUBROUTINE READINPUTSUB(input_file)
                 CASE('assign_center_name')
                     READ(value, * , IOSTAT=iostatus) assign_center_name
                     PRINT'(A50,A64)', 'assign_center_name:', ADJUSTR(assign_center_name)
-                CASE ('assign_HO_rcut')
-                    READ(value, * , IOSTAT=iostatus) assign_HO_rcut
-                    PRINT'(A50,E64.10)', 'assign_HO_rcut: ', assign_HO_rcut
-                CASE ('assign_HC_rcut')
-                    READ(value, * , IOSTAT=iostatus) assign_HC_rcut
-                    PRINT'(A50,E64.10)', 'assign_HC_rcut: ', assign_HC_rcut
-                CASE ('assign_HH_rcut')
-                    READ(value, * , IOSTAT=iostatus) assign_HH_rcut
-                    PRINT'(A50,E64.10)', 'assign_HH_rcut: ', assign_HH_rcut
                 CASE ('assign_OC_rcut')
                     READ(value, * , IOSTAT=iostatus) assign_OC_rcut
                     PRINT'(A50,E64.10)', 'assign_OC_rcut: ', assign_OC_rcut

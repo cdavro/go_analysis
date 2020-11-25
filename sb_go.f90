@@ -20,120 +20,134 @@ MODULE SB_GO
                 sb_atm_mat(2,i,s) = -1
                 READ(20, *) sb_atm_name(i,s), sb_atm_mat(4,i,s), sb_atm_mat(5,i,s), sb_atm_mat(6,i,s)
                 sb_atm_mat(1,i,s) = i
-                IF ( sb_atm_name(i,s) .EQ. "CC" ) THEN !  Carbon (3C)
+                IF ( sb_atm_name(i,s) .EQ. "C3" ) THEN !  Carbon (3C)
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 1
-                !ELSE IF ( sb_atm_name(i,s) .EQ. "CP" ) THEN ! Carbon (2C)
-                !    sb_atm_mat(2,i,s) = 12
-                !    sb_atm_mat(3,i,s) = 2
+                ELSE IF ( sb_atm_name(i,s) .EQ. "C2" ) THEN ! Carbon (2C)
+                    sb_atm_mat(2,i,s) = 12
+                    sb_atm_mat(3,i,s) = 2
                 ELSE IF ( sb_atm_name(i,s) .EQ. "C3A" ) THEN ! Alkoxy Carbon (3C+1O)
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 3
-                ELSE IF ( sb_atm_name(i,s) .EQ. "C3O" ) THEN ! PAlcohol/Alcohol Carbon (3C+1O(Hx))
+                ELSE IF ( sb_atm_name(i,s) .EQ. "C3B" ) THEN ! Alcohol Carbon (3C+1O(Hx))
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 4
-                !ELSE IF ( sb_atm_name(i,s) .EQ. "C3O" ) THEN ! P Alcohol Carbon
-                !    sb_atm_mat(2,i,s) = 12
-                !    sb_atm_mat(3,i,s) = 5
-                ELSE IF ( sb_atm_name(i,s) .EQ. "C3E" ) THEN ! Epoxy Carbon (3C+1O)
+                ELSE IF ( sb_atm_name(i,s) .EQ. "C3C" ) THEN ! P Alcohol Carbon
+                    sb_atm_mat(2,i,s) = 12
+                    sb_atm_mat(3,i,s) = 5
+                ELSE IF ( sb_atm_name(i,s) .EQ. "C3D" ) THEN ! Ether Carbon (3C+1O)
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 6
-                ELSE IF ( sb_atm_name(i,s) .EQ. "C3P" ) THEN ! Protonated Epoxy Carbon (3C+1O(Hx))
+                ELSE IF ( sb_atm_name(i,s) .EQ. "C3E" ) THEN ! Protonated Ether Carbon (3C+1O(Hx))
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 7
-                ELSE IF ( sb_atm_name(i,s) .EQ. "C3F" ) THEN ! Ether Carbon (3C+1O)
+                ELSE IF ( sb_atm_name(i,s) .EQ. "C3F" ) THEN ! Epoxy Carbon (3C+1O)
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 8
-                ELSE IF ( sb_atm_name(i,s) .EQ. "C3Q" ) THEN ! Protonated Ether Carbon (3C+1O(Hx))
+                ELSE IF ( sb_atm_name(i,s) .EQ. "C3G" ) THEN ! Protonated Epoxy Carbon (3C+1O(H))
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 9
                 ELSE IF ( sb_atm_name(i,s) .EQ. "C2A" ) THEN ! Ketone/Alkoxy Carbon (2C+1O)
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 10
-                ELSE IF ( sb_atm_name(i,s) .EQ. "C2O" ) THEN ! PKetone/Alcohol/PAlcohol Carbon (2C+1O(Hx))
+                ELSE IF ( sb_atm_name(i,s) .EQ. "C2B" ) THEN ! PKetone/Alcohol Carbon (2C+1O(H))
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 11
-                ELSE IF ( sb_atm_name(i,s) .EQ. "C2E" ) THEN ! Epoxy Carbon (2C+1O)
+                ELSE IF ( sb_atm_name(i,s) .EQ. "C2C" ) THEN ! PAlcohol Carbon (2C+1O(H2))
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 12
-                ELSE IF ( sb_atm_name(i,s) .EQ. "C2P" ) THEN ! Protonated Epoxy Carbon (2C+1O(Hx))
+                ELSE IF ( sb_atm_name(i,s) .EQ. "C2D" ) THEN ! Ether Carbon (3C+1O)
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 13
-                ELSE IF ( sb_atm_name(i,s) .EQ. "C2F" ) THEN ! Ether Carbon (2C+1O)
+                ELSE IF ( sb_atm_name(i,s) .EQ. "C2E" ) THEN ! Protonated Ether Carbon (3C+1O(Hx))
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 14
-                ELSE IF ( sb_atm_name(i,s) .EQ. "C2Q" ) THEN ! Protonated Ether Carbon (2C+1O(Hx))
+                ELSE IF ( sb_atm_name(i,s) .EQ. "C2F" ) THEN ! Epoxy Carbon (3C+1O)
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 15
-                !!!---
-                ELSE IF ( (sb_atm_name(i,s) .EQ. "OH2" ) .OR.& ! PAlcohol/Alcohol Oxygen (1C+xH)
-                    (sb_atm_name(i,s) .EQ. "OH3" ) ) THEN
-                    sb_atm_mat(2,i,s) = 16
+                ELSE IF ( sb_atm_name(i,s) .EQ. "C2G" ) THEN ! Protonated Epoxy Carbon (3C+1O(H))
+                    sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = 16
-                ELSE IF ( sb_atm_name(i,s) .EQ. "OEN" ) THEN ! Epoxy Oxygen (2C+0H)
-                    sb_atm_mat(2,i,s) = 16
-                    sb_atm_mat(3,i,s) = 17
-                ELSE IF ( sb_atm_name(i,s) .EQ. "OFN" ) THEN ! Ether Oxygen (2C+0H)
-                    sb_atm_mat(2,i,s) = 16
-                    sb_atm_mat(3,i,s) = 18
-                ELSE IF ( sb_atm_name(i,s) .EQ. "OEP" ) THEN ! Protonated Epoxy Oxygen (2C+xH)
-                    sb_atm_mat(2,i,s) = 16
-                    sb_atm_mat(3,i,s) = 19
-                ELSE IF ( sb_atm_name(i,s) .EQ. "OFP" ) THEN ! Protonated Ether Oxygen (2C+xH)
-                    sb_atm_mat(2,i,s) = 16
-                    sb_atm_mat(3,i,s) = 20
+                !!!---
                 ELSE IF ( sb_atm_name(i,s) .EQ. "OA3" ) THEN ! Alkoxy Oxygen (1C+0H)
                     sb_atm_mat(2,i,s) = 16
+                    sb_atm_mat(3,i,s) = 17
+                ELSE IF ( (sb_atm_name(i,s) .EQ. "OB3" ) .OR.& ! Alcohol Oxygen (1C+xH)
+                    (sb_atm_name(i,s) .EQ. "OB2" ) ) THEN
+                    sb_atm_mat(2,i,s) = 16
+                    sb_atm_mat(3,i,s) = 18
+                ELSE IF ( (sb_atm_name(i,s) .EQ. "OC3" ) .OR.& ! PAlcohol Oxygen (1C+xH)
+                    (sb_atm_name(i,s) .EQ. "OC2" ) ) THEN
+                    sb_atm_mat(2,i,s) = 16
+                    sb_atm_mat(3,i,s) = 19
+                ELSE IF ( (sb_atm_name(i,s) .EQ. "OD3" ) .OR.& ! Ether Oxygen (1C+xH)
+                    (sb_atm_name(i,s) .EQ. "OD2" ) ) THEN
+                    sb_atm_mat(2,i,s) = 16
+                    sb_atm_mat(3,i,s) = 20
+                ELSE IF ( (sb_atm_name(i,s) .EQ. "OE3" ) .OR.& ! PEther Oxygen (1C+xH)
+                    (sb_atm_name(i,s) .EQ. "OE2" ) ) THEN
+                    sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 21
-                ELSE IF ( sb_atm_name(i,s) .EQ. "OA2" ) THEN ! Ketone/Alkoxy Oxygen (1C+0H)
+                ELSE IF ( (sb_atm_name(i,s) .EQ. "OF3" ) .OR.& ! Epoxy Oxygen (1C+xH)
+                    (sb_atm_name(i,s) .EQ. "OF2" ) ) THEN
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 22
-                !!!---
-                ELSE IF ( sb_atm_name(i,s) .EQ. "OW" ) THEN ! H2O Oxygen
+                ELSE IF ( (sb_atm_name(i,s) .EQ. "OG3" ) .OR.& ! PEpoxy Oxygen (1C+xH)
+                    (sb_atm_name(i,s) .EQ. "OG2" ) ) THEN
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 23
-                ELSE IF ( sb_atm_name(i,s) .EQ. "OM" ) THEN ! OH Oxygen
+                ELSE IF ( sb_atm_name(i,s) .EQ. "OA2" ) THEN ! Ketone/Alkoxy Oxygen (1C+0H)
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 24
-                ELSE IF ( sb_atm_name(i,s) .EQ. "OP" ) THEN ! H3O Oxygen
+                !!!---
+                ELSE IF ( sb_atm_name(i,s) .EQ. "OM" ) THEN ! OH Oxygen
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 25
-                !!!---
-                ELSE IF ( sb_atm_name(i,s) .EQ. "HW" ) THEN
-                    sb_atm_mat(2,i,s) = 1
+                ELSE IF ( sb_atm_name(i,s) .EQ. "OW" ) THEN ! H2O Oxygen
+                    sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = 26
+                ELSE IF ( sb_atm_name(i,s) .EQ. "OP" ) THEN ! H3O Oxygen
+                    sb_atm_mat(2,i,s) = 16
+                    sb_atm_mat(3,i,s) = 27
+                !!!---
                 ELSE IF ( sb_atm_name(i,s) .EQ. "HM" ) THEN
                     sb_atm_mat(2,i,s) = 1
-                    sb_atm_mat(3,i,s) = 27
-                ELSE IF ( sb_atm_name(i,s) .EQ. "HP" ) THEN
-                    sb_atm_mat(2,i,s) = 1
                     sb_atm_mat(3,i,s) = 28
-                ELSE IF ( sb_atm_name(i,s) .EQ. "HO" ) THEN
+                ELSE IF ( sb_atm_name(i,s) .EQ. "HW" ) THEN
                     sb_atm_mat(2,i,s) = 1
                     sb_atm_mat(3,i,s) = 29
-                ELSE IF ( sb_atm_name(i,s) .EQ. "HEP" ) THEN
+                ELSE IF ( sb_atm_name(i,s) .EQ. "HP" ) THEN
                     sb_atm_mat(2,i,s) = 1
                     sb_atm_mat(3,i,s) = 30
-                ELSE IF ( sb_atm_name(i,s) .EQ. "HET" ) THEN
+                ELSE IF ( sb_atm_name(i,s) .EQ. "HB" ) THEN
                     sb_atm_mat(2,i,s) = 1
                     sb_atm_mat(3,i,s) = 31
-                ELSE IF ( sb_atm_name(i,s) .EQ. "NA" ) THEN
-                    sb_atm_mat(2,i,s) = 11
+                ELSE IF ( sb_atm_name(i,s) .EQ. "HC" ) THEN
+                    sb_atm_mat(2,i,s) = 1
                     sb_atm_mat(3,i,s) = 32
+                ELSE IF ( sb_atm_name(i,s) .EQ. "HE" ) THEN
+                    sb_atm_mat(2,i,s) = 1
+                    sb_atm_mat(3,i,s) = 33
+                ELSE IF ( sb_atm_name(i,s) .EQ. "HG" ) THEN
+                    sb_atm_mat(2,i,s) = 1
+                    sb_atm_mat(3,i,s) = 34
+                ELSE IF ( sb_atm_name(i,s) .EQ. "Na" ) THEN
+                    sb_atm_mat(2,i,s) = 11
+                    sb_atm_mat(3,i,s) = 35
                 ELSE IF ( sb_atm_name(i,s) .EQ. "CLM" ) THEN
                     sb_atm_mat(2,i,s) = 17
-                    sb_atm_mat(3,i,s) = 33
+                    sb_atm_mat(3,i,s) = 36
                 ! Unknown carbon types
                 ELSE IF ( (sb_atm_name(i,s) .EQ. "C" ) .OR.&
-                    (sb_atm_name(i,s) .EQ. "C2" ) .OR.&
-                    (sb_atm_name(i,s) .EQ. "C3" ) .OR.&
                     (sb_atm_name(i,s) .EQ. "CX" ) ) THEN
                     sb_atm_mat(2,i,s) = 12
                     sb_atm_mat(3,i,s) = -1
                 ELSE IF ( (sb_atm_name(i,s) .EQ. "O" ) .OR.&
-                    (sb_atm_name(i,s) .EQ. "OH" ) .OR. &
-                    (sb_atm_name(i,s) .EQ. "OE" ) .OR. &
                     (sb_atm_name(i,s) .EQ. "OA" ) .OR. &
+                    (sb_atm_name(i,s) .EQ. "OB" ) .OR. &
+                    (sb_atm_name(i,s) .EQ. "OC" ) .OR. &
+                    (sb_atm_name(i,s) .EQ. "OD" ) .OR. &
+                    (sb_atm_name(i,s) .EQ. "OE" ) .OR. &
                     (sb_atm_name(i,s) .EQ. "OX" ) ) THEN
                     sb_atm_mat(2,i,s) = 16
                     sb_atm_mat(3,i,s) = -1
