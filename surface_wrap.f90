@@ -141,7 +141,7 @@ END DO
 CLOSE(UNIT=40)
 
 finish = OMP_get_wtime()
-PRINT'(A40,F14.2,A20)', "Center/Wrap:", finish-start, "seconds elapsed"
+PRINT'(A40,F14.2,A20)', "Center/Wrap output:", finish-start, "seconds elapsed"
 
 !   ----------------------------------------------- End
 PRINT'(A100)', '--------------------------------------------------'&

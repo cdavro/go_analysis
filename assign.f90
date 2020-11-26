@@ -33,7 +33,7 @@ INTEGER                         :: nb_o, nb_h, nb_c, up, temp_id1
 INTEGER, ALLOCATABLE            :: nb_center(:)
 INTEGER, ALLOCATABLE            :: nb_epoxide(:), nb_pepoxide(:)
 INTEGER, ALLOCATABLE            :: nb_ether(:),  nb_pether(:), nb_palcohols(:)
-INTEGER, ALLOCATABLE            :: nb_alcohol(:), nb_alkoxide(:), nb_ketone(:)
+INTEGER, ALLOCATABLE            :: nb_alcohol(:), nb_alkoxide(:), nb_ketone(:), nb_ketene(:)
 INTEGER, ALLOCATABLE            :: nb_water(:), nb_hydronium(:), nb_hydroxide(:)
 INTEGER, ALLOCATABLE            :: nb_oxygen_group(:)
 REAL(dp), ALLOCATABLE           :: conn_mat(:,:,:)
@@ -183,6 +183,7 @@ ALLOCATE(nb_pether(nb_step))
 ALLOCATE(nb_alcohol(nb_step))
 ALLOCATE(nb_alkoxide(nb_step))
 ALLOCATE(nb_ketone(nb_step))
+ALLOCATE(nb_ketene(nb_step))
 ALLOCATE(nb_water(nb_step))
 ALLOCATE(nb_hydronium(nb_step))
 ALLOCATE(nb_hydroxide(nb_step))
@@ -195,7 +196,8 @@ conn_mat(:,:,:) = 0.0_dp
 !$OMP SHARED(assign_OC_rcut, assign_OO_rcut)&
 !$OMP SHARED(assign_CC_rcut, assign_HH_rcut)&
 !$OMP SHARED(nb_epoxide, nb_pepoxide, nb_ether, nb_pether, nb_palcohols)&
-!$OMP SHARED(nb_hydroxide, nb_alcohol, nb_ketone, nb_water, nb_hydronium, nb_alkoxide, nb_oxygen_group)&
+!$OMP SHARED(nb_hydroxide, nb_alcohol, nb_ketone, nb_water, nb_hydronium)&
+!$OMP SHARED(nb_ketene,nb_alkoxide, nb_oxygen_group)&
 !$OMP PRIVATE(s, i, j, k, l, n)&
 !$OMP PRIVATE(ij_disp_norm, ij_disp_vec, up, temp_dist, temp_id, temp_el)&
 !$OMP PRIVATE(temp_id1, temp_atm_type)
@@ -212,8 +214,8 @@ DO s = 1, nb_step
                         ij_disp_vec(k) = ij_disp_vec(k) - box(k) * ANINT( ij_disp_vec(k) / box(k) )
                     END DO
                     ij_disp_norm = NORM2( ij_disp_vec )
-                    IF ( ( ( ij_disp_norm .LT. 2.00 ) .AND. (temp_dist .NE. 0 ) .AND.&
-                     ( ij_disp_norm .LT. temp_dist ) .OR. (temp_dist .EQ. 0 ) ) ) THEN
+                    IF ( ( ( ij_disp_norm .LT. 2.00 ) .AND. (temp_dist .NE. 0 ) .AND. &
+                    ( ij_disp_norm .LT. temp_dist ) .OR. (temp_dist .EQ. 0 ) ) ) THEN
                         temp_dist = ij_disp_norm
                         temp_id = INT(atm_mat(1,j,s))
                         temp_el = INT(atm_mat(2,j,s))
@@ -275,32 +277,24 @@ DO s = 1, nb_step
             IF ( ij_disp_norm .LT. 2.00 ) THEN
                 IF ( atm_mat(2,i,s) .EQ. 16 ) THEN
                     IF ( ( atm_mat(2,j,s) .EQ. 12 ) .AND. ( ij_disp_norm .LE. assign_OC_rcut) ) THEN
-                        IF ( ij_disp_norm .LE. assign_OC_rcut ) THEN
-                            atm_mat(9,i,s) = atm_mat(9,i,s) + 1
-                            atm_mat(11,j,s) = atm_mat(11,j,s) + 1
-                            up = 1
-                        END IF
+                        atm_mat(9,i,s) = atm_mat(9,i,s) + 1
+                        atm_mat(11,j,s) = atm_mat(11,j,s) + 1
+                        up = 1
                     ELSE IF ( ( atm_mat(2,j,s) .EQ. 16 ) .AND. ( ij_disp_norm .LE. assign_OO_rcut) ) THEN
-                        IF ( ij_disp_norm .LE. assign_OO_rcut ) THEN
-                            atm_mat(11,i,s) = atm_mat(11,i,s) + 1
-                            atm_mat(11,j,s) = atm_mat(11,j,s) + 1
-                            up = 1
-                        END IF
+                        atm_mat(11,i,s) = atm_mat(11,i,s) + 1
+                        atm_mat(11,j,s) = atm_mat(11,j,s) + 1
+                        up = 1
                     END IF
                     ! Check if i is Carbon
                 ELSE IF ( atm_mat(2,i,s) .EQ. 12 ) THEN
                     IF ( ( atm_mat(2,j,s) .EQ. 12 ) .AND. ( ij_disp_norm .LE. assign_CC_rcut) ) THEN
-                        IF ( ij_disp_norm .LE. assign_CC_rcut ) THEN
-                            atm_mat(9,i,s) = atm_mat(9,i,s) + 1
-                            atm_mat(9,j,s) = atm_mat(9,j,s) + 1
-                            up = 1
-                        END IF
+                        atm_mat(9,i,s) = atm_mat(9,i,s) + 1
+                        atm_mat(9,j,s) = atm_mat(9,j,s) + 1
+                        up = 1
                     ELSE IF ( ( atm_mat(2,j,s) .EQ. 16 ) .AND. ( ij_disp_norm .LE. assign_OC_rcut) ) THEN
-                        IF ( ij_disp_norm .LE. assign_OC_rcut ) THEN
-                            atm_mat(11,i,s) = atm_mat(11,i,s) + 1
-                            atm_mat(9,j,s) = atm_mat(9,j,s) + 1
-                            up = 1
-                        END IF
+                        atm_mat(11,i,s) = atm_mat(11,i,s) + 1
+                        atm_mat(9,j,s) = atm_mat(9,j,s) + 1
+                        up = 1
                     END IF
                 END IF
                 IF ( up .EQ. 1 ) THEN
@@ -348,12 +342,12 @@ DO s = 1, nb_step
             END IF
         END DO
         ! Initial Check
-        IF ( ( atm_mat(9,i,s) .NE. atm_mat(13,i,s) ) .OR.&
-        ( atm_mat(10,i,s) .NE. atm_mat(14,i,s) ) .OR.&
-        ( atm_mat(11,i,s) .NE. atm_mat(15,i,s) ) .OR.&
+        IF ( ( atm_mat(9,i,s) .NE. atm_mat(13,i,s) ) .OR. &
+        ( atm_mat(10,i,s) .NE. atm_mat(14,i,s) ) .OR. &
+        ( atm_mat(11,i,s) .NE. atm_mat(15,i,s) ) .OR. &
         ( atm_mat(12,i,s) .NE. atm_mat(16,i,s) ) ) THEN
             PRINT'(A28,1X,I4,1X,A8,1X,I10)', "Initial count error on atom:", i, "in step:", s
-            print*,conn_mat(:,i,s)
+            PRINT*,conn_mat(:,i,s)
             PRINT*, atm_mat(9,i,s), atm_mat(13,i,s)
             PRINT*, atm_mat(10,i,s), atm_mat(14,i,s)
             PRINT*, atm_mat(11,i,s), atm_mat(15,i,s)
@@ -363,55 +357,61 @@ DO s = 1, nb_step
     ! Now conectivity.
     DO i = 1, nb_atm
         IF ( atm_mat(2,i,s) .EQ. 16 ) THEN
-            IF ( ( atm_mat(9,i,s) .EQ. 0 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 1 )&
-            .AND. ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+            IF ( ( atm_mat(9,i,s) .EQ. 0 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 1 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
                 atm_type(i,s) = "OM" ! HO- Oxygen: 0C, 0O, 1H
-            ELSE IF ( ( atm_mat(9,i,s) .EQ. 0 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 2 )&
-            .AND. ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+            ELSE IF ( ( atm_mat(9,i,s) .EQ. 0 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 2 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
                 atm_type(i,s) = "OW" ! Water oxygen: 0C, 0O, 2H
-            ELSE IF ( ( atm_mat(9,i,s) .EQ. 0 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 3 )&
-            .AND. ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+            ELSE IF ( ( atm_mat(9,i,s) .EQ. 0 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 3 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
                 atm_type(i,s) = "OP" ! H3O+ Oxygen: 0C, 0O, 3H
-            ELSE IF ( ( atm_mat(9,i,s) .EQ. 1 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 0 )&
-            .AND. ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+            ELSE IF ( ( atm_mat(9,i,s) .EQ. 1 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 0 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
                 atm_type(i,s) = "OA" ! Alkoxy/Ketone Oxygen: 1C, 0O, 0H
-            ELSE IF ( ( atm_mat(9,i,s) .EQ. 1 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 1 )&
-            .AND. ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+            ELSE IF ( ( atm_mat(9,i,s) .EQ. 1 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 1 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
                 atm_type(i,s) = "OB" ! Alcohol Oxygen: 1C, 0O, 1H
-            ELSE IF ( ( atm_mat(9,i,s) .EQ. 1 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .GT. 1 )&
-            .AND. ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+            ELSE IF ( ( atm_mat(9,i,s) .EQ. 1 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .GE. 1 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
                 atm_type(i,s) = "OC" ! Protonated Alcohol Oxygen: 1C, 0O, =>1H
-            ELSE IF ( ( atm_mat(9,i,s) .EQ. 2 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 0 )&
-            .AND. ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+            ELSE IF ( ( atm_mat(9,i,s) .EQ. 2 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 0 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
                 atm_type(i,s) = "OD" ! Epoxy/Ether Oxygen: 2C, 0O, 0H
-            ELSE IF ( ( atm_mat(9,i,s) .EQ. 2 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .GT. 1 )&
-            .AND. ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+            ELSE IF ( ( atm_mat(9,i,s) .EQ. 2 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .GE. 1 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
                 atm_type(i,s) = "OE" ! Protonated Epoxy/Ether Oxygen: 2C, 0O, =>1H
             ELSE
                 atm_type(i,s) = "OX" ! Unknown
             END IF
         ELSE IF ( atm_mat(2,i,s) .EQ. 12 ) THEN
-            IF ( ( atm_mat(9,i,s) .EQ. 3 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 0 )&
-            .AND. ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+            IF ( ( atm_mat(9,i,s) .EQ. 3 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 0 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
                 atm_type(i,s) = "C3" ! Carbon: 3C, 0O, 0H
-            ELSE IF ( ( atm_mat(9,i,s) .EQ. 2 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 0 )&
-            .AND. ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+            ELSE IF ( ( atm_mat(9,i,s) .EQ. 2 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 0 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
                 atm_type(i,s) = "C2" ! Carbon: 2C, 0O, 0H
-            ELSE IF ( ( atm_mat(9,i,s) .EQ. 3 ) .AND. ( atm_mat(11,i,s) .EQ. 1 ) .AND. ( atm_mat(10,i,s) .EQ. 0 )&
-            .AND. ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+            ELSE IF ( ( atm_mat(9,i,s) .EQ. 1 ) .AND. ( atm_mat(11,i,s) .EQ. 0 ) .AND. ( atm_mat(10,i,s) .EQ. 0 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+                atm_type(i,s) = "C1" ! Carbon: 1C, 0O, 0H
+            ELSE IF ( ( atm_mat(9,i,s) .EQ. 3 ) .AND. ( atm_mat(11,i,s) .EQ. 1 ) .AND. ( atm_mat(10,i,s) .EQ. 0 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
                 atm_type(i,s) = "C3O" ! Carbon: 3C, 1O, 0H
-            ELSE IF ( ( atm_mat(9,i,s) .EQ. 2 ) .AND. ( atm_mat(11,i,s) .EQ. 1 ) .AND. ( atm_mat(10,i,s) .EQ. 0 )&
-            .AND. ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+            ELSE IF ( ( atm_mat(9,i,s) .EQ. 2 ) .AND. ( atm_mat(11,i,s) .EQ. 1 ) .AND. ( atm_mat(10,i,s) .EQ. 0 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
                 atm_type(i,s) = "C2O" ! Carbon: 2C, 1O, 0H
+            ELSE IF ( ( atm_mat(9,i,s) .EQ. 1 ) .AND. ( atm_mat(11,i,s) .EQ. 1 ) .AND. ( atm_mat(10,i,s) .EQ. 0 ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+                atm_type(i,s) = "C1O" ! Carbon: 2C, 1O, 0H
             ELSE
                 atm_type(i,s) = "CX" ! Unknown
             END IF
         ELSE IF ( atm_mat(2,i,s) .EQ. 1 ) THEN
-            IF ( ( ( atm_mat(9,i,s) .EQ. 1 ) .OR. ( atm_mat(11,i,s) .EQ. 1 ) .OR. ( atm_mat(10,i,s) .EQ. 1 ) )&
-            .AND. ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
+            IF ( ( ( atm_mat(9,i,s) .EQ. 1 ) .OR. ( atm_mat(11,i,s) .EQ. 1 ) .OR. ( atm_mat(10,i,s) .EQ. 1 ) ) .AND. &
+            ( atm_mat(12,i,s) .EQ. 0 ) ) THEN
                 atm_type(i,s) = "H1"
-            ELSE IF ( ( atm_mat(9,i,s) .GT. 1 ) .OR. ( atm_mat(11,i,s) .GT. 1 ) .OR. ( atm_mat(10,i,s) .GT. 1 )&
-            .OR. ( atm_mat(12,i,s) .GT. 1 ) ) THEN
+            ELSE IF ( ( atm_mat(9,i,s) .GT. 1 ) .OR. ( atm_mat(11,i,s) .GT. 1 ) .OR. ( atm_mat(10,i,s) .GT. 1 ) .OR. &
+            ( atm_mat(12,i,s) .GT. 1 ) ) THEN
                 atm_type(i,s) = "H2"
             ELSE IF ( atm_mat(12,i,s) .EQ. 1 ) THEN
                 atm_type(i,s) = "HX"
@@ -433,9 +433,9 @@ DO s = 1, nb_step
         END DO
         IF ( k .EQ. nb_atm ) THEN
             DO i = 1, nb_atm
-                IF ( (atm_type(i,s) .EQ. "HX" ) .OR.&
-                (atm_type(i,s) .EQ. "H2" ) .OR.&
-                (atm_type(i,s) .EQ. "CX" ) .OR.&
+                IF ( (atm_type(i,s) .EQ. "HX" ) .OR. &
+                (atm_type(i,s) .EQ. "H2" ) .OR. &
+                (atm_type(i,s) .EQ. "CX" ) .OR. &
                 (atm_type(i,s) .EQ. "OX" ) ) THEN
                     PRINT*, s, i, atm_type(i,s), atm_mat(13,i,s), atm_mat(14,i,s), atm_mat(15,i,s), atm_mat(16,i,s)
                     PRINT*, conn_mat(:,i,s)
@@ -449,32 +449,32 @@ DO s = 1, nb_step
         END IF
      AS:DO i = 1, nb_atm
             ! ASSIGN CARBONS LINKED WITH 3 CARBONS
-            IF ( (atm_type(i,s) .EQ. "C3" ) .OR.& ! Init
-                (atm_type(i,s) .EQ. "C3O" ) .OR.&
-                (atm_type(i,s) .EQ. "C3A" ) .OR.& ! Alkoxy
-                (atm_type(i,s) .EQ. "C3B" ) .OR.& ! Alcohol
-                (atm_type(i,s) .EQ. "C3C" ) .OR.& ! PAlcohol
-                (atm_type(i,s) .EQ. "C3D" ) .OR.& ! Ether
-                (atm_type(i,s) .EQ. "C3E" ) .OR.& ! PEther
-                (atm_type(i,s) .EQ. "C3F" ) .OR.& ! Epoxy 
-                (atm_type(i,s) .EQ. "C3G" ) ) THEN ! PEpoxy
+            IF ( (atm_type(i,s) .EQ. "C3" ) .OR. & ! Init
+            (atm_type(i,s) .EQ. "C3O" ) .OR. &
+            (atm_type(i,s) .EQ. "C3A" ) .OR. & ! Alkoxy
+            (atm_type(i,s) .EQ. "C3B" ) .OR. & ! Alcohol
+            (atm_type(i,s) .EQ. "C3C" ) .OR. & ! PAlcohol
+            (atm_type(i,s) .EQ. "C3D" ) .OR. & ! Ether
+            (atm_type(i,s) .EQ. "C3E" ) .OR. & ! PEther
+            (atm_type(i,s) .EQ. "C3F" ) .OR. & ! Epoxy
+            (atm_type(i,s) .EQ. "C3G" ) ) THEN ! PEpoxy
                 DO j = 4, 18, 3
                     IF ( conn_mat(j,i,s) .EQ. 16 ) THEN
                         temp_id1 = INT( conn_mat(j-1,i,s) )
-                        IF ( (atm_type(temp_id1,s) .EQ. "OA" ) .OR.&
+                        IF ( (atm_type(temp_id1,s) .EQ. "OA" ) .OR. &
                         (atm_type(temp_id1,s) .EQ. "OA3" ) ) THEN
                             atm_type(temp_id1,s) = "OA3" ! Alkoxy Oxygen (1C+0H)
                             atm_type(i,s) = "C3A" ! Alkoxy Carbon (3C+1O)
-                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OB" ) .OR.&
+                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OB" ) .OR. &
                         (atm_type(temp_id1,s) .EQ. "OB3" ) ) THEN
                             atm_type(temp_id1,s) = "OB3" ! Alcohol Oxygen (1C+1H)
                             atm_type(i,s) = "C3B" ! Alcohol Carbon (3C+1O(H))
-                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OC" ) .OR.&
+                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OC" ) .OR. &
                         (atm_type(temp_id1,s) .EQ. "OC3" ) ) THEN
-                            atm_type(temp_id1,s) = "OC3" ! Protonated Alcohol Oxygen (1C+2H)
-                            atm_type(i,s) = "C3C" ! Protonated Alcohol Carbon (3C+1O(H2))
-                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OD" ) .OR.&
-                        (atm_type(temp_id1,s) .EQ. "OD3" ) .OR.&
+                            atm_type(temp_id1,s) = "OC3" ! Protonated Alcohol Oxygen (1C+2H+)
+                            atm_type(i,s) = "C3C" ! Protonated Alcohol Carbon (3C+1O(2H+))
+                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OD" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OD3" ) .OR. &
                         (atm_type(temp_id1,s) .EQ. "OF3" ) ) THEN
                             atm_type(temp_id1,s) = "OD3" ! Default to Ether Oxygen (2C+0H)
                             atm_type(i,s) = "C3D" ! Default to Ether Carbon (3C+1O)
@@ -482,8 +482,8 @@ DO s = 1, nb_step
                                 IF ( conn_mat(k,temp_id1,s) .EQ. 12 ) THEN
                                     DO n = 4, 18, 3
                                         IF ( conn_mat(n,i,s) .EQ. 12 ) THEN
-                                            IF ( (conn_mat(k-1,temp_id1,s) .EQ. conn_mat(n-1,i,s) ) .AND.&
-                                            (conn_mat(k-1,temp_id1,s) .NE. 0 ) .AND.&
+                                            IF ( (conn_mat(k-1,temp_id1,s) .EQ. conn_mat(n-1,i,s) ) .AND. &
+                                            (conn_mat(k-1,temp_id1,s) .NE. 0 ) .AND. &
                                             (conn_mat(n-1,i,s) .NE. 0 ) ) THEN
                                                 atm_type(temp_id1,s) = "OF3" ! Epoxy Oxygen (2C+0H)
                                                 atm_type(i,s) = "C3F" ! Epoxy Carbon (3C+1O)
@@ -492,20 +492,20 @@ DO s = 1, nb_step
                                     END DO
                                 END IF
                             END DO
-                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OE" ) .OR.&
-                            (atm_type(temp_id1,s) .EQ. "OE3" ) .OR.&
-                            (atm_type(temp_id1,s) .EQ. "OG3" ) ) THEN
-                            atm_type(temp_id1,s) = "OE3" ! Default to Protonated Ether Oxygen (2C+xH)
-                            atm_type(i,s) = "C3E" ! Default to Protonated Ether Carbon (3C+1O(Hx))
+                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OE" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OE3" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OG3" ) ) THEN
+                            atm_type(temp_id1,s) = "OE3" ! Default to Protonated Ether Oxygen (2C+1H+)
+                            atm_type(i,s) = "C3E" ! Default to Protonated Ether Carbon (3C+1O(1H+))
                             DO k = 4, 18, 3
                                 IF ( conn_mat(k,temp_id1,s) .EQ. 12 ) THEN
                                     DO n = 4, 18, 3
                                         IF ( conn_mat(n,i,s) .EQ. 12 ) THEN
-                                            IF ( (conn_mat(k-1,temp_id1,s) .EQ. conn_mat(n-1,i,s) ) .AND.&
-                                            (conn_mat(k-1,temp_id1,s) .NE. 0 ) .AND.&
+                                            IF ( (conn_mat(k-1,temp_id1,s) .EQ. conn_mat(n-1,i,s) ) .AND. &
+                                            (conn_mat(k-1,temp_id1,s) .NE. 0 ) .AND. &
                                             (conn_mat(n-1,i,s) .NE. 0 ) ) THEN
-                                                atm_type(temp_id1,s) = "OG3" ! Protonated Epoxy Oxygen (2C+xH)
-                                                atm_type(i,s) = "C3G" ! Protonated Epoxy Carbon (3C+1O(Hx))
+                                                atm_type(temp_id1,s) = "OG3" ! Protonated Epoxy Oxygen (2C+1H+)
+                                                atm_type(i,s) = "C3G" ! Protonated Epoxy Carbon (3C+1O(1H+))
                                             END IF
                                         END IF
                                     END DO
@@ -515,32 +515,32 @@ DO s = 1, nb_step
                     END IF
                 END DO
             ! ASSIGN CARBONS
-            ELSE IF ( (atm_type(i,s) .EQ. "C2" ) .OR.& ! Init
-                (atm_type(i,s) .EQ. "C2O" ) .OR.&
-                (atm_type(i,s) .EQ. "C2A" ) .OR.& ! Alkoxy/Ketone
-                (atm_type(i,s) .EQ. "C2B" ) .OR.& ! PKetone/Alcohol
-                (atm_type(i,s) .EQ. "C2C" ) .OR.& ! PAlcohol 
-                (atm_type(i,s) .EQ. "C2D" ) .OR.& ! Ether
-                (atm_type(i,s) .EQ. "C2E" ) .OR.& ! PEther
-                (atm_type(i,s) .EQ. "C2F" ) .OR.& ! Epoxy
-                (atm_type(i,s) .EQ. "C2G" ) ) THEN ! PEpoxy
+            ELSE IF ( (atm_type(i,s) .EQ. "C2" ) .OR. & ! Init
+            (atm_type(i,s) .EQ. "C2O" ) .OR. &
+            (atm_type(i,s) .EQ. "C2A" ) .OR. & ! Alkoxy/Ketone
+            (atm_type(i,s) .EQ. "C2B" ) .OR. & ! PKetone/Alcohol
+            (atm_type(i,s) .EQ. "C2C" ) .OR. & ! PAlcohol
+            (atm_type(i,s) .EQ. "C2D" ) .OR. & ! Ether
+            (atm_type(i,s) .EQ. "C2E" ) .OR. & ! PEther
+            (atm_type(i,s) .EQ. "C2F" ) .OR. & ! Epoxy
+            (atm_type(i,s) .EQ. "C2G" ) ) THEN ! PEpoxy
                 DO j = 4, 18, 3
                     IF ( conn_mat(j,i,s) .EQ. 16 ) THEN
                         temp_id1 = INT( conn_mat(j-1,i,s) )
-                        IF ( (atm_type(temp_id1,s) .EQ. "OA" ) .OR.&
+                        IF ( (atm_type(temp_id1,s) .EQ. "OA" ) .OR. &
                         (atm_type(temp_id1,s) .EQ. "OA2" ) ) THEN
                             atm_type(temp_id1,s) = "OA2" ! Alkoxy/Ketone Oxygen (1C+0H)
-                            atm_type(i,s) = "C2A" ! Alkoxy/Ketone Carbon (3C+1O)
-                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OB" ) .OR.&
+                            atm_type(i,s) = "C2A" ! Alkoxy/Ketone Carbon (2C+1O)
+                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OB" ) .OR. &
                         (atm_type(temp_id1,s) .EQ. "OB2" ) ) THEN
                             atm_type(temp_id1,s) = "OB2" ! PKetone/Alcohol Oxygen (1C+1H)
-                            atm_type(i,s) = "C2B" ! PKetone/Alcohol Carbon (2C+1O(H))
-                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OC" ) .OR.&
+                            atm_type(i,s) = "C2B" ! PKetone/Alcohol Carbon (2C+1O(1H))
+                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OC" ) .OR. &
                         (atm_type(temp_id1,s) .EQ. "OC2" ) ) THEN
-                            atm_type(temp_id1,s) = "OC2" ! Protonated Alcohol Oxygen (1C+2H)
-                            atm_type(i,s) = "C2C" ! Protonated Alcohol Carbon (3C+1O(H2))
-                        ELSE IF ( ( (atm_type(temp_id1,s) .EQ. "OD" ) .AND. atm_mat(14,temp_id1,s) .LT. 1 ) .OR.&
-                            (atm_type(temp_id1,s) .EQ. "OD2" ) .OR.&
+                            atm_type(temp_id1,s) = "OC2" ! Protonated Alcohol Oxygen (1C+2H+)
+                            atm_type(i,s) = "C2C" ! Protonated Alcohol Carbon (2C+1O(2H+))
+                        ELSE IF ( ( (atm_type(temp_id1,s) .EQ. "OD" ) .AND. atm_mat(14,temp_id1,s) .LT. 1 ) .OR. &
+                            (atm_type(temp_id1,s) .EQ. "OD2" ) .OR. &
                             (atm_type(temp_id1,s) .EQ. "OF2" ) ) THEN
                             atm_type(temp_id1,s) = "OD2" ! Default to Ether Oxygen (2C+0H)
                             atm_type(i,s) = "C2D" ! Default to Ether Carbon (2C+1O)
@@ -548,8 +548,8 @@ DO s = 1, nb_step
                                 IF ( conn_mat(k,temp_id1,s) .EQ. 12 ) THEN
                                     DO n = 4, 18, 3
                                         IF ( conn_mat(n,i,s) .EQ. 12 ) THEN
-                                            IF ( (conn_mat(k-1,temp_id1,s) .EQ. conn_mat(n-1,i,s) ) .AND.&
-                                            (conn_mat(k-1,temp_id1,s) .NE. 0 ) .AND.&
+                                            IF ( (conn_mat(k-1,temp_id1,s) .EQ. conn_mat(n-1,i,s) ) .AND. &
+                                            (conn_mat(k-1,temp_id1,s) .NE. 0 ) .AND. &
                                             (conn_mat(n-1,i,s) .NE. 0 ) ) THEN
                                                 atm_type(temp_id1,s) = "OF2" ! Epoxy Oxygen (2C+0H)
                                                 atm_type(i,s) = "C2F" ! Epoxy Carbon (2C+1O)
@@ -558,20 +558,85 @@ DO s = 1, nb_step
                                     END DO
                                 END IF
                             END DO
-                        ELSE IF ( ( (atm_type(temp_id1,s) .EQ. "OE" ) .AND. atm_mat(14,temp_id1,s) .GE. 1 ) .OR.&
-                            (atm_type(temp_id1,s) .EQ. "OE2" ) .OR.&
+                        ELSE IF ( ( (atm_type(temp_id1,s) .EQ. "OE" ) .AND. atm_mat(14,temp_id1,s) .GE. 1 ) .OR. &
+                            (atm_type(temp_id1,s) .EQ. "OE2" ) .OR. &
                             (atm_type(temp_id1,s) .EQ. "OG2" ) ) THEN
-                            atm_type(temp_id1,s) = "OE2" ! Default to Protonated Ether Oxygen (2C+xH)
-                            atm_type(i,s) = "C2E" ! Default to Protonated Ether Carbon (2C+1O(Hx) )
+                            atm_type(temp_id1,s) = "OE2" ! Default to Protonated Ether Oxygen (2C+1H+)
+                            atm_type(i,s) = "C2E" ! Default to Protonated Ether Carbon (2C+1O(1H+) )
                             DO k = 4, 18, 3
                                 IF ( conn_mat(k,temp_id1,s) .EQ. 12 ) THEN
                                     DO n = 4, 18, 3
                                         IF ( conn_mat(n,i,s) .EQ. 12 ) THEN
-                                            IF ( (conn_mat(k-1,temp_id1,s) .EQ. conn_mat(n-1,i,s) ) .AND.&
-                                            (conn_mat(k-1,temp_id1,s) .NE. 0 ) .AND.&
+                                            IF ( (conn_mat(k-1,temp_id1,s) .EQ. conn_mat(n-1,i,s) ) .AND. &
+                                            (conn_mat(k-1,temp_id1,s) .NE. 0 ) .AND. &
                                             (conn_mat(n-1,i,s) .NE. 0 ) ) THEN
-                                                atm_type(temp_id1,s) = "OG2" ! Protonated Epoxy Oxygen (2C+xH)
-                                                atm_type(i,s) = "C2G" ! Protonated Epoxy Carbon (2C+1O(Hx) )
+                                                atm_type(temp_id1,s) = "OG2" ! Protonated Epoxy Oxygen (2C+1H+)
+                                                atm_type(i,s) = "C2G" ! Protonated Epoxy Carbon (2C+1O(1H+) )
+                                            END IF
+                                        END IF
+                                    END DO
+                                END IF
+                            END DO
+                        END IF
+                    END IF
+                END DO
+            ELSE IF ( (atm_type(i,s) .EQ. "C1" ) .OR. &
+                (atm_type(i,s) .EQ. "C1O" ) .OR. &
+                (atm_type(i,s) .EQ. "C1A" ) .OR. &
+                (atm_type(i,s) .EQ. "C1B" ) .OR. &
+                (atm_type(i,s) .EQ. "C1C" ) .OR. &
+                (atm_type(i,s) .EQ. "C1D" ) .OR. &
+                (atm_type(i,s) .EQ. "C1E" ) .OR. &
+                (atm_type(i,s) .EQ. "C1F" ) .OR. &
+                (atm_type(i,s) .EQ. "C1G" ) ) THEN ! ??
+                DO j = 4, 18, 3
+                    IF ( conn_mat(j,i,s) .EQ. 16 ) THEN
+                        temp_id1 = INT( conn_mat(j-1,i,s) )
+                        IF ( (atm_type(temp_id1,s) .EQ. "OA" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OA1" ) ) THEN
+                            atm_type(temp_id1,s) = "OA1" ! Alkoxy/Ketene Oxygen (1C+0H)
+                            atm_type(i,s) = "C1A" ! Ketene Carbon (1C+1O)
+                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OB" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OB1" ) ) THEN
+                            atm_type(temp_id1,s) = "OB1" ! PKetone/Alcohol Oxygen (1C+1H)
+                            atm_type(i,s) = "C1B" ! PKetone/Alcohol Carbon (1C+1O(1H))
+                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OC" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OC1" ) ) THEN
+                            atm_type(temp_id1,s) = "OC1" ! Protonated Alcohol Oxygen (1C+2H+)
+                            atm_type(i,s) = "C1C" ! Protonated Alcohol Carbon (1C+1O(2H+))
+                        ELSE IF ( ( (atm_type(temp_id1,s) .EQ. "OD" ) .AND. atm_mat(14,temp_id1,s) .LT. 1 ) .OR. &
+                            (atm_type(temp_id1,s) .EQ. "OD1" ) .OR. &
+                            (atm_type(temp_id1,s) .EQ. "OF1" ) ) THEN
+                            atm_type(temp_id1,s) = "OD1" ! Default to Ether Oxygen (2C+0H)
+                            atm_type(i,s) = "C1D" ! Default to Ether Carbon (1C+1O)
+                            DO k = 4, 18, 3
+                                IF ( conn_mat(k,temp_id1,s) .EQ. 12 ) THEN
+                                    DO n = 4, 18, 3
+                                        IF ( conn_mat(n,i,s) .EQ. 12 ) THEN
+                                            IF ( (conn_mat(k-1,temp_id1,s) .EQ. conn_mat(n-1,i,s) ) .AND. &
+                                            (conn_mat(k-1,temp_id1,s) .NE. 0 ) .AND. &
+                                            (conn_mat(n-1,i,s) .NE. 0 ) ) THEN
+                                                atm_type(temp_id1,s) = "OF1" ! Epoxy Oxygen (2C+0H)
+                                                atm_type(i,s) = "C1F" ! Epoxy Carbon (1C+1O)
+                                            END IF
+                                        END IF
+                                    END DO
+                                END IF
+                            END DO
+                        ELSE IF ( ( (atm_type(temp_id1,s) .EQ. "OE" ) .AND. atm_mat(14,temp_id1,s) .GE. 1 ) .OR. &
+                            (atm_type(temp_id1,s) .EQ. "OE1" ) .OR. &
+                            (atm_type(temp_id1,s) .EQ. "OG1" ) ) THEN
+                            atm_type(temp_id1,s) = "OE1" ! Default to Protonated Ether Oxygen (1C+1H+)
+                            atm_type(i,s) = "C1E" ! Default to Protonated Ether Carbon (1C+1O(1H+) )
+                            DO k = 4, 18, 3
+                                IF ( conn_mat(k,temp_id1,s) .EQ. 12 ) THEN
+                                    DO n = 4, 18, 3
+                                        IF ( conn_mat(n,i,s) .EQ. 12 ) THEN
+                                            IF ( (conn_mat(k-1,temp_id1,s) .EQ. conn_mat(n-1,i,s) ) .AND. &
+                                            (conn_mat(k-1,temp_id1,s) .NE. 0 ) .AND. &
+                                            (conn_mat(n-1,i,s) .NE. 0 ) ) THEN
+                                                atm_type(temp_id1,s) = "OG1" ! Protonated Epoxy Oxygen (1C+1H+)
+                                                atm_type(i,s) = "C1G" ! Protonated Epoxy Carbon (1C+1O(1H+) )
                                             END IF
                                         END IF
                                     END DO
@@ -581,14 +646,14 @@ DO s = 1, nb_step
                     END IF
                 END DO
             ! ASSIGN MONOVALENT H
-            ELSE IF ( (atm_type(i,s) .EQ. "H" ) .OR.&
-                (atm_type(i,s) .EQ. "H1" ) .OR.&
-                (atm_type(i,s) .EQ. "HM" ) .OR.&
-                (atm_type(i,s) .EQ. "HW" ) .OR.&
-                (atm_type(i,s) .EQ. "HP" ) .OR.&
-                (atm_type(i,s) .EQ. "HB" ) .OR.&
-                (atm_type(i,s) .EQ. "HC" ) .OR.&
-                (atm_type(i,s) .EQ. "HE" ) .OR.&
+            ELSE IF ( (atm_type(i,s) .EQ. "H" ) .OR. &
+                (atm_type(i,s) .EQ. "H1" ) .OR. &
+                (atm_type(i,s) .EQ. "HM" ) .OR. &
+                (atm_type(i,s) .EQ. "HW" ) .OR. &
+                (atm_type(i,s) .EQ. "HP" ) .OR. &
+                (atm_type(i,s) .EQ. "HB" ) .OR. &
+                (atm_type(i,s) .EQ. "HC" ) .OR. &
+                (atm_type(i,s) .EQ. "HE" ) .OR. &
                 (atm_type(i,s) .EQ. "HG" ) ) THEN
                 DO j = 4, 18, 3
                     IF ( conn_mat(j,i,s) .EQ. 16 ) THEN
@@ -599,19 +664,23 @@ DO s = 1, nb_step
                             atm_type(i,s) = "HW" ! H2O Hydrogen (1O)
                         ELSE IF ( (atm_type(temp_id1,s) .EQ. "OP" ) ) THEN
                             atm_type(i,s) = "HP" ! H3O Hydrogen (1O)
-                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OB" ) .OR.&
-                        (atm_type(temp_id1,s) .EQ. "OB2" ) .OR.&
+                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OB" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OB1" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OB2" ) .OR. &
                         (atm_type(temp_id1,s) .EQ. "OB3" ) ) THEN
                             atm_type(i,s) = "HB" ! Alcohol/PKetone Hydrogen (1O)
-                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OC" ) .OR.&
-                        (atm_type(temp_id1,s) .EQ. "OC2" ) .OR.&
+                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OC" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OC1" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OC2" ) .OR. &
                         (atm_type(temp_id1,s) .EQ. "OC3" ) ) THEN
                             atm_type(i,s) = "HC" ! PAlcohol Hydrogen (1O)
-                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OE2" ) .OR.&
-                            (atm_type(temp_id1,s) .EQ. "OE3" ) ) THEN
+                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OE1" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OE2" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OE3" ) ) THEN
                             atm_type(i,s) = "HE" ! Protonated Epoxy Hydrogen (1O)
-                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OG2" ) .OR.&
-                            (atm_type(temp_id1,s) .EQ. "OG3" ) ) THEN
+                        ELSE IF ( (atm_type(temp_id1,s) .EQ. "OG1" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OG2" ) .OR. &
+                        (atm_type(temp_id1,s) .EQ. "OG3" ) ) THEN
                             atm_type(i,s) = "HG" ! Protonated Epoxy Hydrogen (1O)
                         END IF
                     END IF
@@ -621,19 +690,26 @@ DO s = 1, nb_step
         END DO AS
     END DO
 
-    nb_epoxide(s) = COUNT( (atm_type(:,s) .EQ. "OF2"), DIM=1 ) + COUNT( (atm_type(:,s) .EQ. "OF3"), DIM=1 )
-    nb_pepoxide(s) = COUNT( (atm_type(:,s) .EQ. "OG2"), DIM=1 ) + COUNT( (atm_type(:,s) .EQ. "OG3"), DIM=1 )
-    nb_ether(s) = COUNT( (atm_type(:,s) .EQ. "OD2"), DIM=1 ) + COUNT( (atm_type(:,s) .EQ. "OD3"), DIM=1 )
-    nb_pether(s) = COUNT( (atm_type(:,s) .EQ. "OE2"), DIM=1 ) + COUNT( (atm_type(:,s) .EQ. "OE3"), DIM=1 )
-    nb_alcohol(s) = COUNT( (atm_type(:,s) .EQ. "OB2"), DIM=1 ) + COUNT( (atm_type(:,s) .EQ. "OB3"), DIM=1 )
-    nb_palcohols(s) = COUNT( (atm_type(:,s) .EQ. "OC2"), DIM=1 ) + COUNT( (atm_type(:,s) .EQ. "OC3"), DIM=1 )
+    nb_epoxide(s) = COUNT( (atm_type(:,s) .EQ. "OF2"), DIM=1 ) + COUNT( (atm_type(:,s) .EQ. "OF3"), DIM=1 ) &
+    + COUNT( (atm_type(:,s) .EQ. "OF1"), DIM=1 )
+    nb_pepoxide(s) = COUNT( (atm_type(:,s) .EQ. "OG2"), DIM=1 ) + COUNT( (atm_type(:,s) .EQ. "OG3"), DIM=1 ) &
+    + COUNT( (atm_type(:,s) .EQ. "OG1"), DIM=1 )
+    nb_ether(s) = COUNT( (atm_type(:,s) .EQ. "OD2"), DIM=1 ) + COUNT( (atm_type(:,s) .EQ. "OD3"), DIM=1 ) &
+    + COUNT( (atm_type(:,s) .EQ. "OD1"), DIM=1 )
+    nb_pether(s) = COUNT( (atm_type(:,s) .EQ. "OE2"), DIM=1 ) + COUNT( (atm_type(:,s) .EQ. "OE3"), DIM=1 ) &
+    + COUNT( (atm_type(:,s) .EQ. "OE1"), DIM=1 )
+    nb_alcohol(s) = COUNT( (atm_type(:,s) .EQ. "OB2"), DIM=1 ) + COUNT( (atm_type(:,s) .EQ. "OB3"), DIM=1 ) &
+    + COUNT( (atm_type(:,s) .EQ. "OB1"), DIM=1 )
+    nb_palcohols(s) = COUNT( (atm_type(:,s) .EQ. "OC2"), DIM=1 ) + COUNT( (atm_type(:,s) .EQ. "OC3"), DIM=1 ) &
+    + COUNT( (atm_type(:,s) .EQ. "OC1"), DIM=1 )
     nb_alkoxide(s) = COUNT( (atm_type(:,s) .EQ. "OA3"), DIM=1 )
     nb_ketone(s) = COUNT( (atm_type(:,s) .EQ. "OA2"), DIM=1 )
+    nb_ketene(s) = COUNT( (atm_type(:,s) .EQ. "OA1"), DIM=1 )
     nb_hydroxide(s) = COUNT( (atm_type(:,s) .EQ. "OM"), DIM=1 )
     nb_water(s) = COUNT( (atm_type(:,s) .EQ. "OW"), DIM=1 )
     nb_hydronium(s) = COUNT( (atm_type(:,s) .EQ. "OP"), DIM=1 )
-    nb_oxygen_group(s) = nb_epoxide(s) + nb_pepoxide(s) + nb_ether(s) +  nb_pether(s) +&
-        nb_alcohol(s) + nb_alkoxide(s) + nb_ketone(s) + nb_hydroxide(s) + nb_hydronium(s) + nb_water(s)
+    nb_oxygen_group(s) = nb_epoxide(s) + nb_pepoxide(s) + nb_ether(s) +  nb_pether(s) &
+    + nb_alcohol(s) + nb_alkoxide(s) + nb_ketone(s) + nb_ketene(s) +nb_hydroxide(s) + nb_hydronium(s) + nb_water(s)
 
 END DO
 !$OMP END PARALLEL DO
@@ -645,17 +721,17 @@ PRINT'(A40,F14.2,A20)', "Topology:", finish-start, "seconds elapsed"
 start = OMP_get_wtime()
 
 OPEN(UNIT=50, FILE = suffix//"_oxygen_groups_population.txt")
-WRITE(50, '(A4,1X,A10,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4)') &
-    "Traj", "Step", "EPO", "PEPO", "ETH", "PETH", "PALC", "ALC", "ALK", "AKL2", "H2O", "OH-", "H3O+", "TSum", "TO"
+WRITE(50, '(A4,1X,A10,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4)') &
+    "Traj", "Step", "EPO", "PEPO", "ETH", "PETH", "PALC", "ALC", "ALK3", "ALK2", "ALK1", "H2O", "OH-", "H3O+", "TSum", "TO"
 DO s = 1, nb_step
-    WRITE(50, '(A4,1X,I10,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4)') &
+    WRITE(50, '(A4,1X,I10,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4,1X,I4)') &
     suffix, s, nb_epoxide(s), nb_pepoxide(s), nb_ether(s), nb_pether(s), nb_palcohols(s), nb_alcohol(s), nb_alkoxide(s)&
-    , nb_ketone(s), nb_water(s), nb_hydroxide(s), nb_hydronium(s), nb_oxygen_group(s), nb_o
+    , nb_ketone(s), nb_ketene(s), nb_water(s), nb_hydroxide(s), nb_hydronium(s), nb_oxygen_group(s), nb_o
 END DO
 CLOSE(UNIT=50)
 
-DEALLOCATE(nb_epoxide,nb_pepoxide,nb_alcohol,nb_ether,nb_pether,nb_alkoxide,nb_ketone,nb_water&
-,nb_hydronium,nb_hydroxide,nb_oxygen_group, nb_palcohols)
+DEALLOCATE(nb_epoxide,nb_pepoxide,nb_alcohol,nb_ether,nb_pether,nb_alkoxide,nb_ketone,nb_ketene,nb_water,&
+nb_hydronium,nb_hydroxide,nb_oxygen_group, nb_palcohols)
 
 finish = OMP_get_wtime()
 PRINT'(A40,F14.2,A20)', "Oxygen groups topology output:", finish-start, "seconds elapsed"
