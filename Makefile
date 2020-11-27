@@ -21,6 +21,12 @@ extract.o: extract.f90
 surface_wrap.o: surface_wrap.f90
 	$(FC) $(FCFLAGS) -c surface_wrap.f90
 
+dist.o: dist.f90
+	$(FC) $(FCFLAGS) -c dist.f90
+
+react_event.o: react_event.f90
+	$(FC) $(FCFLAGS) -c react_event.f90
+
 density.o: density.f90
 	$(FC) $(FCFLAGS) -c density.f90
 
@@ -54,6 +60,12 @@ extract: input.o extract.o
 density: input.o sb_go.o density.o
 	$(FC) $(FCFLAGS) input.o sb_go.o density.o -o density
 
+dist: input.o dist.o
+	$(FC) $(FCFLAGS) input.o sb_go.o dist.o -o dist
+
+react_event: input.o react_event.o
+	$(FC) $(FCFLAGS) input.o sb_go.o react_event.o -o react_event
+
 order_layer: input.o order_layer.o
 	$(FC) $(FCFLAGS) input.o order_layer.o -o order_layer
 
@@ -69,13 +81,14 @@ hbonds: input.o sb_go.o hbonds.o
 vvcf: input.o sb_go.o vvcf.o
 	$(FC) $(FCFLAGS) input.o sb_go.o vvcf.o -o vvcf
 
-
-all: input.o sb_go.o density.o order_layer.o fluctuation.o assign.o assign_ff.o extract.o surface_wrap.o water_angle.o hbonds.o vvcf.o 
+all: input.o sb_go.o density.o order_layer.o fluctuation.o assign.o assign_ff.o extract.o surface_wrap.o dist.o react_event.o water_angle.o hbonds.o vvcf.o
 	$(FC) $(FCFLAGS) input.o assign.o -o assign
 	$(FC) $(FCFLAGS) input.o assign_ff.o -o assign_ff
 	$(FC) $(FCFLAGS) input.o surface_wrap.o -o surface_wrap
 	$(FC) $(FCFLAGS) input.o sb_go.o extract.o -o extract
 	$(FC) $(FCFLAGS) input.o sb_go.o density.o -o density
+	$(FC) $(FCFLAGS) input.o sb_go.o dist.o -o dist
+	$(FC) $(FCFLAGS) input.o sb_go.o react_event.o -o react_event
 	$(FC) $(FCFLAGS) input.o sb_go.o order_layer.o -o order_layer
 	$(FC) $(FCFLAGS) input.o sb_go.o fluctuation.o -o fluctuation
 	$(FC) $(FCFLAGS) input.o sb_go.o water_angle.o -o water_angle
@@ -83,7 +96,7 @@ all: input.o sb_go.o density.o order_layer.o fluctuation.o assign.o assign_ff.o 
 	$(FC) $(FCFLAGS) input.o sb_go.o vvcf.o -o vvcf
 
 clean:
-	rm -f *.o 
+	rm -f *.o
 
 realclean:
-	rm -f *.o *.mod assign assign_ff extract surface_wrap density order_layer fluctuation water_angle hbonds vvcf 
+	rm -f *.o *.mod assign assign_ff extract surface_wrap dist react_event density order_layer fluctuation water_angle hbonds vvcf
