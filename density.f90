@@ -171,7 +171,7 @@ DO s = 1, nb_step
         count_dens_down = 0
         count_dens_up = 0
     C1:DO i = 1, nb_atm
-            IF ( atm_mat(3,i,s) .NE. 23 ) THEN ! Water Oxygen
+            IF ( atm_mat(3,i,s) .NE. 34 ) THEN ! Water Oxygen
                 CYCLE C1
             END IF
             IF ( ( atm_mat(7,i,s)*atm_mat(8,i,s) .GE. r ) .AND. ( atm_mat(7,i,s)*atm_mat(8,i,s) .LT. r+dens_dr ) ) THEN
@@ -182,7 +182,9 @@ DO s = 1, nb_step
             END IF
         END DO C1
         dens_down(j,s) = ( (15.999+ (2*1.00784) ) * count_dens_down ) / ( box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23 )
+        dens_down(j,s) = dens_down(j,s) / 0.997
         dens_up(j,s) = ( (15.999+ (2*1.00784) ) * count_dens_up ) / ( box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23 )
+        dens_up(j,s) = dens_up(j,s) / 0.997
         r = r + dens_dr
     END DO
 END DO
@@ -262,15 +264,16 @@ DO s = 1, nb_step
     DO j = 1, dens_step
         count_dens_down_avgz_c = 0
     D1:DO i = 1, nb_atm
-            IF ( atm_mat(3,i,s) .NE. 23 ) THEN ! Water Oxygen
+            IF ( atm_mat(3,i,s) .NE. 34 ) THEN ! Water Oxygen
                 CYCLE D1
             END IF
             IF ( ( (atm_mat(6,i,s) - avg_z(s) ) .GE. r ) .AND. ( ( atm_mat(6,i,s) - avg_z(s) ) .LT. r+dens_dr ) ) THEN
                 count_dens_down_avgz_c = count_dens_down_avgz_c + 1
             END IF
         END DO D1
-        dens_down_avgz_c(j,s) = ( (15.999+ (2*1.00784) ) * count_dens_down_avgz_c ) &
+        dens_down_avgz_c(j,s) = ( (15.999 + (2*1.00784) ) * count_dens_down_avgz_c ) &
         / ( box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23 )
+        dens_down_avgz_c(j,s) = dens_down_avgz_c(j,s) / 0.997
         r = r + dens_dr
     END DO
 END DO

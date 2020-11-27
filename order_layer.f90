@@ -182,19 +182,19 @@ DO s = 1, nb_step
             count_all = count_all + 1
         END IF
         IF ( ( atm_name(i,s) .EQ. "OW" ) .AND. &
-            (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L0_down ) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L0_up ) ) THEN
+        (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L0_down ) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L0_up ) ) THEN
             type = "OL0"
             count_L0 = count_L0 + 1
         ELSE IF ( ( atm_name(i,s) .EQ. "OW" ) .AND. &
-            (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L1_down ) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L1_up ) ) THEN
+        (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L1_down ) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L1_up ) ) THEN
             type = "OL1"
             count_L1 = count_L1 + 1
         ELSE IF ( ( atm_name(i,s) .EQ. "OW" ) .AND. &
-            (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L2_down ) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L2_up ) ) THEN
+        (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L2_down ) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L2_up ) ) THEN
             type = "OL2"
             count_L2 = count_L2 + 1
         ELSE IF ( ( atm_name(i,s) .EQ. "OW" ) .AND. &
-            (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L3_down ) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L3_up ) ) THEN
+        (atm_mat(15,i,s)*atm_mat(16,i,s) .GT. L3_down ) .AND.  (atm_mat(15,i,s)*atm_mat(16,i,s) .LE. L3_up ) ) THEN
             type = "OL3"
             count_L3 = count_L3 + 1
         END IF
