@@ -125,20 +125,20 @@ IF ( IS_c .EQ. 'Y' ) THEN
     start = OMP_get_wtime()
 
     CALL sb_count_is(file_is,nb_step,nb_max_is)
-    
+
     finish = OMP_get_wtime()
     PRINT'(A40,F14.2,A20)', "IS grid:", finish-start, "seconds elapsed"
-    
+
 ! A ----------------------------------------------- Read IS
     start = OMP_get_wtime()
-    
+
     ALLOCATE(is_mat(5,nb_max_is,nb_step))
     ALLOCATE(nb_is(nb_step))
     is_mat(:,:,:) = 0.0_dp
     nb_is(:) = 0
-    
+
     CALL sb_read_is(file_is,nb_step,box(:),is_mat(:,:,:),nb_is(:))
-    
+
     finish = OMP_get_wtime()
     PRINT'(A40,F14.2,A20)', "IS:", finish-start, "seconds elapsed"
 END IF
