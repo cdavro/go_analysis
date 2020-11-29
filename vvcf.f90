@@ -492,10 +492,10 @@ DO t = mcsb, mcs+1
                 ! END IF
 
                 IF ( ( up_down_only .EQ. "D" ) .AND. &
-                ( OHvec_mat(13,i,s) .GT. OHvec_mat(36,i,s ) ) ) THEN ! Down only
+                ( OHvec_mat(13,i,s) .GT. OHvec_mat(36,i,s ) ) ) THEN ! Down only (GO Sheet)
                     CYCLE H1
                 ELSE IF ( ( up_down_only .EQ. "U" ) .AND. &
-                ( OHvec_mat(13,i,s) .LT. OHvec_mat(36,i,s ) ) ) THEN ! Up only
+                ( OHvec_mat(13,i,s) .LT. OHvec_mat(36,i,s ) ) ) THEN ! Up only (GO Sheet)
                     CYCLE H1
                 END IF
 
