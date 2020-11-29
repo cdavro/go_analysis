@@ -123,10 +123,33 @@ OHvec_mat(:,:,:) = 0.0_dp
 !$OMP PRIVATE(OpH_disp_vec, OpH_disp_norm)
 DO s = 1, nb_step
     o = 0
-    DO i = 1, nb_atm
+ OC:DO i = 1, nb_atm
         IF ( atm_mat(2,i,s) .EQ. 16 ) THEN
-            DO j = 1, nb_atm
+            IF ( ( atm_mat(3,i,s) .NE. 34 ) .AND. ( atm_mat(3,i,s) .EQ. 33 ) .AND. &
+            ( atm_mat(3,i,s) .NE. 35 ) .AND. ( atm_mat(3,i,s) .EQ. 25 ) .AND. &
+            ( atm_mat(3,i,s) .NE. 26 ) .AND. ( atm_mat(3,i,s) .EQ. 28 ) .AND. &
+            ( atm_mat(3,i,s) .NE. 30 ) ) THEN
+                CYCLE OC
+            END IF
+         HC:DO j = 1, nb_atm
                 IF ( atm_mat(2,j,s) .EQ. 1 ) THEN
+                    IF ( ( atm_mat(3,i,s) .EQ. 34 ) .AND. ( atm_mat(3,j,s) .EQ. 37 ) ) THEN
+                        CONTINUE
+                    ELSE IF  ( ( atm_mat(3,i,s) .EQ. 33 ) .AND. ( atm_mat(3,j,s) .EQ. 36 ) ) THEN
+                        CONTINUE
+                    ELSE IF  ( ( atm_mat(3,i,s) .EQ. 35 ) .AND. ( atm_mat(3,j,s) .EQ. 38 ) ) THEN
+                        CONTINUE
+                    ELSE IF  ( ( atm_mat(3,i,s) .EQ. 25 ) .AND. ( atm_mat(3,j,s) .EQ. 39 ) ) THEN
+                        CONTINUE
+                    ELSE IF  ( ( atm_mat(3,i,s) .EQ. 26 ) .AND. ( atm_mat(3,j,s) .EQ. 40 ) ) THEN
+                        CONTINUE
+                    ELSE IF  ( ( atm_mat(3,i,s) .EQ. 28 ) .AND. ( atm_mat(3,j,s) .EQ. 41 ) ) THEN
+                        CONTINUE
+                    ELSE IF  ( ( atm_mat(3,i,s) .EQ. 30 ) .AND. ( atm_mat(3,j,s) .EQ. 42 ) ) THEN
+                        CONTINUE
+                    ELSE
+                        CYCLE HC
+                    END IF
                     DO k = 1, 3
                         OpH_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
                         OpH_disp_vec(k) = OpH_disp_vec(k) - box(k) * ANINT( OpH_disp_vec(k)/box(k) )
@@ -146,9 +169,9 @@ DO s = 1, nb_step
                         END DO
                     END IF
                 END IF
-            END DO
+            END DO HC
         END IF
-    END DO
+    END DO OC
     nb_max_OHvec(s) = COUNT( OHvec_mat(1,:,s) .NE. 0, DIM=1 )
 END DO
 !$OMP END PARALLEL DO
