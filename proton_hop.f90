@@ -206,10 +206,10 @@ PROGRAM proton_hop
                                 prev_new_vec(k) = prev_new_vec(k) - box(k) * ANINT( prev_new_vec(k) / box(k) )
                             END DO
                             prev_new_norm = NORM2( prev_new_vec ) ! calculate distance between index s and index s-1
-                            IF ( prev_new_norm .LT. 3.00) THEN ! If less than 3 and not in the memory, jump
-                                IF ( ( H3O_mat(1,i,s) .NE. HOPP(3,j,s-1) ) .OR.&
-                                ( H3O_mat(1,i,s)  .NE. HOPP(4,j,s-1) ).OR.&
-                                ( H3O_mat(1,i,s)  .NE. HOPP(5,j,s-1) ).OR.&
+                            IF ( prev_new_norm .LT. 4.00) THEN ! If less than 3 and not in the memory, jump
+                                IF ( ( H3O_mat(1,i,s) .NE. HOPP(3,j,s-1) ) .AND.&
+                                ( H3O_mat(1,i,s)  .NE. HOPP(4,j,s-1) ).AND.&
+                                ( H3O_mat(1,i,s)  .NE. HOPP(5,j,s-1) ).AND.&
                                 ( H3O_mat(1,i,s)  .NE. HOPP(6,j,s-1) ) ) THEN
                                     HOPP(1,i,s) = HOPP(1,i,s-1) + 1
                                     HOPP(2,i,s) = H3O_mat(1,j,s)
@@ -326,7 +326,7 @@ PROGRAM proton_hop
             WRITE(42,'(A4,1X,A10,1X,A6,1X,A6,1X,A6,1X,A14&
             &,1X,A6,1X,A6,1X,A6,1X,A6,1X,A6,1X,A6,1X,A6,1X,A6)')&
             "Traj", "Step", "H(t)","ID","H_ID","dist_ISD"&
-            &,"ID-1","ID-2","ID-3","ID-4","ID-5","ID-6","ID-7","ID-7"
+            &,"ID-1","ID-2","ID-3","ID-4","ID-5","ID-6","ID-7","ID-8"
             DO s = 1, nb_step
                 DO i = 1, MAXVAL(nb_max_H3O)
                     IF (HOPP(2,i,s) .NE. 0) THEN
@@ -362,4 +362,3 @@ PROGRAM proton_hop
         DEALLOCATE(is_mat,nb_is,H3O_mat,HOPP,nb_max_H3O)
     END IF
 END PROGRAM proton_hop
-
