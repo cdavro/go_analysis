@@ -1,3 +1,7 @@
+!Author: Rolf David
+!License: MIT
+!UTF-8, CRLF, Fortran2003
+
 MODULE SB_GO
     IMPLICIT NONE
     ! -----------------------------------------------Set Double precision
@@ -10,6 +14,7 @@ MODULE SB_GO
         INTEGER, INTENT(IN)                          :: sb_nb_atm, sb_nb_step
         REAL(dp), INTENT(INOUT)                      :: sb_atm_mat(:,:,:)
         CHARACTER(LEN=3), ALLOCATABLE, INTENT(INOUT) :: sb_atm_name(:,:)
+        !-- Procedure only
         INTEGER                                      :: s, i
 
         OPEN(UNIT=20,FILE=sb_file_pos,STATUS='old',FORM='formatted',ACTION='READ')
@@ -253,5 +258,19 @@ MODULE SB_GO
         CLOSE(UNIT=21)
 
     END SUBROUTINE sb_read_is
+
+    PURE FUNCTION fc_itoc(i) result(res)
+        INTEGER, INTENT(IN) :: i
+        CHARACTER(:), ALLOCATABLE :: res
+        CHARACTER( RANGE( (i)+2 ) ) :: tmp
+        WRITE(tmp,'(i0)') i
+        res = TRIM( tmp )
+    END FUNCTION
+
+    PURE FUNCTION fc_trim_ext(string_in) result(string_out)
+        CHARACTER(*), INTENT(IN) :: string_in
+        CHARACTER(:), ALLOCATABLE :: string_out
+        string_out = TRIM( string_in(1:SCAN( TRIM( string_in ),".", .TRUE. )-1) )
+    END FUNCTION
 
 END MODULE SB_GO

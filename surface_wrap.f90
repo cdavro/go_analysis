@@ -5,6 +5,7 @@
 PROGRAM surface_wrap
 USE OMP_LIB
 USE INPUT
+USE SB_GO
 
 IMPLICIT NONE
 
@@ -123,9 +124,9 @@ ELSE
 END IF
 
 IF ( WRAP_C .EQ. "Y") THEN
-    OPEN(UNIT=40, FILE = suffix//"_wrapped_surf.xyz")
+    OPEN(UNIT=40, FILE = suffix//"_wrapped_"//fc_trim_ext(file_is)//".surf")
 ELSE
-    OPEN(UNIT=40, FILE = suffix//"_nonwrapped_surf.xyz")
+    OPEN(UNIT=40, FILE = suffix//"_nonwrapped_"//fc_trim_ext(file_is)//".surf")
 END IF
 DO s = 1, nb_step
     WRITE(40,'(I10)') nb_pt_is(s)

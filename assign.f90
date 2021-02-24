@@ -5,6 +5,7 @@
 PROGRAM assign
 USE OMP_LIB
 USE INPUT
+USE SB_GO
 
 IMPLICIT NONE
 
@@ -740,11 +741,11 @@ PRINT'(A40,F14.2,A20)', "Oxygen groups topology output:", finish-start, "seconds
 start = OMP_get_wtime()
 
 IF ( WRAP_C .EQ. "Y" ) THEN
-    OPEN(UNIT=40, FILE = suffix//"_wrapped_"//file_pos)
-    IF ( file_vel .NE. '0') OPEN(UNIT=41, FILE = suffix//"_wrapped_"//file_vel)
+    OPEN(UNIT=40, FILE = suffix//"_wrapped_"//fc_trim_ext(file_pos)//".xyz")
+    IF ( file_vel .NE. '0') OPEN(UNIT=41, FILE = suffix//"_wrapped_"//fc_trim_ext(file_vel)//".vel")
 ELSE
-    OPEN(UNIT=40, FILE = suffix//"_nonwrapped_"//file_pos)
-    IF ( file_vel .NE. '0') OPEN(UNIT=41, FILE = suffix//"_nonwrapped_"//file_vel)
+    OPEN(UNIT=40, FILE = suffix//"_nonwrapped_"//fc_trim_ext(file_pos)//".xyz")
+    IF ( file_vel .NE. '0') OPEN(UNIT=41, FILE = suffix//"_nonwrapped_"//fc_trim_ext(file_vel)//".vel")
 END IF
 DO s = 1, nb_step
     WRITE(40,'(I10)') nb_atm

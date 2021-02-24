@@ -105,15 +105,16 @@ END IF
 
 IF ( IS_c .EQ. 'Y' ) THEN
 
-    ! X ----------------------------------------------- Calculate closest distance between IS and Water Oxygen
+    ! X ----------------------------------------------- Calculate closest distance between IS and Water-type Oxygen
     start = OMP_get_wtime()
-
     !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, is_mat, nb_is, nb_atm, nb_step)&
     !$OMP PRIVATE(s, i, j, k)&
     !$OMP PRIVATE(SpO_disp_vec, SpO_disp_norm)
     DO s = 1, nb_step
         DO i = 1, nb_atm
-            IF ( atm_mat(3,i,s) .EQ. 23 ) THEN ! Water Oxygen
+            IF ( ( atm_mat(3,i,s) .EQ. 34 ) .OR. &
+            ( atm_mat(3,i,s) .EQ. 33 ) .OR. &
+            ( atm_mat(3,i,s) .EQ. 35 ) ) THEN ! Water-type Oxygen
                 DO j = 1, nb_is(s)
                     IF ( is_mat(4,j,s) .EQ. 1 ) THEN
                         DO k = 1, 3
@@ -123,7 +124,7 @@ IF ( IS_c .EQ. 'Y' ) THEN
                         SpO_disp_norm = NORM2( SpO_disp_vec )
                         IF ( ( SpO_disp_norm .LT. atm_mat(15,i,s) ) .OR. ( atm_mat(15,i,s) .EQ. 0.0 ) ) THEN
                             atm_mat(15,i,s) = SpO_disp_norm
-                            IF ( atm_mat(6,i,s) .LT. is_mat(3,j,s ) ) THEN
+                            IF ( atm_mat(6,i,s) .LT. is_mat(3,j,s) ) THEN
                                 atm_mat(16,i,s) = -1
                             ELSE
                                 atm_mat(16,i,s) = 1
@@ -138,7 +139,7 @@ IF ( IS_c .EQ. 'Y' ) THEN
                         SpO_disp_norm = NORM2( SpO_disp_vec )
                         IF ( ( SpO_disp_norm .LT. atm_mat(18,i,s) ) .OR. (atm_mat(18,i,s) .EQ. 0.0 ) ) THEN
                             atm_mat(18,i,s) = SpO_disp_norm
-                            IF ( atm_mat(6,i,s) .GT. is_mat(3,j,s ) ) THEN
+                            IF ( atm_mat(6,i,s) .GT. is_mat(3,j,s) ) THEN
                                 atm_mat(19,i,s) = -1
                             ELSE
                                 atm_mat(19,i,s) = 1
@@ -153,7 +154,7 @@ IF ( IS_c .EQ. 'Y' ) THEN
     !$OMP END PARALLEL DO
 
     finish = OMP_get_wtime()
-    PRINT'(A40,F14.2,A20)', "IS and O:", finish-start, "seconds elapsed"
+    PRINT'(A40,F14.2,A20)', "IS and OW-type:", finish-start, "seconds elapsed"
 
 END IF
 
