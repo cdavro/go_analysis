@@ -105,7 +105,7 @@ all: input.o sb_go.o density.o order_layer.o fluctuation.o assign.o assign_ff.o 
 	$(FC) $(FCFLAGS) input.o sb_go.o proton_hop.o -o proton_hop
 
 clean:
-	rm -f *.o
+	rm -f *.o *.mod
 
 realclean:
 	rm -f *.o *.mod assign assign_ff extract surface_wrap dist react_event density order_layer fluctuation water_angle hbonds vvcf proton_hop
