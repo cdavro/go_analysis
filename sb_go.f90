@@ -259,6 +259,19 @@ MODULE SB_GO
 
     END SUBROUTINE sb_read_is
 
+    SUBROUTINE sb_dist(xyz_i,xyz_j,box_dim,norm_ij,vec_ij)
+        REAL(dp), INTENT(IN) :: xyz_i(:), xyz_j(:), box_dim(:)
+        REAL(dp) :: sbo_norm_ij
+        REAL(dp) :: sbo_vec_ij(3)
+        REAL(dp), INTENT(OUT), OPTIONAL :: norm_ij
+        REAL(dp), INTENT(OUT), OPTIONAL :: vec_ij(:)
+        sbo_vec_ij = xyz_j - xyz_i
+        sbo_vec_ij = sbo_vec_ij - box_dim * ANINT( sbo_vec_ij / box_dim )
+        sbo_norm_ij = NORM2 ( sbo_vec_ij )
+        IF ( PRESENT( norm_ij)  ) norm_ij = sbo_norm_ij
+        IF ( PRESENT( vec_ij ) ) vec_ij = sbo_vec_ij
+    END SUBROUTINE sb_dist
+
     PURE FUNCTION fc_itoc(i) result(res)
         INTEGER, INTENT(IN) :: i
         CHARACTER(:), ALLOCATABLE :: res
