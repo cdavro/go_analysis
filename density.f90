@@ -28,12 +28,12 @@ REAL(dp), ALLOCATABLE           :: avg_z(:)
 REAL(dp), ALLOCATABLE           :: dens_down(:,:), dens_up(:,:), avg_dens_down(:), avg_dens_up(:)
 REAL(dp), ALLOCATABLE           :: dens_down_avgz_c(:,:), avg_dens_down_avgz_c(:)
 
-REAL(dp)                        :: ISaO_disp_vec(3), ISaO_disp_norm
+REAL(dp)                        :: ISaO_disp_norm
 REAL(dp)                        :: r
 REAL(dp)                        :: mass_dens_down, mass_dens_up, mass_dens_down_avgz_c
 
 !   ----------------------------------------------- Counters
-INTEGER                         :: s, i, j, k, o
+INTEGER                         :: s, i, j, o
 
 !   -----------------------------------------------
 PRINT'(A100)','--------------------------------------------------'&
@@ -103,18 +103,16 @@ PRINT'(A40,F14.2,A20)', "IS:", finish-start, "seconds elapsed"
 start = OMP_get_wtime()
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, is_mat, nb_is, nb_step, nb_atm)&
-!$OMP PRIVATE(s, i, j, k)&
-!$OMP PRIVATE(ISaO_disp_vec, ISaO_disp_norm)
+!$OMP PRIVATE(s, i, j)&
+!$OMP PRIVATE(ISaO_disp_norm)
 DO s = 1, nb_step
     DO i = 1, nb_atm
         IF ( atm_mat(2,i,s) .EQ. 16 ) THEN
             DO j = 1, nb_is(s)
                 IF ( is_mat(4,j,s) .EQ. 1 ) THEN
-                    DO k = 1, 3
-                        ISaO_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
-                        ISaO_disp_vec(k) = ISaO_disp_vec(k) - box(k) * ANINT( ISaO_disp_vec(k) / box(k) )
-                    END DO
-                    ISaO_disp_norm = NORM2( ISaO_disp_vec )
+
+                    CALL sb_dist(atm_mat(4:6,i,s),is_mat(1:3,j,s),box,norm_ij=ISaO_disp_norm)
+                    
                     IF ( ( ISaO_disp_norm .LT. atm_mat(7,i,s) ) .OR. ( atm_mat(7,i,s) .EQ. 0.0 ) ) THEN
                         atm_mat(7,i,s) = ISaO_disp_norm
                         IF ( atm_mat(6,i,s) .LT. is_mat(3,j,s ) ) THEN
@@ -125,11 +123,9 @@ DO s = 1, nb_step
                         atm_mat(9,i,s) = is_mat(5,j,s)
                     END IF
                 ELSE IF ( is_mat(4,j,s) .EQ. 2 ) THEN
-                    DO k = 1, 3
-                        ISaO_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
-                        ISaO_disp_vec(k) = ISaO_disp_vec(k) - box(k) * ANINT( ISaO_disp_vec(k) / box(k) )
-                    END DO
-                    ISaO_disp_norm = NORM2( ISaO_disp_vec )
+
+                    CALL sb_dist(atm_mat(4:6,i,s),is_mat(1:3,j,s),box,norm_ij=ISaO_disp_norm)
+
                     IF ( ( ISaO_disp_norm .LT. atm_mat(10,i,s) ) .OR. ( atm_mat(10,i,s) .EQ. 0.0 ) ) THEN
                         atm_mat(10,i,s) = ISaO_disp_norm
                         IF ( atm_mat(6,i,s) .GT. is_mat(3,j,s ) ) THEN

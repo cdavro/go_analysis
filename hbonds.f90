@@ -27,18 +27,15 @@ INTEGER, ALLOCATABLE            :: nb_is(:)
 !   ----------------------------------------------- Temp variables
 REAL(dp)                        :: OpH_disp_vec(3), OpH_disp_norm, OH_disp_vec(3), OH_disp_norm, alpha
 REAL(dp)                        :: oHpO_disp_vec(3), oHpO_disp_norm
-REAL(dp)                        :: XOh_disp_vec(3), XOh_disp_norm
-REAL(dp)                        :: XHo_disp_vec(3), XHo_disp_norm
-REAL(dp)                        :: XO_disp_vec(3), XO_disp_norm
-REAL(dp)                        :: SpOh_disp_vec(3), SpOh_disp_norm
-REAL(dp)                        :: SpO_disp_vec(3), SpO_disp_norm
+REAL(dp)                        :: XOh_disp_norm, XHo_disp_norm, XO_disp_norm
+REAL(dp)                        :: SpOh_disp_norm, SpO_disp_norm
 
 !   ----------------------------------------------- Count variables
 INTEGER                         :: nb_o, Udonnor_count, Udonnor_count2
 INTEGER, ALLOCATABLE            :: nb_max_OHvec(:)
 
 !   ----------------------------------------------- Counters
-INTEGER                         :: i, s, k, j, o, l, n
+INTEGER                         :: i, s, j, o, l, n
 INTEGER                         :: CAC
 
 !   -----------------------------------------------
@@ -119,8 +116,8 @@ OHvec_mat(:,:,:) = 0.0_dp
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_max_OHvec, nb_step, nb_atm)&
 !$OMP SHARED(hb_OpH_rcut)&
-!$OMP PRIVATE(s, i, j, k, o)&
-!$OMP PRIVATE(OpH_disp_vec, OpH_disp_norm)
+!$OMP PRIVATE(s, i, j, o)&
+!$OMP PRIVATE(OpH_disp_norm,OpH_disp_vec)
 DO s = 1, nb_step
     o = 0
  OC:DO i = 1, nb_atm
@@ -150,23 +147,18 @@ DO s = 1, nb_step
                     ELSE
                         CYCLE HC
                     END IF
-                    DO k = 1, 3
-                        OpH_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
-                        OpH_disp_vec(k) = OpH_disp_vec(k) - box(k) * ANINT( OpH_disp_vec(k)/box(k) )
-                    END DO
-                    OpH_disp_norm = NORM2( OpH_disp_vec )
+
+                    CALL sb_dist(atm_mat(4:6,i,s),atm_mat(4:6,j,s),box,norm_ij=OpH_disp_norm,vec_ij=OpH_disp_vec)
+
                     IF ( OpH_disp_norm .LT. hb_OpH_rcut ) THEN
                         o = o + 1
                         OHvec_mat(1,o,s) = atm_mat(1,i,s)
                         OHvec_mat(2,o,s) = atm_mat(1,j,s)
                         OHvec_mat(3,o,s) = atm_mat(3,i,s)
                         OHvec_mat(4,o,s) = atm_mat(3,j,s)
-                        DO k = 1, 3
-                            OHvec_mat(k+4,o,s) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
-                            OHvec_mat(k+4,o,s) = OHvec_mat(k+4,o,s) - box(k) * ANINT( OHvec_mat(k+4,o,s)/box(k) ) ! Disp
-                            OHvec_mat(k+7,o,s) = atm_mat(k+3,i,s) ! O pos
-                            OHvec_mat(k+10,o,s) = atm_mat(k+3,j,s) ! H pos
-                        END DO
+                        OHvec_mat(5:7,o,s) = OpH_disp_vec  ! Disp
+                        OHvec_mat(8:10,o,s) = atm_mat(4:6,i,s) ! O pos
+                        OHvec_mat(11:13,o,s) = atm_mat(4:6,j,s) ! H pos
                     END IF
                 END IF
             END DO HC
@@ -186,7 +178,7 @@ OHvec_hbond_mat(:,:,:) = 0.0_dp
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, nb_atm, nb_step, OHvec_hbond_mat)&
 !$OMP SHARED(hb_oHpO_rcut)&
-!$OMP PRIVATE(s, i, j, k, l, n)&
+!$OMP PRIVATE(s, i, j, l, n)&
 !$OMP PRIVATE(oHpO_disp_vec, oHpO_disp_norm, Udonnor_count, Udonnor_count2, OH_disp_norm, OH_disp_vec)&
 !$OMP PRIVATE(alpha)
 DO s = 1, nb_step
@@ -202,15 +194,9 @@ DO s = 1, nb_step
         OHvec_hbond_mat(3,i,s) = OHvec_mat(2,i,s)
         DO j = 1, nb_atm
             IF ( atm_mat(2,j,s) .EQ. 16 ) THEN
-                DO k = 1, 3
-                    oHpO_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+10,i,s)
-                    oHpO_disp_vec(k) = oHpO_disp_vec(k) - box(k) * ANINT( oHpO_disp_vec(k)/box(k) ) ! HO hbonds vector
-                    OH_disp_vec(k) = OHvec_mat(k+10,i,s) - OHvec_mat(k+7,i,s)
-                    OH_disp_vec(k) = OH_disp_vec(k) - box(k) * ANINT( OH_disp_vec(k)/box(k) ) ! OH vector
-                END DO
 
-                oHpO_disp_norm = NORM2( oHpO_disp_vec ) ! r
-                OH_disp_norm = NORM2( OH_disp_vec )
+                CALL sb_dist(OHvec_mat(11:13,i,s),atm_mat(4:6,j,s),box,norm_ij=oHpO_disp_norm,vec_ij=oHpO_disp_vec) ! HO hbonds vector
+                CALL sb_dist(OHvec_mat(8:10,i,s),OHvec_mat(11:13,i,s),box,norm_ij=OH_disp_norm,vec_ij=OH_disp_vec) ! OH vector
 
                 IF( ( oHpO_disp_norm .LE. hb_oHpO_rcut ) .AND. ( atm_mat(1,j,s) .NE. OHvec_mat(1,i,s) ) ) THEN
                     atm_mat(7,j,s) = atm_mat(7,j,s) + 1 ! Acceptor count (O)
@@ -273,8 +259,8 @@ start = OMP_get_wtime()
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, nb_step, nb_atm)&
 !$OMP SHARED(hb_X1Oh_rcut, hb_X2Oh_rcut)&
-!$OMP PRIVATE(s, i, j, k)&
-!$OMP PRIVATE(XOh_disp_vec, XOh_disp_norm, XHo_disp_vec, XHo_disp_norm)
+!$OMP PRIVATE(s, i, j)&
+!$OMP PRIVATE(XOh_disp_norm, XHo_disp_norm)
 DO s = 1, nb_step
  D1:DO i = 1, nb_o*3
         IF ( OHvec_mat(1,i,s) .EQ. 0 ) THEN
@@ -287,14 +273,9 @@ DO s = 1, nb_step
             IF ( atm_mat(1,j,s) .EQ. OHvec_mat(1,i,s) ) THEN
                 CYCLE D2
             END IF
-            DO k = 1, 3
-                XOh_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+7,i,s)
-                XOh_disp_vec(k) = XOh_disp_vec(k) - box(k) * ANINT( XOh_disp_vec(k)/box(k) )
-                XHo_disp_vec(k) = atm_mat(k+3,j,s) - OHvec_mat(k+10,i,s)
-                XHo_disp_vec(k) = XHo_disp_vec(k) - box(k) * ANINT( XHo_disp_vec(k)/box(k) )
-            END DO
-            XOh_disp_norm = NORM2( XOh_disp_vec )
-            XHo_disp_norm = NORM2( XHo_disp_vec )
+
+            CALL sb_dist(OHvec_mat(8:10,i,s),atm_mat(4:6,j,s),box,norm_ij=XOh_disp_norm)
+            CALL sb_dist(OHvec_mat(11:13,i,s),atm_mat(4:6,j,s),box,norm_ij=XHo_disp_norm)
 
             IF ( ( (XOh_disp_norm .LE. OHvec_mat(32,i,s) ) .OR. &
             (OHvec_mat(32,i,s) .EQ. 0.0) ) .AND. &
@@ -366,8 +347,8 @@ start = OMP_get_wtime()
 
 !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, nb_step, nb_atm)&
 !$OMP SHARED(hb_X1O_rcut, hb_X2O_rcut)&
-!$OMP PRIVATE(s, i, j, k)&
-!$OMP PRIVATE(XO_disp_vec, XO_disp_norm)
+!$OMP PRIVATE(s, i, j)&
+!$OMP PRIVATE(XO_disp_norm)
 DO s = 1, nb_step
     E1:DO i = 1, nb_atm
         IF ( atm_mat(2,i,s) .NE. 16 ) THEN
@@ -380,11 +361,8 @@ DO s = 1, nb_step
             IF ( atm_mat(1,j,s) .EQ. atm_mat(1,i,s) ) THEN
                 CYCLE E2
             END IF
-            DO k = 1, 3
-                XO_disp_vec(k) = atm_mat(k+3,j,s) - atm_mat(k+3,i,s)
-                XO_disp_vec(k) = XO_disp_vec(k) - box(k) * ANINT( XO_disp_vec(k)/box(k) )
-            END DO
-            XO_disp_norm = NORM2( XO_disp_vec )
+
+            CALL sb_dist(atm_mat(4:6,i,s),atm_mat(4:6,j,s),box,norm_ij=XO_disp_norm)
 
             IF ( ( (XO_disp_norm .LE. atm_mat(22,i,s) ) .OR. &
             ( atm_mat(22,i,s) .EQ. 0.0) ) .AND.&
@@ -443,8 +421,8 @@ IF ( IS_c .EQ. 'Y' ) THEN
     start = OMP_get_wtime()
 
     !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, OHvec_mat, nb_o, is_mat, nb_is, nb_step)&
-    !$OMP PRIVATE(s, i, j, k)&
-    !$OMP PRIVATE(SpOh_disp_vec, SpOh_disp_norm)
+    !$OMP PRIVATE(s, i, j)&
+    !$OMP PRIVATE(SpOh_disp_norm)
     DO s = 1, nb_step
         F2:DO i = 1, nb_o*3
             IF ( OHvec_mat(1,i,s) .EQ. 0 ) THEN
@@ -452,11 +430,9 @@ IF ( IS_c .EQ. 'Y' ) THEN
             END IF
             DO j = 1, nb_is(s)
                 IF ( is_mat(4,j,s) .EQ. 1 ) THEN
-                    DO k = 1, 3
-                        SpOh_disp_vec(k) = is_mat(k,j,s) - OHvec_mat(k+7,i,s)
-                        SpOh_disp_vec(k) = SpOh_disp_vec(k) - box(k) * ANINT( SpOh_disp_vec(k)/box(k) )
-                    END DO
-                    SpOh_disp_norm = NORM2( SpOh_disp_vec )
+
+                    CALL sb_dist(OHvec_mat(8:10,i,s),is_mat(1:3,j,s),box,norm_ij=SpOh_disp_norm)
+
                     IF ( ( SpOh_disp_norm .LT. OHvec_mat(25,i,s) ) .OR. ( OHvec_mat(25,i,s) .EQ. 0.0 ) ) THEN
                         OHvec_mat(25,i,s) = SpOh_disp_norm
                         IF ( OHvec_mat(10,i,s) .LT. is_mat(3,j,s) ) THEN
@@ -467,11 +443,9 @@ IF ( IS_c .EQ. 'Y' ) THEN
                         OHvec_mat(27,i,s) = is_mat(5,j,s)
                     END IF
                 ELSE IF ( is_mat(4,j,s) .EQ. 2 ) THEN
-                    DO k = 1, 3
-                        SpOh_disp_vec(k) = is_mat(k,j,s) - OHvec_mat(k+7,i,s)
-                        SpOh_disp_vec(k) = SpOh_disp_vec(k) - box(k) * ANINT( SpOh_disp_vec(k)/box(k) )
-                    END DO
-                    SpOh_disp_norm = NORM2( SpOh_disp_vec )
+
+                    CALL sb_dist(OHvec_mat(8:10,i,s),is_mat(1:3,j,s),box,norm_ij=SpOh_disp_norm)
+
                     IF ( ( SpOh_disp_norm .LT. OHvec_mat(28,i,s) ) .OR. ( OHvec_mat(28,i,s) .EQ. 0.0 ) ) THEN
                         OHvec_mat(28,i,s) = SpOh_disp_norm
                         IF ( OHvec_mat(10,i,s) .GT. is_mat(3,j,s) ) THEN
@@ -494,18 +468,16 @@ IF ( IS_c .EQ. 'Y' ) THEN
     start = OMP_get_wtime()
 
     !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, nb_o, is_mat, nb_is, nb_atm, nb_step)&
-    !$OMP PRIVATE(s, i, j, k)&
-    !$OMP PRIVATE(SpO_disp_vec, SpO_disp_norm)
+    !$OMP PRIVATE(s, i, j)&
+    !$OMP PRIVATE(SpO_disp_norm)
     DO s = 1, nb_step
         DO i = 1, nb_atm
             IF ( atm_mat(2,i,s) .EQ. 16 ) THEN
                 DO j = 1, nb_is(s)
                     IF ( is_mat(4,j,s) .EQ. 1 ) THEN
-                        DO k = 1, 3
-                            SpO_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
-                            SpO_disp_vec(k) = SpO_disp_vec(k) - box(k) * ANINT( SpO_disp_vec(k)/box(k) )
-                        END DO
-                        SpO_disp_norm = NORM2( SpO_disp_vec )
+
+                        CALL sb_dist(atm_mat(4:6,i,s),is_mat(1:3,j,s),box,norm_ij=SpO_disp_norm)
+
                         IF ( ( SpO_disp_norm .LT. atm_mat(15,i,s) ) .OR. ( atm_mat(15,i,s) .EQ. 0.0 ) ) THEN
                             atm_mat(15,i,s) = SpO_disp_norm
                             IF ( atm_mat(6,i,s) .LT. is_mat(3,j,s) ) THEN
@@ -516,11 +488,9 @@ IF ( IS_c .EQ. 'Y' ) THEN
                             atm_mat(17,i,s) = is_mat(5,j,s)
                         END IF
                     ELSE IF ( is_mat(4,j,s) .EQ. 2 ) THEN
-                        DO k = 1, 3
-                            SpO_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
-                            SpO_disp_vec(k) = SpO_disp_vec(k) - box(k) * ANINT( SpO_disp_vec(k)/box(k) )
-                        END DO
-                        SpO_disp_norm = NORM2( SpO_disp_vec )
+
+                        CALL sb_dist(atm_mat(4:6,i,s),is_mat(1:3,j,s),box,norm_ij=SpO_disp_norm)
+
                         IF ( (SpO_disp_norm .LT. atm_mat(18,i,s) ) .OR. ( atm_mat(18,i,s) .EQ. 0.0 ) ) THEN
                             atm_mat(18,i,s) = SpO_disp_norm
                             IF ( atm_mat(6,i,s) .GT. is_mat(3,j,s) ) THEN

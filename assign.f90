@@ -25,7 +25,7 @@ REAL(dp), ALLOCATABLE           :: center_avgpos(:,:)
 
 !   ----------------------------------------------- Temporary variables
 REAL(dp)                        :: z_shift
-REAL(dp)                        :: ij_disp_vec(3), ij_disp_norm
+REAL(dp)                        :: ij_disp_norm
 REAL(dp)                        :: temp_dist
 INTEGER                         :: temp_el, temp_id
 
@@ -200,7 +200,7 @@ conn_mat(:,:,:) = 0.0_dp
 !$OMP SHARED(nb_hydroxide, nb_alcohol, nb_ketone, nb_water, nb_hydronium)&
 !$OMP SHARED(nb_ketene,nb_alkoxide, nb_oxygen_group)&
 !$OMP PRIVATE(s, i, j, k, l, n)&
-!$OMP PRIVATE(ij_disp_norm, ij_disp_vec, up, temp_dist, temp_id, temp_el)&
+!$OMP PRIVATE(ij_disp_norm, up, temp_dist, temp_id, temp_el)&
 !$OMP PRIVATE(temp_id1, temp_atm_type)
 DO s = 1, nb_step
     ! First to assign hydrogen atom (closest atom, one bond only)
@@ -210,11 +210,9 @@ DO s = 1, nb_step
             DO j = 1, nb_atm
                 IF ( i .EQ. j) CYCLE
                 !IF ( atm_mat(2,j,s) .NE. 1 ) THEN
-                    DO k = 1, 3
-                        ij_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
-                        ij_disp_vec(k) = ij_disp_vec(k) - box(k) * ANINT( ij_disp_vec(k) / box(k) )
-                    END DO
-                    ij_disp_norm = NORM2( ij_disp_vec )
+
+                    CALL sb_dist(atm_mat(3:5,i,s),atm_mat(3:5,j,s),box,norm_ij=ij_disp_norm)
+
                     IF ( ( ( ij_disp_norm .LT. 2.00 ) .AND. (temp_dist .NE. 0 ) .AND. &
                     ( ij_disp_norm .LT. temp_dist ) .OR. (temp_dist .EQ. 0 ) ) ) THEN
                         temp_dist = ij_disp_norm
@@ -270,11 +268,9 @@ DO s = 1, nb_step
         IF ( atm_mat(2,i,s) .EQ. 1 ) CYCLE T2i ! Escape H
     T2j:DO j = i+1, nb_atm
             IF ( atm_mat(2,j,s) .EQ. 1 ) CYCLE T2j ! Escape H
-            DO k = 1, 3
-                ij_disp_vec(k) = atm_mat(k+2,j,s) - atm_mat(k+2,i,s)
-                ij_disp_vec(k) = ij_disp_vec(k) - box(k) * ANINT( ij_disp_vec(k) / box(k) )
-            END DO
-            ij_disp_norm = NORM2( ij_disp_vec )
+
+            CALL sb_dist(atm_mat(3:5,i,s),atm_mat(3:5,j,s),box,norm_ij=ij_disp_norm)
+
             IF ( ij_disp_norm .LT. 2.00 ) THEN
                 IF ( atm_mat(2,i,s) .EQ. 16 ) THEN
                     IF ( ( atm_mat(2,j,s) .EQ. 12 ) .AND. ( ij_disp_norm .LE. assign_OC_rcut) ) THEN

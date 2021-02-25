@@ -25,8 +25,8 @@ PROGRAM proton_hop
     INTEGER, ALLOCATABLE            :: nb_is(:), nb_max_OH(:)
     INTEGER                         :: nb_max_is, nb_o, nb_oh, hopp_c, nb_max_HOPP
 
-    REAL(dp)                        :: ISaX_disp_vec(3), ISaX_disp_norm
-    REAL(dp)                        :: prev_new_vec(3), prev_new_norm
+    REAL(dp)                        :: ISaX_disp_norm
+    REAL(dp)                        :: prev_new_norm
 
     !   ----------------------------------------------- Counters
     INTEGER                         :: s, i, j, k, o
@@ -106,19 +106,17 @@ PROGRAM proton_hop
         OH_mat(:,:,:) = 0.0_dp
         nb_max_OH(:) = 0
         !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, is_mat, nb_is, nb_step, nb_atm, OH_mat, nb_max_OH)&
-        !$OMP PRIVATE(s, i, j, k, o)&
-        !$OMP PRIVATE(ISaX_disp_vec, ISaX_disp_norm)
+        !$OMP PRIVATE(s, i, j, o)&
+        !$OMP PRIVATE(ISaX_disp_norm)
         DO s = 1, nb_step
             o = 0
             DO i = 1, nb_atm
                 IF (atm_mat(3,i,s) .EQ. 33) THEN ! OH
                     DO j = 1, nb_is(s)
                         IF ( is_mat(4,j,s) .EQ. 1 ) THEN
-                            DO k = 1, 3
-                                ISaX_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
-                                ISaX_disp_vec(k) = ISaX_disp_vec(k) - box(k) * ANINT( ISaX_disp_vec(k) / box(k) )
-                            END DO
-                            ISaX_disp_norm = NORM2( ISaX_disp_vec )
+
+                            CALL sb_dist(atm_mat(4:6,i,s),is_mat(1:3,j,s),box,norm_ij=ISaX_disp_norm)
+
                             IF ( ( ISaX_disp_norm .LT. atm_mat(7,i,s) ) .OR. ( atm_mat(7,i,s) .EQ. 0.0 ) ) THEN
                                 atm_mat(7,i,s) = ISaX_disp_norm
                                 IF ( atm_mat(6,i,s) .LT. is_mat(3,j,s ) ) THEN
@@ -129,11 +127,9 @@ PROGRAM proton_hop
                                 atm_mat(9,i,s) = is_mat(5,j,s)
                             END IF
                         ELSE IF ( is_mat(4,j,s) .EQ. 2 ) THEN
-                            DO k = 1, 3
-                                ISaX_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
-                                ISaX_disp_vec(k) = ISaX_disp_vec(k) - box(k) * ANINT( ISaX_disp_vec(k) / box(k) )
-                            END DO
-                            ISaX_disp_norm = NORM2( ISaX_disp_vec )
+
+                            CALL sb_dist(atm_mat(4:6,i,s),is_mat(1:3,j,s),box,norm_ij=ISaX_disp_norm)
+
                             IF ( ( ISaX_disp_norm .LT. atm_mat(10,i,s) ) .OR. ( atm_mat(10,i,s) .EQ. 0.0 ) ) THEN
                                 atm_mat(10,i,s) = ISaX_disp_norm
                                 IF ( atm_mat(6,i,s) .GT. is_mat(3,j,s ) ) THEN
@@ -146,9 +142,7 @@ PROGRAM proton_hop
                         END IF
                     END DO
                     o = o + 1
-                    DO k = 1, 12
-                        OH_mat(k,o,s) = atm_mat(k,i,s)
-                    END DO
+                    OH_mat(1:12,o,s) = atm_mat(1:12,i,s)
                 END IF
             END DO
             nb_max_OH(s) = COUNT( OH_mat(1,:,s) .NE. 0, DIM=1 )
@@ -165,9 +159,7 @@ PROGRAM proton_hop
         HOPP(:,:,:) = 0.0_dp
         hopp_c = 0
         nb_max_HOPP = 0
-        !!$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, is_mat, nb_is, nb_step, nb_atm)&
-        !!$OMP PRIVATE(s, i, j, k)&
-        !!$OMP PRIVATE(ISaX_disp_vec, ISaX_disp_norm)
+
         W:DO s = 1, nb_step
             IF ( nb_max_OH(s) .EQ. 0 ) THEN ! Skip when no proton at all in step s
                 CYCLE W
@@ -201,11 +193,9 @@ PROGRAM proton_hop
                             HOPP(12,i,s) = HOPP(12,j,s-1)
                             CYCLE X
                         ELSE
-                            DO k = 1, 3
-                                prev_new_vec(k) = OH_mat(k+3,i,s)  - OH_mat(k+3,j,s-1)
-                                prev_new_vec(k) = prev_new_vec(k) - box(k) * ANINT( prev_new_vec(k) / box(k) )
-                            END DO
-                            prev_new_norm = NORM2( prev_new_vec ) ! calculate distance between index s and index s-1
+
+                            CALL sb_dist(OH_mat(4:6,i,s),OH_mat(4:6,j,s-1),box,norm_ij=prev_new_norm) ! calculate distance between index s and index s-1
+
                             IF ( prev_new_norm .LT. 4.00) THEN ! If less than 3 and not in the memory, jump
                                 IF ( ( OH_mat(1,i,s) .NE. HOPP(3,j,s-1) ) .AND.&
                                 ( OH_mat(1,i,s)  .NE. HOPP(4,j,s-1) ).AND.&
@@ -285,7 +275,6 @@ PROGRAM proton_hop
         IF (hopp_c .NE. nb_max_HOPP) THEN
             PRINT*, "ERROR on max hopp", nb_max_HOPP, hopp_c
         END IF
-        !!$OMP END PARALLEL DO
 
         finish = OMP_get_wtime()
         PRINT'(A40,F14.2,A20)', "Hopping function:", finish-start, "seconds elapsed"
