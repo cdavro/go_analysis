@@ -49,6 +49,9 @@ vvcf.o: vvcf.f90
 proton_hop.o: proton_hop.f90
 	$(FC) $(FCFLAGS) -c proton_hop.f90
 
+hydroxyde_hop.o: hydroxyde_hop.f90
+	$(FC) $(FCFLAGS) -c hydroxyde_hop.f90
+
 #Individual programs
 assign: input.o sb_go.o assign.o
 	$(FC) $(FCFLAGS) input.o sb_go.o assign.o -o assign
@@ -89,7 +92,10 @@ vvcf: input.o sb_go.o vvcf.o
 proton_hop: input.o sb_go.o proton_hop.o
 	$(FC) $(FCFLAGS) input.o sb_go.o proton_hop.o -o proton_hop
 
-all: input.o sb_go.o density.o order_layer.o fluctuation.o assign.o assign_ff.o extract.o surface_wrap.o dist.o react_event.o water_angle.o hbonds.o vvcf.o proton_hop.o
+hydroxyde_hop: input.o sb_go.o hydroxyde_hop.o
+	$(FC) $(FCFLAGS) input.o sb_go.o hydroxyde_hop.o -o hydroxyde_hop
+
+all: input.o sb_go.o density.o order_layer.o fluctuation.o assign.o assign_ff.o extract.o surface_wrap.o dist.o react_event.o water_angle.o hbonds.o vvcf.o proton_hop.o hydroxyde_hop.o
 	$(FC) $(FCFLAGS) input.o sb_go.o assign.o -o assign
 	$(FC) $(FCFLAGS) input.o sb_go.o assign_ff.o -o assign_ff
 	$(FC) $(FCFLAGS) input.o sb_go.o surface_wrap.o -o surface_wrap
@@ -103,9 +109,10 @@ all: input.o sb_go.o density.o order_layer.o fluctuation.o assign.o assign_ff.o 
 	$(FC) $(FCFLAGS) input.o sb_go.o hbonds.o -o hbonds
 	$(FC) $(FCFLAGS) input.o sb_go.o vvcf.o -o vvcf
 	$(FC) $(FCFLAGS) input.o sb_go.o proton_hop.o -o proton_hop
+	$(FC) $(FCFLAGS) input.o sb_go.o hydroxyde_hop.o -o hydroxyde_hop
 
 clean:
 	rm -f *.o *.mod
 
 realclean:
-	rm -f *.o *.mod assign assign_ff extract surface_wrap dist react_event density order_layer fluctuation water_angle hbonds vvcf proton_hop
+	rm -f *.o *.mod assign assign_ff extract surface_wrap dist react_event density order_layer fluctuation water_angle hbonds vvcf proton_hop hydroxyde_hop
