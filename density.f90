@@ -30,7 +30,7 @@ REAL(dp), ALLOCATABLE           :: dens_down_avgz_c(:,:), avg_dens_down_avgz_c(:
 
 REAL(dp)                        :: ISaO_disp_vec(3), ISaO_disp_norm
 REAL(dp)                        :: r
-INTEGER                         :: count_dens_down, count_dens_up, count_dens_down_avgz_c
+REAL(dp)                        :: mass_dens_down, mass_dens_up, mass_dens_down_avgz_c
 
 !   ----------------------------------------------- Counters
 INTEGER                         :: s, i, j, k, o
@@ -164,12 +164,12 @@ dens_up(:,:) = 0.0_dp
 !$OMP SHARED(dens_rstart, dens_dr, dens_step)&
 !$OMP SHARED(dens_down, dens_up)&
 !$OMP PRIVATE(s, r, j, i)&
-!$OMP PRIVATE(count_dens_down, count_dens_up)
+!$OMP PRIVATE(mass_dens_down, mass_dens_up)
 DO s = 1, nb_step
     r = dens_rstart
     DO j = 1, dens_step
-        count_dens_down = 0
-        count_dens_up = 0
+        mass_dens_down = 0.0_dp
+        mass_dens_up = 0.0_dp
     C1:DO i = 1, nb_atm
             IF ( ( atm_mat(3,i,s) .NE. 33 ) .AND. &
             ( atm_mat(3,i,s) .NE. 34 ) .AND. &
@@ -177,15 +177,15 @@ DO s = 1, nb_step
                 CYCLE C1
             END IF
             IF ( ( atm_mat(7,i,s)*atm_mat(8,i,s) .GE. r ) .AND. ( atm_mat(7,i,s)*atm_mat(8,i,s) .LT. r+dens_dr ) ) THEN
-                count_dens_down = count_dens_down + 1
+                mass_dens_down = mass_dens_down + (15.999+(INT( atm_mat(3,i,s) )-32)*1.00784)
             END IF
             IF ( ( atm_mat(10,i,s)*atm_mat(11,i,s) .GE. r ) .AND. ( atm_mat(10,i,s)*atm_mat(11,i,s) .LT. r+dens_dr ) ) THEN
-                count_dens_up = count_dens_up + 1
+                mass_dens_up = mass_dens_up + (15.999+(INT( atm_mat(3,i,s) )-32)*1.00784)
             END IF
         END DO C1
-        dens_down(j,s) = ( (15.999+ (2*1.00784) ) * count_dens_down ) / ( box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23 )
+        dens_down(j,s) = mass_dens_down / ( box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23 )
         dens_down(j,s) = dens_down(j,s) / 0.997
-        dens_up(j,s) = ( (15.999+ (2*1.00784) ) * count_dens_up ) / ( box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23 )
+        dens_up(j,s) = mass_dens_up / ( box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23 )
         dens_up(j,s) = dens_up(j,s) / 0.997
         r = r + dens_dr
     END DO
@@ -252,7 +252,7 @@ avg_z(:) = 0.0_dp
 !$OMP SHARED(dens_rstart, dens_dr, dens_step, dens_center_atmnb)&
 !$OMP SHARED(avg_z, dens_down_avgz_c)&
 !$OMP PRIVATE(s, r, j, i, o)&
-!$OMP PRIVATE(count_dens_down_avgz_c)
+!$OMP PRIVATE(mass_dens_down_avgz_c)
 DO s = 1, nb_step
     o = 0
     DO i = 1, nb_atm
@@ -264,7 +264,7 @@ DO s = 1, nb_step
     avg_z(s) = avg_z(s) / o
     r = dens_rstart
     DO j = 1, dens_step
-        count_dens_down_avgz_c = 0
+        mass_dens_down_avgz_c = 0.0_dp
     D1:DO i = 1, nb_atm
             IF ( ( atm_mat(3,i,s) .NE. 33 ) .AND. &
             ( atm_mat(3,i,s) .NE. 34 ) .AND. &
@@ -272,10 +272,10 @@ DO s = 1, nb_step
                 CYCLE D1
             END IF
             IF ( ( (atm_mat(6,i,s) - avg_z(s) ) .GE. r ) .AND. ( ( atm_mat(6,i,s) - avg_z(s) ) .LT. r+dens_dr ) ) THEN
-                count_dens_down_avgz_c = count_dens_down_avgz_c + 1
+                mass_dens_down_avgz_c = mass_dens_down_avgz_c + (15.999+(INT( atm_mat(3,i,s) )-32)*1.00784)
             END IF
         END DO D1
-        dens_down_avgz_c(j,s) = ( (15.999 + (2*1.00784) ) * count_dens_down_avgz_c ) &
+        dens_down_avgz_c(j,s) = mass_dens_down_avgz_c &
         / ( box(1) *  box(2) * dens_dr * 1d-24 * 6.02214086d23 )
         dens_down_avgz_c(j,s) = dens_down_avgz_c(j,s) / 0.997
         r = r + dens_dr
