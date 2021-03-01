@@ -19,20 +19,21 @@ REAL(dp), PARAMETER         :: aut_to_fs=0.0241888432658569977_dp
 REAL(dp), PARAMETER         :: c_pi=4.0_dp*DATAN(1.0_dp)
 
 ! -----------------------------------------------Variables
-CHARACTER(LEN=64)           :: file_pos='0', file_vel='0', file_is='0'
+CHARACTER(LEN=64)           :: file_pos='0', file_vel='0', file_is='0', in_file='0'
 INTEGER                     :: nb_atm, nb_step
 CHARACTER(LEN=2)            :: suffix
 REAL(dp)                    :: xlo=0.0_dp, xhi=0.0_dp
 REAL(dp)                    :: ylo=0.0_dp, yhi=0.0_dp
 REAL(dp)                    :: zlo=0.0_dp, zhi=0.0_dp
 REAL(dp)                    :: box(3)
+CHARACTER(LEN=1)            :: WRAP_C="Y"
 ! Surface related
 CHARACTER(LEN=1)            :: IS_c="N"
 CHARACTER(LEN=1)            :: AS_c="N"
 CHARACTER(LEN=1)            :: IS_ud="A"
 ! Extract                   ::
 INTEGER                     :: stepi, stepf
-CHARACTER(LEN=1)            :: WRAP_C="Y"
+CHARACTER(LEN=1)            :: is_XYZ="N", is_SURF="N"
 ! Assign
 CHARACTER(LEN=3)            :: assign_center_name
 REAL(dp)                    :: assign_HO_rcut=1.30, assign_HC_rcut=1.30, assign_HH_rcut=1.30
@@ -163,12 +164,21 @@ SUBROUTINE READINPUTSUB(input_file)
                     READ(value, * , IOSTAT=iostatus) assign_center_nb
                     PRINT'(A50,I64)', 'assign_center_nb:', assign_center_nb
 ! Extract
+                CASE ('in_file')
+                    READ(value, * , IOSTAT=iostatus) in_file
+                    PRINT'(A50,A64)', 'In file:', ADJUSTR(in_file)
                 CASE('stepi')
                     READ(value, * , IOSTAT=iostatus) stepi
                     PRINT'(A50,I64)', 'stepi:', stepi
                 CASE ('stepf')
                     READ(value, * , IOSTAT=iostatus) stepf
                     PRINT'(A50,I64)', 'stepf: ', stepf
+                CASE('is_XYZ')
+                    READ(value, * , IOSTAT=iostatus) is_XYZ
+                    PRINT'(A50,A64)', 'is_XYZ:', ADJUSTR(is_XYZ)
+                CASE('is_SURF')
+                    READ(value, * , IOSTAT=iostatus) is_SURF
+                    PRINT'(A50,A64)', 'is_SURF:', ADJUSTR(is_SURF)
 ! Density
                 CASE ('dens_center_atmnb')
                     READ(value, * , IOSTAT=iostatus) dens_center_atmnb
