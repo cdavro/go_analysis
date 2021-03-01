@@ -26,14 +26,14 @@ INTEGER                         :: nb_max_is
 INTEGER, ALLOCATABLE            :: nb_is(:)
 
 !   ----------------------------------------------- Temp variables
-REAL(dp)                        :: SpO_disp_vec(3), SpO_disp_norm
+REAL(dp)                        :: SpO_disp_norm
 CHARACTER(LEN=3)                :: type
 
 !   ----------------------------------------------- Count variables
 INTEGER                         :: nb_h
 
 !   ----------------------------------------------- Counters
-INTEGER                         :: i, s, k, j
+INTEGER                         :: i, s, j
 INTEGER                         :: count_L0, count_L1, count_L2, count_L3, count_all
 
 !   -----------------------------------------------
@@ -108,8 +108,8 @@ IF ( IS_c .EQ. 'Y' ) THEN
     ! X ----------------------------------------------- Calculate closest distance between IS and Water-type Oxygen
     start = OMP_get_wtime()
     !$OMP PARALLEL DO DEFAULT(NONE) SHARED(atm_mat, box, is_mat, nb_is, nb_atm, nb_step)&
-    !$OMP PRIVATE(s, i, j, k)&
-    !$OMP PRIVATE(SpO_disp_vec, SpO_disp_norm)
+    !$OMP PRIVATE(s, i, j)&
+    !$OMP PRIVATE(SpO_disp_norm)
     DO s = 1, nb_step
         DO i = 1, nb_atm
             IF ( ( atm_mat(3,i,s) .EQ. 34 ) .OR. &
@@ -117,11 +117,9 @@ IF ( IS_c .EQ. 'Y' ) THEN
             ( atm_mat(3,i,s) .EQ. 35 ) ) THEN ! Water-type Oxygen
                 DO j = 1, nb_is(s)
                     IF ( is_mat(4,j,s) .EQ. 1 ) THEN
-                        DO k = 1, 3
-                            SpO_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
-                            SpO_disp_vec(k) = SpO_disp_vec(k) - box(k) * ANINT( SpO_disp_vec(k)/box(k) )
-                        END DO
-                        SpO_disp_norm = NORM2( SpO_disp_vec )
+
+                        CALL sb_dist(atm_mat(4:6,i,s),is_mat(1:3,j,s),box,norm_ij=SpO_disp_norm)
+
                         IF ( ( SpO_disp_norm .LT. atm_mat(15,i,s) ) .OR. ( atm_mat(15,i,s) .EQ. 0.0 ) ) THEN
                             atm_mat(15,i,s) = SpO_disp_norm
                             IF ( atm_mat(6,i,s) .LT. is_mat(3,j,s) ) THEN
@@ -132,11 +130,9 @@ IF ( IS_c .EQ. 'Y' ) THEN
                             atm_mat(17,i,s) = is_mat(5,j,s)
                         END IF
                     ELSE IF ( is_mat(4,j,s) .EQ. 2 ) THEN
-                        DO k = 1, 3
-                            SpO_disp_vec(k) = is_mat(k,j,s) - atm_mat(k+3,i,s)
-                            SpO_disp_vec(k) = SpO_disp_vec(k) - box(k) * ANINT( SpO_disp_vec(k)/box(k) )
-                        END DO
-                        SpO_disp_norm = NORM2( SpO_disp_vec )
+
+                        CALL sb_dist(atm_mat(4:6,i,s),is_mat(1:3,j,s),box,norm_ij=SpO_disp_norm)
+
                         IF ( ( SpO_disp_norm .LT. atm_mat(18,i,s) ) .OR. (atm_mat(18,i,s) .EQ. 0.0 ) ) THEN
                             atm_mat(18,i,s) = SpO_disp_norm
                             IF ( atm_mat(6,i,s) .GT. is_mat(3,j,s) ) THEN
