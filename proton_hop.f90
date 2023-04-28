@@ -201,8 +201,8 @@ PROGRAM proton_hop
                                 ( H3O_mat(1,i,s)  .NE. HOPP(4,j,s-1) ).AND.&
                                 ( H3O_mat(1,i,s)  .NE. HOPP(5,j,s-1) ).AND.&
                                 ( H3O_mat(1,i,s)  .NE. HOPP(6,j,s-1) ) ) THEN
-                                    HOPP(1,i,s) = HOPP(1,i,s-1) + 1
-                                    HOPP(2,i,s) = H3O_mat(1,j,s)
+                                    HOPP(1,i,s) = HOPP(1,j,s-1) + 1
+                                    HOPP(2,i,s) = H3O_mat(1,i,s)
                                     HOPP(11,i,s) = H3O_mat(7,i,s)*H3O_mat(8,i,s)
                                     DO k = 3,10
                                         HOPP(k,i,s) = HOPP(k-1,j,s-1)
